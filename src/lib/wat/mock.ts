@@ -1,0 +1,62 @@
+export const WAT_COURSE_ID = "issb1";
+
+export interface WATSet {
+  id: string;
+  title: string;
+  isPremium: boolean;
+  words: string[];
+}
+
+const NEGATIVE_WORDS = [
+  "ABUSE","FAILURE","DEFEAT","FEAR","ANGER","HATRED","LAZINESS","COWARDICE",
+  "WEAKNESS","CORRUPTION","SELFISHNESS","DISHONESTY","CRUELTY","JEALOUSY",
+  "GREED","BETRAYAL","VIOLENCE","DESPAIR","SHAME","GUILT","POVERTY","CRIME",
+  "DESTRUCTION","CHAOS","DEPRESSION","CONFLICT","REGRET","MISTAKE","DANGER",
+  "THREAT","LOSS","PAIN","SUFFERING","WORRY","DOUBT","CONFUSION","FRUSTRATION",
+  "ENEMY","IGNORANCE","ARROGANCE","HATRED","WASTE","REVENGE","BRIBE","CHEAT",
+  "FRAUD","NEGLECT","ABUSE","INSULT","HUMILIATION","TORTURE","SLAVERY","INJUSTICE",
+  "DISCRIMINATION","OPPRESSION","EXPLOITATION","MANIPULATION","DECEIT","ENVY",
+  "SPITE","MALICE","CORRUPTION","TYRANNY","AGGRESSION","HOSTILITY","BRUTALITY",
+  "TERRORISM","DISASTER","CATASTROPHE","EPIDEMIC","POLLUTION","DROUGHT","FAMINE",
+  "UNEMPLOYMENT","POVERTY","MISERY","HARDSHIP","ISOLATION","LONELINESS","ANXIETY",
+  "PANIC","PHOBIA","ADDICTION","ALCOHOLISM","CRIME","RIOT","ANARCHY",
+];
+
+const MODEL_01_WORDS = [
+  "ARMY","COURAGE","LEADER","NATION","DUTY","HONOR","VICTORY","STRENGTH",
+  "DISCIPLINE","LOYALTY","SACRIFICE","INTEGRITY","TEAMWORK","RESPONSIBILITY",
+  "PATRIOTISM","EXCELLENCE","DETERMINATION","WISDOM","JUSTICE","RESPECT",
+  "FAMILY","FRIEND","WORK","STUDY","FUTURE","SUCCESS","PEACE","LOVE",
+  "HOPE","TRUST","AMBITION","CHALLENGE","GROWTH","CHANGE","TIME","KNOWLEDGE",
+  "MIND","HEART","POWER","FREEDOM","UNITY","SERVICE","FAITH","SINCERITY",
+  "HONESTY","BRAVERY","PROGRESS","COMPASSION","KINDNESS","GENEROSITY",
+  "HUMILITY","PATIENCE","PERSEVERANCE","CREATIVITY","INNOVATION","VISION",
+  "MISSION","GOAL","ACHIEVEMENT","PRIDE","GLORY","TRADITION","CULTURE",
+  "EDUCATION","HEALTH","COMMUNITY","SOCIETY","COUNTRY","FLAG","SOLDIER",
+  "OFFICER","TRAINING","MISSION","ORDER","COMMAND","PROTECT","DEFEND",
+  "SERVE","LEAD","INSPIRE","MOTIVATE","COORDINATE","EXECUTE","SUCCEED",
+];
+
+const MODEL_02_WORDS = [
+  "FIRE","WATER","MOUNTAIN","RIVER","SKY","EARTH","WIND","STORM",
+  "LIGHT","DARKNESS","DAWN","NIGHT","MORNING","EVENING","SPRING","AUTUMN",
+  "ROAD","BRIDGE","DOOR","WALL","WINDOW","GARDEN","FOREST","DESERT",
+  "OCEAN","ISLAND","VALLEY","PEAK","HORIZON","JOURNEY","DESTINATION","HOME",
+  "SCHOOL","HOSPITAL","MARKET","STATION","AIRPORT","BORDER","BOUNDARY","TERRITORY",
+  "MAP","COMPASS","SIGNAL","RADIO","CODE","MESSAGE","ORDER","MISSION",
+  "STRATEGY","TACTICS","PLAN","OBJECTIVE","TARGET","POSITION","ADVANCE","RETREAT",
+  "ATTACK","DEFEND","SECURE","PATROL","GUARD","RESCUE","RELIEF","SUPPORT",
+];
+
+export const WAT_SETS: WATSet[] = [
+  { id: "all-negative", title: "All Negative WAT", isPremium: false, words: NEGATIVE_WORDS },
+  { id: "model-01",     title: "Model Test 01",    isPremium: false, words: MODEL_01_WORDS },
+  { id: "model-02",     title: "Model Test 02",    isPremium: true,  words: MODEL_02_WORDS },
+  { id: "model-03",     title: "Model Test 03",    isPremium: true,  words: [...MODEL_01_WORDS].reverse() },
+  { id: "model-04",     title: "Model Test 04",    isPremium: true,  words: [...MODEL_02_WORDS].reverse() },
+  { id: "model-05",     title: "Model Test 05",    isPremium: true,  words: MODEL_01_WORDS.slice(0, 60) },
+  { id: "model-06",     title: "Model Test 06",    isPremium: true,  words: MODEL_02_WORDS.slice(0, 60) },
+  { id: "model-07",     title: "Model Test 07",    isPremium: true,  words: [...NEGATIVE_WORDS].slice(20) },
+  { id: "model-08",     title: "Model Test 08",    isPremium: true,  words: [...MODEL_01_WORDS].slice(10) },
+  { id: "model-09",     title: "Model Test 09",    isPremium: true,  words: [...MODEL_02_WORDS].slice(10) },
+];

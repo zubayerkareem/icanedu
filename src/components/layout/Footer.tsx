@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Facebook, Youtube, Send, Mail, Phone, MapPin } from "lucide-react";
+import { Facebook, Youtube, Instagram, Mail, Phone, MapPin, Navigation } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { t } from "@/lib/strings";
 
@@ -22,39 +22,33 @@ export function Footer() {
               {settings?.tagline || t.brand.tagline}
             </p>
             <div className="mt-4 flex gap-3">
-              {settings?.facebook_url && (
-                <a
-                  href={settings.facebook_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                  aria-label="Facebook"
-                >
-                  <Facebook className="h-4 w-4" />
-                </a>
-              )}
-              {settings?.youtube_url && (
-                <a
-                  href={settings.youtube_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                  aria-label="YouTube"
-                >
-                  <Youtube className="h-4 w-4" />
-                </a>
-              )}
-              {settings?.telegram_url && (
-                <a
-                  href={settings.telegram_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-                  aria-label="Telegram"
-                >
-                  <Send className="h-4 w-4" />
-                </a>
-              )}
+              <a
+                href="https://www.facebook.com/icanbdedu"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-[#1877F2] hover:text-white"
+                aria-label="Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.youtube.com/@ican_academy"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-[#FF0000] hover:text-white"
+                aria-label="YouTube"
+              >
+                <Youtube className="h-4 w-4" />
+              </a>
+              <a
+                href="https://www.instagram.com/icanacademybd"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full bg-background p-2 text-muted-foreground transition-colors hover:bg-[#E1306C] hover:text-white"
+                aria-label="Instagram"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
             </div>
           </div>
 
@@ -115,18 +109,21 @@ export function Footer() {
                 phone: "01894734005",
                 email: "icanedu23@gmail.com",
                 address: "Lalkuthi More, Rangpur",
+                mapUrl: "https://www.google.com/maps/search/iCAN+Academy+Rangpur",
               },
               {
                 name: "মিরপুর শাখা",
                 phone: "01894734003",
                 email: "icanedu23@gmail.com",
                 address: "Pallabi Metro, Mirpur, Dhaka",
+                mapUrl: "https://www.google.com/maps/search/iCAN+Academy+Mirpur+Dhaka",
               },
               {
                 name: "ফার্মগেট শাখা",
                 phone: "01894734002",
                 email: "icanedu23@gmail.com",
                 address: "RH Home Center, Farmgate, Dhaka",
+                mapUrl: "https://www.google.com/maps/dir/23.7013164,90.4246481/iCAN+Academy+Farmgate+Branch+(ISSB,+Cadet+College),+74%2FB%2F1+Room+no+211,212,213,+R+H+Home+Centre,+18+Green+Rd,+Dhaka+1215/@23.7252123,90.3712112,13z/data=!3m1!4b1!4m9!4m8!1m1!4e1!1m5!1m1!1s0x3755b9006b97113d:0x252e63af34149ef4!2m2!1d90.3889921!2d23.7545164?entry=ttu&g_ep=EgoyMDI2MDUyMC4wIKXMDSoASAFQAw%3D%3D",
               },
             ].map((branch) => (
               <div
@@ -148,6 +145,15 @@ export function Footer() {
                     <span>{branch.address}</span>
                   </li>
                 </ul>
+                <a
+                  href={branch.mapUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent"
+                >
+                  <Navigation className="h-3 w-3" />
+                  Google Maps-এ দেখুন
+                </a>
               </div>
             ))}
           </div>

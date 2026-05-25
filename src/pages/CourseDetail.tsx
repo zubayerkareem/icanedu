@@ -2,15 +2,22 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   BookOpen,
+  Brain,
   CheckCircle2,
   ClipboardList,
   Clock,
   Download,
   Eye,
+  FileEdit,
+  FileQuestion,
   FileText,
   HelpCircle,
+  Image,
   Infinity as InfinityIcon,
+  Layers,
   Lock,
+  MessageSquare,
+  PenLine,
   PlayCircle,
   ShieldCheck,
   Star,
@@ -31,12 +38,6 @@ import { useCourse, useRelatedCourses } from "@/hooks/useCourse";
 import { useAuth } from "@/hooks/useAuth";
 import { t } from "@/lib/strings";
 import type { Course, CourseVideo, LessonType, Module } from "@/lib/courses/types";
-import { IQ_COURSE_ID } from "@/lib/iq-practice/mock";
-import { STORY_COURSE_ID } from "@/lib/incomplete-story/mock";
-import { PPDT_COURSE_ID } from "@/lib/ppdt/mock";
-import { PICTURE_STORY_COURSE_ID } from "@/lib/picture-story/mock";
-import { WAT_COURSE_ID } from "@/lib/wat/mock";
-import { IST_COURSE_ID } from "@/lib/ist/mock";
 
 const LESSON_ICON: Record<LessonType, typeof PlayCircle> = {
   video: PlayCircle,
@@ -134,7 +135,7 @@ export default function CourseDetail() {
   return (
     <>
       <CourseHero course={course} />
-      <CurriculumSection modules={course.modules ?? []} />
+      <CurriculumSection course={course} modules={course.modules ?? []} />
       <VideosSection videos={course.videos ?? []} />
       <ResourcesSection resources={course.resources ?? []} />
       <TeacherSection course={course} />
@@ -221,7 +222,26 @@ function CourseHero({ course }: { course: Course }) {
             )}
           </div>
 
-          {course.teacher && (
+          {course.teachers && course.teachers.length > 0 ? (
+            <div className="mt-8 flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {course.teachers.slice(0, 4).map((t, i) => (
+                  <Avatar key={i} className="h-10 w-10 ring-2 ring-background">
+                    {t.avatar && <AvatarImage src={t.avatar} />}
+                    <AvatarFallback className="bg-accent text-accent-foreground text-xs">
+                      {t.name.slice(0, 1)}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+              <div>
+                <div className="text-sm font-semibold text-foreground">
+                  {course.teachers.length} জন শিক্ষক
+                </div>
+                <div className="text-xs text-muted-foreground">বিশেষজ্ঞ শিক্ষক প্যানেল</div>
+              </div>
+            </div>
+          ) : course.teacher && (
             <div className="mt-8 flex items-center gap-3">
               <Avatar className="h-12 w-12 ring-2 ring-border">
                 {course.teacher.avatar && <AvatarImage src={course.teacher.avatar} />}
@@ -339,53 +359,6 @@ function CourseHero({ course }: { course: Course }) {
                   </Link>
                 </Button>
 
-                {course.id === IQ_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/iq-practice`}>
-                      🧠 IQ Practice
-                    </Link>
-                  </Button>
-                )}
-
-                {course.id === STORY_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/incomplete-story`}>
-                      ✍️ Incomplete Story
-                    </Link>
-                  </Button>
-                )}
-
-                {course.id === PPDT_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/ppdt`}>
-                      🔍 PPDT Practice
-                    </Link>
-                  </Button>
-                )}
-
-                {course.id === PICTURE_STORY_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/picture-story`}>
-                      🖼️ পিকচার স্টোরি
-                    </Link>
-                  </Button>
-                )}
-
-                {course.id === WAT_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/wat`}>
-                      🧠 WAT Practice
-                    </Link>
-                  </Button>
-                )}
-
-                {course.id === IST_COURSE_ID && (
-                  <Button variant="outline" size="lg" className="w-full" asChild>
-                    <Link to={`/courses/${course.id}/ist`}>
-                      📝 IST Practice
-                    </Link>
-                  </Button>
-                )}
                 {!user && (
                   <p className="text-center text-xs text-muted-foreground">
                     কোর্স কিনতে{" "}
@@ -463,7 +436,17 @@ function IncludeRow({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 // ============ Curriculum ============
 
-function CurriculumSection({ modules }: { modules: Module[] }) {
+const ISSB_MODULES = [
+  { label: "IQ Practice",       icon: Brain,         path: "iq-practice" },
+  { label: "WAT Practice",      icon: PenLine,       path: "wat" },
+  { label: "IST Practice",      icon: FileEdit,      path: "ist" },
+  { label: "Extempore Essay",   icon: MessageSquare, path: "extempore" },
+  { label: "Picture Story",     icon: Image,         path: "picture-story" },
+  { label: "Incomplete Story",  icon: Layers,        path: "incomplete-story" },
+  { label: "PPDT Practice",     icon: FileQuestion,  path: "ppdt" },
+];
+
+function CurriculumSection({ course, modules }: { course: Course; modules: Module[] }) {
   if (modules.length === 0) return null;
   // Track which lessons should be marked as preview (first 2 of first module).
   const previewIds = new Set<string>(
@@ -540,6 +523,29 @@ function CurriculumSection({ modules }: { modules: Module[] }) {
             </AccordionItem>
           ))}
         </Accordion>
+
+        {course.category === "ISSB" && (
+          <div className="mt-8 space-y-4">
+            <h3 className="font-heading text-xl font-bold text-foreground">
+              ISSB প্র্যাকটিস মডিউলসমূহ
+            </h3>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {ISSB_MODULES.map((mod) => {
+                const Icon = mod.icon;
+                return (
+                  <Link
+                    key={mod.path}
+                    to={`/courses/${course.id}/${mod.path}`}
+                    className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-accent/10 hover:border-accent/40 transition-colors shadow-sm"
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-accent" />
+                    {mod.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -734,9 +740,48 @@ function DescriptionSection({ content }: { content: string }) {
 
 // ============ Teacher ============
 
+function TeacherCard({ teacher }: { teacher: import("@/lib/courses/types").Teacher }) {
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 sm:flex-row sm:items-start">
+      <Avatar className="h-20 w-20 shrink-0">
+        {teacher.avatar && <AvatarImage src={teacher.avatar} />}
+        <AvatarFallback className="bg-accent text-xl text-accent-foreground">
+          {teacher.name.slice(0, 1)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1">
+        <div className="font-heading text-lg font-bold text-foreground">{teacher.name}</div>
+        {teacher.short_bio && (
+          <div className="mt-1 text-sm font-medium text-accent">{teacher.short_bio}</div>
+        )}
+        {teacher.long_bio && (
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{teacher.long_bio}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TeacherSection({ course }: { course: Course }) {
+  const teachers = course.teachers;
   const teacher = course.teacher;
-  if (!teacher) return null;
+  if (!teachers?.length && !teacher) return null;
+
+  if (teachers && teachers.length > 0) {
+    return (
+      <section className="py-12 sm:py-16">
+        <div className="container max-w-4xl">
+          <h2 className="mb-6 font-heading text-2xl font-bold text-foreground sm:text-3xl">
+            শিক্ষক প্যানেল
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {teachers.map((t, i) => <TeacherCard key={i} teacher={t} />)}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-12 sm:py-16">
       <div className="container max-w-4xl">
@@ -745,23 +790,23 @@ function TeacherSection({ course }: { course: Course }) {
         </h2>
         <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-6 sm:flex-row sm:items-start">
           <Avatar className="h-24 w-24 shrink-0">
-            {teacher.avatar && <AvatarImage src={teacher.avatar} />}
+            {teacher!.avatar && <AvatarImage src={teacher!.avatar} />}
             <AvatarFallback className="bg-accent text-2xl text-accent-foreground">
-              {teacher.name.slice(0, 1)}
+              {teacher!.name.slice(0, 1)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="font-heading text-xl font-bold text-foreground">
-              {teacher.name}
+              {teacher!.name}
             </div>
-            {teacher.short_bio && (
+            {teacher!.short_bio && (
               <div className="mt-1 text-sm font-medium text-accent">
-                {teacher.short_bio}
+                {teacher!.short_bio}
               </div>
             )}
-            {teacher.long_bio && (
+            {teacher!.long_bio && (
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {teacher.long_bio}
+                {teacher!.long_bio}
               </p>
             )}
           </div>

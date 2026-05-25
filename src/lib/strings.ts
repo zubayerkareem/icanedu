@@ -76,7 +76,7 @@ export const t = {
     overview: "ওভারভিউ",
     myCourses: "আমার কোর্স",
     welcome: "স্বাগতম",
-    title: "শিক্ষার্থী ড্যাশবোর্ড",
+    title: "Student Dashboard",
   },
   admin: {
     title: "অ্যাডমিন প্যানেল",

@@ -16,11 +16,16 @@ export function NoticesSection() {
   return (
     <section className="bg-muted/30 py-12 sm:py-16">
       <div className="container max-w-4xl">
-        <div className="mb-8 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
-            <Bell className="h-5 w-5 text-accent" />
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+              <Bell className="h-5 w-5 text-accent" />
+            </div>
+            <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">সাম্প্রতিক নোটিশ</h2>
           </div>
-          <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">সাম্প্রতিক নোটিশ</h2>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/notices">সব নোটিশ দেখুন</Link>
+          </Button>
         </div>
 
         <div className="grid gap-3">
@@ -52,11 +57,6 @@ export function NoticesSection() {
           ))}
         </div>
 
-        <div className="mt-6 text-center">
-          <Button asChild>
-            <Link to="/notices">সব নোটিশ দেখুন</Link>
-          </Button>
-        </div>
       </div>
     </section>
   );

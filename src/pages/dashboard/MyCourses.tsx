@@ -1,15 +1,89 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Clock, CheckCircle2, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useMyOrders, type OrderStatus } from "@/hooks/useOrders";
+import { Button } from "@/components/ui/button";
+import { useMyOrders, type Order, type OrderStatus } from "@/hooks/useOrders";
+import { MOCK_COURSES } from "@/lib/courses/mock";
+import type { Course } from "@/lib/courses/types";
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
-  pending:   { label: "অনুমোদন বাকি",    color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
-  confirmed: { label: "সক্রিয়",           color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  shipped:   { label: "সক্রিয়",           color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  delivered: { label: "সম্পন্ন",           color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  cancelled: { label: "বাতিল",            color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  pending:   { label: "অনুমোদন বাকি", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
+  confirmed: { label: "সক্রিয়",        color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  shipped:   { label: "সক্রিয়",        color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  delivered: { label: "সম্পন্ন",        color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  cancelled: { label: "বাতিল",         color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getCourse(order: Order): Course | undefined {
+  if (!order.product_id) return undefined;
+  return MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id);
+}
+
+// ─── Enrolled Course Card ─────────────────────────────────────────────────────
+
+function EnrolledCourseCard({ order }: { order: Order }) {
+  const course = getCourse(order);
+  const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
+  const isActive = order.status === "confirmed" || order.status === "shipped" || order.status === "delivered";
+  const courseId = order.product_id ?? course?.id ?? "";
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      {/* Banner */}
+      <div className="relative h-44 w-full bg-muted overflow-hidden">
+        {course?.thumbnail_url ? (
+          <img
+            src={course.thumbnail_url}
+            alt={order.product_name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-accent/5">
+            <BookOpen className="h-12 w-12 text-accent/40" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
+          <h3 className="font-heading font-bold text-white text-sm leading-snug line-clamp-2 drop-shadow">
+            {order.product_name}
+          </h3>
+          <Badge className={`shrink-0 text-[10px] ${status.color}`}>{status.label}</Badge>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-4 space-y-4">
+        {/* Meta row */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {new Date(order.created_at).toLocaleDateString("bn-BD", {
+              day: "numeric", month: "long", year: "numeric",
+            })}
+          </span>
+          <span className="font-bold text-accent">
+            ৳{order.total_price.toLocaleString("bn-BD")}
+          </span>
+        </div>
+
+        {/* Continue button */}
+        {isActive && courseId && (
+          <Button asChild className="w-full" size="sm">
+            <Link to={`/dashboard/courses/${courseId}`}>
+              কোর্স চালু করুন <ChevronRight className="ml-1 h-4 w-4" />
+            </Link>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MyCourses() {
   const { data: allOrders = [], isLoading } = useMyOrders();
@@ -22,9 +96,9 @@ export default function MyCourses() {
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-40 animate-pulse rounded-xl border border-border bg-muted/30" />
+              <div key={i} className="h-80 animate-pulse rounded-2xl border border-border bg-muted/30" />
             ))}
           </div>
         ) : enrollments.length === 0 ? (
@@ -40,36 +114,10 @@ export default function MyCourses() {
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {enrollments.map((order) => {
-              const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
-              const isActive = order.status === "confirmed" || order.status === "shipped";
-              return (
-                <div key={order.id} className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 mb-4">
-                    <BookOpen className="h-5 w-5 text-accent" />
-                  </div>
-                  <h3 className="font-medium text-foreground leading-snug line-clamp-2">{order.product_name}</h3>
-                  <p className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    নথিভুক্তি: {new Date(order.created_at).toLocaleDateString("bn-BD", {
-                      day: "numeric", month: "long", year: "numeric",
-                    })}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <Badge className={`text-xs ${status.color}`}>{status.label}</Badge>
-                    {isActive && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                        <CheckCircle2 className="h-3 w-3" /> চালু আছে
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-3 font-heading text-base font-bold text-accent">
-                    ৳{order.total_price.toLocaleString("bn-BD")}
-                  </p>
-                </div>
-              );
-            })}
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {enrollments.map((order) => (
+              <EnrolledCourseCard key={order.id} order={order} />
+            ))}
           </div>
         )}
       </div>

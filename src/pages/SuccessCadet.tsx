@@ -1,69 +1,7 @@
 import { Link } from "react-router-dom";
 import { Trophy, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const STORIES = [
-  {
-    id: 1,
-    name: "আরিফুল ইসলাম",
-    college: "ঝিনাইদহ ক্যাডেট কলেজ",
-    year: "২০২৫",
-    avatar: "আ",
-    quote:
-      "iCANBD-এর ক্যাডেট কলেজ প্যাকেজ আমার জন্য আশীর্বাদ। গণিত, বিজ্ঞান, ইংরেজি — সব বিষয়ে একসাথে প্রস্তুতি নিতে পেরেছি।",
-    result: "মৌখিক পরীক্ষায় উত্তীর্ণ",
-  },
-  {
-    id: 2,
-    name: "ফারহান রহমান",
-    college: "রাজশাহী ক্যাডেট কলেজ",
-    year: "২০২৫",
-    avatar: "ফ",
-    quote:
-      "লিখিত পরীক্ষার প্রস্তুতিতে iCANBD-এর প্রশ্নব্যাংক ও মডেল টেস্টগুলো অনেক কাজে লেগেছে। প্রতিটি বিষয়ে আত্মবিশ্বাস বেড়েছে।",
-    result: "সফলভাবে ভর্তি",
-  },
-  {
-    id: 3,
-    name: "নাফিসা আক্তার",
-    college: "ময়মনসিংহ গার্লস ক্যাডেট কলেজ",
-    year: "২০২৫",
-    avatar: "ন",
-    quote:
-      "মেয়েদের জন্য ক্যাডেট কলেজে সুযোগ পাওয়া সত্যিই কঠিন। iCANBD-এর বিশেষ গাইডেন্সে আমি সফল হয়েছি।",
-    result: "সফলভাবে ভর্তি",
-  },
-  {
-    id: 4,
-    name: "সাইফুল হক",
-    college: "সিলেট ক্যাডেট কলেজ",
-    year: "২০২৪",
-    avatar: "স",
-    quote:
-      "শারীরিক পরীক্ষার গাইডলাইন এবং মনোবিজ্ঞান টেস্টের প্রস্তুতি — দুটোই অনেক সাহায্য করেছে। স্যারদের ধন্যবাদ।",
-    result: "সফলভাবে ভর্তি",
-  },
-  {
-    id: 5,
-    name: "তাহমিদ হোসেন",
-    college: "বরিশাল ক্যাডেট কলেজ",
-    year: "২০২৪",
-    avatar: "ত",
-    quote:
-      "বাংলা রচনা ও ইংরেজি কম্পোজিশন সেকশনগুলো বিশেষভাবে উপকারী ছিল। আমার লেখার দক্ষতা অনেক উন্নত হয়েছে।",
-    result: "প্রথম সুযোগে সফল",
-  },
-  {
-    id: 6,
-    name: "সুমাইয়া বেগম",
-    college: "কুমিল্লা ক্যাডেট কলেজ",
-    year: "২০২৫",
-    avatar: "সু",
-    quote:
-      "লাইভ মক পরীক্ষা এবং বিস্তারিত ফিডব্যাক সেশনগুলো অনেক সাহায্য করেছে। প্রতিটি দুর্বলতা চিহ্নিত করে উন্নতি করতে পেরেছি।",
-    result: "সফলভাবে ভর্তি",
-  },
-];
+import { SUCCESS_STORIES } from "@/lib/success/stories";
 
 
 export default function SuccessCadet() {
@@ -99,7 +37,7 @@ export default function SuccessCadet() {
             <p className="mt-2 text-sm text-muted-foreground">আমাদের শিক্ষার্থীরা যা অর্জন করেছেন</p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {STORIES.map((s) => (
+            {SUCCESS_STORIES.map((s) => (
               <div
                 key={s.id}
                 className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
@@ -111,7 +49,10 @@ export default function SuccessCadet() {
                     </svg>
                   </div>
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">"{s.quote}"</p>
+                <div>
+                  <h3 className="font-heading font-semibold text-foreground text-base">{s.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+                </div>
               </div>
             ))}
           </div>

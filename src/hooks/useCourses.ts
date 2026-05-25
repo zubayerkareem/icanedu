@@ -40,14 +40,19 @@ export function useCourses(params: UseCoursesParams = {}) {
         .select("*")
         .eq("is_published", true);
 
-      const all: Course[] = (!error && data && data.length > 0)
+      const supabaseCourses: Course[] = (!error && data && data.length > 0)
         ? data.map((row) => ({
             ...row,
             teacher: row.teacher_name
               ? { name: row.teacher_name, avatar: row.teacher_avatar, short_bio: row.teacher_short_bio, long_bio: row.teacher_long_bio }
               : undefined,
           }))
-        : MOCK_COURSES;
+        : [];
+
+      // Merge: Supabase courses take precedence by id; fill remaining with mock
+      const supabaseIds = new Set(supabaseCourses.map((c) => c.id));
+      const mockOnly = MOCK_COURSES.filter((c) => !supabaseIds.has(c.id));
+      const all: Course[] = [...supabaseCourses, ...mockOnly];
       const categories = Array.from(
         new Set(all.map((c) => c.category).filter((x): x is string => Boolean(x))),
       ).sort();

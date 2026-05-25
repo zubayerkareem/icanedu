@@ -110,26 +110,116 @@ const baseHighlights: string[] = [
   "সার্টিফিকেট প্রদান",
 ];
 
+const issbWrittenTeachers = [
+  {
+    name: "মেজর (অব.) আরিফ হোসেন",
+    short_bio: "সাবেক সেনা কর্মকর্তা, ISSB বিশেষজ্ঞ",
+    long_bio: "মেজর (অব.) আরিফ হোসেন দীর্ঘ সামরিক ক্যারিয়ারে ISSB পরীক্ষায় অংশগ্রহণ ও প্রশিক্ষণে বিশেষজ্ঞ। তিনি হাজারো শিক্ষার্থীকে সশস্ত্র বাহিনীতে যোগ দিতে সহায়তা করেছেন।",
+  },
+  {
+    name: "ড. নাজমুল ইসলাম",
+    short_bio: "সাইকোলজিস্ট ও মোটিভেশনাল স্পিকার",
+    long_bio: "ড. নাজমুল ইসলাম একজন প্রখ্যাত মনোবিজ্ঞানী, স্পিকার ও লেখক। ISSB মনোবিজ্ঞান পরীক্ষায় তাঁর সেশন শিক্ষার্থীদের আত্মবিশ্বাস ও মানসিক প্রস্তুতিতে বিশেষভাবে কার্যকর।",
+  },
+  {
+    name: "ক্যাপ্টেন (অব.) রাফি আহমেদ",
+    short_bio: "বাংলা ও ইংরেজি রচনা বিশেষজ্ঞ",
+    long_bio: "ক্যাপ্টেন (অব.) রাফি আহমেদ সশস্ত্র বাহিনীর লিখিত পরীক্ষার বিশেষজ্ঞ, বিশেষত বাংলা ও ইংরেজি রচনা এবং Extempore Essay মডিউলে অভিজ্ঞ।",
+  },
+  {
+    name: "সার্জেন্ট (অব.) মামুন রশীদ",
+    short_bio: "আইকিউ ও সাধারণ জ্ঞান প্রশিক্ষক",
+    long_bio: "সার্জেন্ট (অব.) মামুন রশীদ IQ Practice, গণিত ও সমসাময়িক সাধারণ জ্ঞানে বিশেষজ্ঞ। তাঁর প্র্যাকটিক্যাল পদ্ধতি শিক্ষার্থীদের দ্রুত ফলাফল পেতে সাহায্য করে।",
+  },
+];
+
+function buildIssbWrittenModules(): Module[] {
+  return [
+    {
+      id: "wm1",
+      title: "বাংলা — রচনা, ব্যাকরণ ও সারসংক্ষেপ",
+      total_duration: "৬ ঘণ্টা",
+      lessons: [
+        { id: "wl1", title: "রচনা লেখার কৌশল ও কাঠামো", type: "video", duration: "২০:১৫", isPreview: true },
+        { id: "wl2", title: "সারসংক্ষেপ ও ভাবসম্প্রসারণ", type: "video", duration: "১৮:৩০", isPreview: true },
+        { id: "wl3", title: "ব্যাকরণ গাইড (PDF)", type: "pdf", duration: "—" },
+        { id: "wl4", title: "বাংলা মক টেস্ট", type: "quiz", duration: "২০ প্রশ্ন" },
+      ],
+    },
+    {
+      id: "wm2",
+      title: "ইংরেজি — Grammar, Essay & Comprehension",
+      total_duration: "৬ ঘণ্টা",
+      lessons: [
+        { id: "wl5", title: "English Essay Writing Techniques", type: "video", duration: "২২:০০" },
+        { id: "wl6", title: "Grammar Crash Course", type: "video", duration: "২৫:০০" },
+        { id: "wl7", title: "Reading Comprehension Practice (PDF)", type: "pdf", duration: "—" },
+        { id: "wl8", title: "English Mock Test", type: "quiz", duration: "২৫ প্রশ্ন" },
+      ],
+    },
+    {
+      id: "wm3",
+      title: "গণিত ও আইকিউ",
+      total_duration: "৫ ঘণ্টা",
+      lessons: [
+        { id: "wl9", title: "সংখ্যাতত্ত্ব ও বীজগণিত", type: "video", duration: "২৪:০০" },
+        { id: "wl10", title: "লজিক ও Pattern Recognition", type: "video", duration: "২০:৩০" },
+        { id: "wl11", title: "আইকিউ প্র্যাকটিস সেট (PDF)", type: "pdf", duration: "—" },
+        { id: "wl12", title: "গণিত ও আইকিউ মক টেস্ট", type: "quiz", duration: "৩০ প্রশ্ন" },
+      ],
+    },
+    {
+      id: "wm4",
+      title: "সাধারণ জ্ঞান ও সমসাময়িক",
+      total_duration: "৪ ঘণ্টা",
+      lessons: [
+        { id: "wl13", title: "বাংলাদেশ বিষয়াবলি ও মুক্তিযুদ্ধ", type: "video", duration: "১৮:০০" },
+        { id: "wl14", title: "আন্তর্জাতিক বিষয় ও সমসাময়িক ঘটনা", type: "video", duration: "১৬:০০" },
+        { id: "wl15", title: "সাধারণ জ্ঞান শিট (PDF)", type: "pdf", duration: "—" },
+        { id: "wl16", title: "সাধারণ জ্ঞান মক টেস্ট", type: "quiz", duration: "৩০ প্রশ্ন" },
+      ],
+    },
+    {
+      id: "wm5",
+      title: "Preliminary Viva প্রস্তুতি",
+      total_duration: "৩ ঘণ্টা",
+      lessons: [
+        { id: "wl17", title: "Viva তে কীভাবে নিজেকে উপস্থাপন করবেন", type: "video", duration: "২২:০০" },
+        { id: "wl18", title: "সম্ভাব্য প্রশ্ন ও সেরা উত্তর কৌশল", type: "video", duration: "২৮:০০" },
+        { id: "wl19", title: "Mock Viva সেশন ও ফিডব্যাক", type: "assignment", duration: "—" },
+      ],
+    },
+  ];
+}
+
 // ─── ISSB Courses ────────────────────────────────────────────────────────────
 
 export const ISSB_COURSES: Course[] = [
   {
     id: "issb1",
-    title: "ISSB Written Test Complete Preparation",
-    slug: "issb-written-test",
+    title: "Regular Programme",
+    slug: "issb-regular-programme",
     category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&auto=format&fit=crop",
-    duration: "৩০ ঘণ্টা",
-    total_lessons: 45,
-    price: 3500,
-    discount_price: 2499,
-    discount_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString(),
+    thumbnail_url: "/issb-full-prep-banner.jpg",
+    duration: "৮ সপ্তাহ / ৪৮ দিন",
+    total_lessons: 104,
+    price: 9000,
     teacher_name: "মেজর (অব.) আরিফ হোসেন",
     teacher: sampleTeacher("মেজর (অব.) আরিফ হোসেন", "সাবেক সেনা কর্মকর্তা, ISSB বিশেষজ্ঞ"),
-    short_description: "ISSB লিখিত পরীক্ষার সকল বিষয় — বাংলা, ইংরেজি, গণিত, সাধারণ জ্ঞান সম্পূর্ণ প্রস্তুতি।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+    short_description: "৮ সপ্তাহে সম্পূর্ণ ISSB প্রস্তুতি — ইনডোর ৫০% + আউটডোর ৫০%। রিনাউন্ড সাইকোলজিস্ট, স্পিকার ও লেখকের সেশন এবং ফাউন্ডারের সাথে ওয়ান-টু-ওয়ান DP Viva।",
+    long_description: `এই কোর্সটি ISSB-এ সফল হতে ইচ্ছুক প্রার্থীদের জন্য সম্পূর্ণ প্রস্তুতির সুযোগ।
+
+কোর্সের বিশেষত্ব:
+• ৮ সপ্তাহ / ৪৮ দিন ব্যাপী নিবিড় প্রশিক্ষণ
+• ১০৪ ঘণ্টা ক্লাস (ইনডোর ৫০% + আউটডোর ৫০%)
+• প্রখ্যাত মনোবিজ্ঞানী, স্পিকার ও লেখকের বিশেষ সেশন
+• ফাউন্ডারের সাথে ওয়ান-টু-ওয়ান DP Viva সেশন`,
+    highlights: [
+      "১০৪ ঘণ্টা ক্লাস (ইনডোর ৫০% + আউটডোর ৫০%)",
+      "রিনাউন্ড সাইকোলজিস্ট, স্পিকার ও লেখকের সেশন",
+      "ফাউন্ডারের সাথে ওয়ান-টু-ওয়ান DP Viva",
+      "৮ সপ্তাহ / ৪৮ দিনের নিবিড় প্রশিক্ষণ",
+    ],
     enrollment_count: 2140,
     rating_average: 4.9,
     rating_count: 540,
@@ -140,19 +230,30 @@ export const ISSB_COURSES: Course[] = [
   },
   {
     id: "issb2",
-    title: "ISSB Psychological Test Mastery",
-    slug: "issb-psychological-test",
+    title: "Preliminary Viva",
+    slug: "issb-preliminary-viva",
     category: "ISSB",
     thumbnail_url:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&auto=format&fit=crop",
-    duration: "২০ ঘণ্টা",
-    total_lessons: 32,
-    price: 2500,
-    teacher_name: "ড. নাহিদ সুলতান",
-    teacher: sampleTeacher("ড. নাহিদ সুলতান", "মনোবিজ্ঞানী, ISSB পরামর্শদাতা"),
-    short_description: "Word Association, Thematic Apperception Test, Situation Reaction Test — সম্পূর্ণ গাইড।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+      "https://images.unsplash.com/photo-1560439513-74b037a25d84?w=1200&auto=format&fit=crop",
+    duration: "৪ সপ্তাহ / ২৪ দিন",
+    total_lessons: 48,
+    price: 5000,
+    teacher_name: "মেজর (অব.) আরিফ হোসেন",
+    teacher: sampleTeacher("মেজর (অব.) আরিফ হোসেন", "সাবেক সেনা কর্মকর্তা, ISSB বিশেষজ্ঞ"),
+    short_description: "৪ সপ্তাহে প্রাথমিক ভাইভা প্রস্তুতি — ইনডোর ৫০% + আউটডোর ৫০%। প্রাথমিক ইন্টারভিউ ও মিলিটারি ডাক্তারের প্রাইমারি মেডিকেল চেকআপ।",
+    long_description: `প্রাথমিক ভাইভা পর্যায়ে সফল হওয়ার জন্য বিশেষভাবে তৈরি কোর্স।
+
+কোর্সের বিশেষত্ব:
+• ৪ সপ্তাহ / ২৪ দিন ব্যাপী প্রশিক্ষণ
+• ৪৮ ঘণ্টা ক্লাস (ইনডোর ৫০% + আউটডোর ৫০%)
+• প্রাথমিক ইন্টারভিউর জন্য ওয়ান-টু-ওয়ান সেশন
+• মিলিটারি ডাক্তারের প্রাইমারি মেডিকেল চেকআপ`,
+    highlights: [
+      "৪৮ ঘণ্টা ক্লাস (ইনডোর ৫০% + আউটডোর ৫০%)",
+      "প্রাথমিক ইন্টারভিউর ওয়ান-টু-ওয়ান সেশন",
+      "মিলিটারি ডাক্তারের প্রাইমারি মেডিকেল চেকআপ",
+      "৪ সপ্তাহ / ২৪ দিনের প্রশিক্ষণ",
+    ],
     enrollment_count: 1860,
     rating_average: 4.8,
     rating_count: 420,
@@ -161,148 +262,6 @@ export const ISSB_COURSES: Course[] = [
     reviews: baseReviews,
     created_at: "2026-03-25T10:00:00Z",
   },
-  {
-    id: "issb3",
-    title: "ISSB Group Tasks & Command Task",
-    slug: "issb-group-command-task",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&auto=format&fit=crop",
-    duration: "১৫ ঘণ্টা",
-    total_lessons: 24,
-    price: 2000,
-    discount_price: 1499,
-    teacher_name: "ক্যাপ্টেন (অব.) ফয়সাল আহমেদ",
-    teacher: sampleTeacher("ক্যাপ্টেন (অব.) ফয়সাল আহমেদ", "লিডারশিপ ট্রেইনার"),
-    short_description: "Group Planning, Progressive Group Task, Half Group Task ও Command Task সফলভাবে পার করার কৌশল।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 1540,
-    rating_average: 4.7,
-    rating_count: 310,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-03-15T10:00:00Z",
-  },
-  {
-    id: "issb4",
-    title: "ISSB Interview & Lecturette Skills",
-    slug: "issb-interview-lecturette",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1560439513-74b037a25d84?w=1200&auto=format&fit=crop",
-    duration: "১২ ঘণ্টা",
-    total_lessons: 20,
-    price: 1800,
-    teacher_name: "কর্নেল (অব.) মাহবুব রহমান",
-    teacher: sampleTeacher("কর্নেল (অব.) মাহবুব রহমান", "সাবেক সেনা কর্মকর্তা"),
-    short_description: "IO Interview-এ সফল হওয়ার কৌশল, Lecturette বিষয় নির্বাচন ও উপস্থাপনা।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 1320,
-    rating_average: 4.8,
-    rating_count: 280,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-02-28T10:00:00Z",
-  },
-  {
-    id: "issb5",
-    title: "ISSB Physical Fitness Program",
-    slug: "issb-physical-fitness",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1200&auto=format&fit=crop",
-    duration: "১০ ঘণ্টা",
-    total_lessons: 18,
-    price: 0,
-    teacher_name: "পিটি ইন্সট্রাক্টর রাসেল মিয়া",
-    teacher: sampleTeacher("পিটি ইন্সট্রাক্টর রাসেল মিয়া", "ফিটনেস বিশেষজ্ঞ"),
-    short_description: "ISSB শারীরিক পরীক্ষার জন্য সম্পূর্ণ ফিটনেস রুটিন — দৌড়, পুশ-আপ, পুল-আপ সব কিছু।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 3200,
-    rating_average: 4.9,
-    rating_count: 720,
-    modules: buildModules(),
-    includes: { ...baseIncludes, certificate: false },
-    reviews: baseReviews,
-    created_at: "2026-04-01T10:00:00Z",
-  },
-  {
-    id: "issb6",
-    title: "ISSB Current Affairs & GK Crash Course",
-    slug: "issb-current-affairs-gk",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=1200&auto=format&fit=crop",
-    duration: "৮ ঘণ্টা",
-    total_lessons: 16,
-    price: 1200,
-    discount_price: 899,
-    teacher_name: "মেজর (অব.) আরিফ হোসেন",
-    teacher: sampleTeacher("মেজর (অব.) আরিফ হোসেন", "ISSB বিশেষজ্ঞ"),
-    short_description: "সাম্প্রতিক ঘটনা, বাংলাদেশ সেনাবাহিনী, মুক্তিযুদ্ধ ও আন্তর্জাতিক বিষয়াবলি।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 980,
-    rating_average: 4.6,
-    rating_count: 190,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-04-15T10:00:00Z",
-  },
-  {
-    id: "issb7",
-    title: "ISSB Complete Bundle (All-in-One)",
-    slug: "issb-complete-bundle",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200&auto=format&fit=crop",
-    duration: "৮০ ঘণ্টা",
-    total_lessons: 120,
-    price: 9999,
-    discount_price: 5999,
-    discount_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
-    teacher_name: "মেজর (অব.) আরিফ হোসেন",
-    teacher: sampleTeacher("মেজর (অব.) আরিফ হোসেন", "ISSB বিশেষজ্ঞ"),
-    short_description: "লিখিত, মনস্তাত্ত্বিক, গ্রুপ টাস্ক, ইন্টারভিউ — সবকিছু এক প্যাকেজে। ISSB-তে সফল হওয়ার নিশ্চিত গাইড।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 4500,
-    rating_average: 4.9,
-    rating_count: 1200,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-04-20T10:00:00Z",
-  },
-  {
-    id: "issb8",
-    title: "ISSB Mock Test Series",
-    slug: "issb-mock-test",
-    category: "ISSB",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=1200&auto=format&fit=crop",
-    duration: "১৬ ঘণ্টা",
-    total_lessons: 30,
-    price: 1500,
-    teacher_name: "ড. নাহিদ সুলতান",
-    teacher: sampleTeacher("ড. নাহিদ সুলতান", "মনোবিজ্ঞানী"),
-    short_description: "পূর্ণাঙ্গ মডেল টেস্ট ও বিস্তারিত ব্যাখ্যাসহ সমাধান। পরীক্ষার আগে নিজেকে যাচাই করুন।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 760,
-    rating_average: 4.7,
-    rating_count: 160,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-03-10T10:00:00Z",
-  },
 ];
 
 // ─── Cadet College Courses ────────────────────────────────────────────────────
@@ -310,21 +269,33 @@ export const ISSB_COURSES: Course[] = [
 export const CADET_COURSES: Course[] = [
   {
     id: "cadet1",
-    title: "ক্যাডেট কলেজ ভর্তি পরীক্ষা: গণিত সম্পূর্ণ প্রস্তুতি",
-    slug: "cadet-math",
+    title: "Cadet College Admission Online Batch",
+    slug: "cadet-online-batch",
     category: "Cadet",
     thumbnail_url:
       "https://images.unsplash.com/photo-1509228627152-72ae9ae6848d?w=1200&auto=format&fit=crop",
-    duration: "৩৫ ঘণ্টা",
-    total_lessons: 55,
+    duration: "মাসিক",
+    total_lessons: 48,
     price: 3000,
-    discount_price: 2199,
-    discount_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(),
-    teacher_name: "মোহাম্মদ জাহিদুল ইসলাম",
-    teacher: sampleTeacher("মোহাম্মদ জাহিদুল ইসলাম", "গণিত শিক্ষক, ২০+ বছরের অভিজ্ঞতা"),
-    short_description: "বীজগণিত, জ্যামিতি, পাটিগণিত — ক্যাডেট কলেজ ভর্তির পূর্ণ গণিত সিলেবাস।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+    teacher_name: "Ex Cadet / BUP / Dhaka University",
+    teacher: sampleTeacher("Ex Cadet / BUP / Dhaka University", "অভিজ্ঞ শিক্ষক প্যানেল"),
+    short_description: "অনলাইন Zoom ব্যাচ — সপ্তাহে ৪ দিন, প্রতিদিন ৩ ঘণ্টা। মাসিক ৩০০০ টাকা, ভর্তি ফি ৫০০০ টাকা।",
+    long_description: `অনলাইনে ক্যাডেট কলেজ ভর্তি প্রস্তুতির সেরা সুযোগ।
+
+কোর্সের বিশেষত্ব:
+• Zoom Premium ব্যবহার
+• মাসিক ফি — ৩০০০ টাকা | ভর্তি ফি — ৫০০০ টাকা
+• সপ্তাহে ৪ দিন ক্লাস, প্রতিদিন ৩ ঘণ্টা
+• প্রতি শনিবার পরীক্ষা | শুক্রবার ছুটি
+• বাংলা + ইংরেজি উভয় মিডিয়াম
+• নিয়মিত শিট ও সকল বিষয়ের রেগুলার শিট
+• শিক্ষক: Ex Cadet / BUP / Dhaka University`,
+    highlights: [
+      "Zoom Premium — সপ্তাহে ৪ দিন, প্রতিদিন ৩ ঘণ্টা",
+      "প্রতি শনিবার পরীক্ষা, শুক্রবার ছুটি",
+      "বাংলা ও ইংরেজি উভয় মিডিয়াম",
+      "Ex Cadet / BUP / Dhaka University শিক্ষক",
+    ],
     enrollment_count: 3400,
     rating_average: 4.9,
     rating_count: 870,
@@ -335,19 +306,33 @@ export const CADET_COURSES: Course[] = [
   },
   {
     id: "cadet2",
-    title: "ক্যাডেট কলেজ ইংরেজি মাস্টারক্লাস",
-    slug: "cadet-english",
+    title: "Pre-Cadet Online College Admission Preparation",
+    slug: "pre-cadet-online",
     category: "Cadet",
     thumbnail_url:
       "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&auto=format&fit=crop",
-    duration: "২৫ ঘণ্টা",
-    total_lessons: 40,
+    duration: "মাসিক",
+    total_lessons: 32,
     price: 2500,
-    teacher_name: "শাহানা পারভীন",
-    teacher: sampleTeacher("শাহানা পারভীন", "ইংরেজি শিক্ষক, ক্যাডেট বিশেষজ্ঞ"),
-    short_description: "Grammar, Composition, Reading Comprehension — ক্যাডেট ভর্তির ইংরেজি সম্পূর্ণ প্রস্তুতি।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+    teacher_name: "Ex Cadet / BUP / Dhaka University",
+    teacher: sampleTeacher("Ex Cadet / BUP / Dhaka University", "অভিজ্ঞ শিক্ষক প্যানেল"),
+    short_description: "অনলাইন প্রি-ক্যাডেট প্রস্তুতি — মাসিক ২৫০০ টাকা, ভর্তি ফি ৩০০০ টাকা। সপ্তাহে ৪ দিন, ২.৩০ ঘণ্টা।",
+    long_description: `অনলাইনে প্রি-ক্যাডেট ভর্তি প্রস্তুতি।
+
+কোর্সের বিশেষত্ব:
+• ভর্তি ফি — ৩০০০ টাকা | মাসিক ফি — ২৫০০ টাকা
+• নিয়মিত ক্লাস শিট
+• দুর্বল শিক্ষার্থীদের জন্য বিশেষ ক্লাস
+• বাংলা ও ইংরেজি উভয় মিডিয়াম
+• সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)
+• সাপ্তাহিক ও মাসিক পরীক্ষা
+• শিক্ষক: Ex Cadet / BUP / Dhaka University`,
+    highlights: [
+      "সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)",
+      "দুর্বল শিক্ষার্থীদের জন্য বিশেষ ক্লাস",
+      "সাপ্তাহিক ও মাসিক পরীক্ষা",
+      "বাংলা ও ইংরেজি উভয় মিডিয়াম",
+    ],
     enrollment_count: 2900,
     rating_average: 4.8,
     rating_count: 640,
@@ -358,20 +343,33 @@ export const CADET_COURSES: Course[] = [
   },
   {
     id: "cadet3",
-    title: "ক্যাডেট কলেজ বিজ্ঞান প্রস্তুতি",
-    slug: "cadet-science",
+    title: "Pre-Cadet College Admission Preparation",
+    slug: "pre-cadet-offline",
     category: "Cadet",
     thumbnail_url:
       "https://images.unsplash.com/photo-1532094349884-543559059c7d?w=1200&auto=format&fit=crop",
-    duration: "২০ ঘণ্টা",
-    total_lessons: 35,
-    price: 2000,
-    discount_price: 1599,
-    teacher_name: "ড. রফিকুল ইসলাম",
-    teacher: sampleTeacher("ড. রফিকুল ইসলাম", "বিজ্ঞান শিক্ষক"),
-    short_description: "পদার্থ, রসায়ন ও জীববিজ্ঞান — ক্যাডেট কলেজ বিজ্ঞান অংশের সম্পূর্ণ গাইড।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+    duration: "মাসিক",
+    total_lessons: 32,
+    price: 2500,
+    teacher_name: "Ex Cadet / BUP / Dhaka University",
+    teacher: sampleTeacher("Ex Cadet / BUP / Dhaka University", "অভিজ্ঞ শিক্ষক প্যানেল"),
+    short_description: "অফলাইন প্রি-ক্যাডেট প্রস্তুতি — মাসিক ২৫০০ টাকা, ভর্তি ফি ৪০০০ টাকা। সপ্তাহে ৪ দিন, ২.৩০ ঘণ্টা।",
+    long_description: `অফলাইনে প্রি-ক্যাডেট ভর্তি প্রস্তুতি।
+
+কোর্সের বিশেষত্ব:
+• ভর্তি ফি — ৪০০০ টাকা | মাসিক ফি — ২৫০০ টাকা
+• সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)
+• দুর্বল শিক্ষার্থীদের জন্য বিশেষ ক্লাস
+• বাংলা ও ইংরেজি উভয় মিডিয়াম
+• সাপ্তাহিক ও মাসিক পরীক্ষা
+• নিয়মিত ক্লাস শিট
+• শিক্ষক: Ex Cadet / BUP / Dhaka University`,
+    highlights: [
+      "সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)",
+      "দুর্বল শিক্ষার্থীদের জন্য বিশেষ ক্লাস",
+      "বাংলা ও ইংরেজি উভয় মিডিয়াম",
+      "সাপ্তাহিক ও মাসিক পরীক্ষা",
+    ],
     enrollment_count: 2100,
     rating_average: 4.7,
     rating_count: 480,
@@ -382,123 +380,118 @@ export const CADET_COURSES: Course[] = [
   },
   {
     id: "cadet4",
-    title: "ক্যাডেট কলেজ বাংলা ও সাধারণ জ্ঞান",
-    slug: "cadet-bangla-gk",
+    title: "Cadet College Admission Preparation",
+    slug: "cadet-offline",
     category: "Cadet",
     thumbnail_url:
       "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&auto=format&fit=crop",
-    duration: "১৮ ঘণ্টা",
-    total_lessons: 30,
-    price: 1800,
-    teacher_name: "মোহাম্মদ জাহিদুল ইসলাম",
-    teacher: sampleTeacher("মোহাম্মদ জাহিদুল ইসলাম", "শিক্ষক"),
-    short_description: "বাংলা ব্যাকরণ, রচনা, বাংলাদেশ ও আন্তর্জাতিক সাধারণ জ্ঞান সম্পূর্ণ কোর্স।",
-    long_description: longDescription,
-    highlights: baseHighlights,
+    duration: "মাসিক",
+    total_lessons: 40,
+    price: 3500,
+    teacher_name: "Experienced & Meritorious Teachers Panel",
+    teacher: sampleTeacher("অভিজ্ঞ শিক্ষক প্যানেল", "মেধাবী ও অভিজ্ঞ শিক্ষকমণ্ডলী"),
+    short_description: "অফলাইন ক্যাডেট ভর্তি প্রস্তুতি — মাসিক ৩৫০০ টাকা, ভর্তি ফি ৭০০০ টাকা। সপ্তাহে ৪ দিন, ২.৩০ ঘণ্টা।",
+    long_description: `অফলাইনে সম্পূর্ণ ক্যাডেট কলেজ ভর্তি প্রস্তুতি।
+
+কোর্সের বিশেষত্ব:
+• ভর্তি ফি — ৭০০০ টাকা | মাসিক ফি — ৩৫০০ টাকা
+• সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)
+• সাপ্তাহিক ও মাসিক পরীক্ষা
+• নিয়মিত ক্লাস শিট
+• দুর্বল শিক্ষার্থীদের জন্য বিশেষ ক্লাস
+• বাংলা ও ইংরেজি উভয় মিডিয়াম
+• অভিজ্ঞ ও মেধাবী শিক্ষক প্যানেল`,
+    highlights: [
+      "সপ্তাহে ৪ দিন ক্লাস (২.৩০ ঘণ্টা)",
+      "অভিজ্ঞ ও মেধাবী শিক্ষক প্যানেল",
+      "বাংলা ও ইংরেজি উভয় মিডিয়াম",
+      "সাপ্তাহিক ও মাসিক পরীক্ষা",
+    ],
     enrollment_count: 1800,
-    rating_average: 4.6,
+    rating_average: 4.9,
     rating_count: 360,
     modules: buildModules(),
     includes: baseIncludes,
     reviews: baseReviews,
     created_at: "2026-03-30T10:00:00Z",
   },
-  {
-    id: "cadet5",
-    title: "ক্যাডেট কলেজ মৌখিক পরীক্ষা প্রস্তুতি",
-    slug: "cadet-oral-test",
-    category: "Cadet",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1200&auto=format&fit=crop",
-    duration: "১০ ঘণ্টা",
-    total_lessons: 18,
-    price: 0,
-    teacher_name: "শাহানা পারভীন",
-    teacher: sampleTeacher("শাহানা পারভীন", "মৌখিক পরীক্ষা বিশেষজ্ঞ"),
-    short_description: "মৌখিক পরীক্ষায় আত্মবিশ্বাসের সাথে উত্তর দেওয়ার কৌশল ও নমুনা প্রশ্নোত্তর।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 4100,
-    rating_average: 4.9,
-    rating_count: 950,
-    modules: buildModules(),
-    includes: { ...baseIncludes, certificate: false },
-    reviews: baseReviews,
-    created_at: "2026-04-08T10:00:00Z",
-  },
-  {
-    id: "cadet6",
-    title: "ক্যাডেট কলেজ শারীরিক ফিটনেস কোর্স",
-    slug: "cadet-physical",
-    category: "Cadet",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1576678927484-cc907957088c?w=1200&auto=format&fit=crop",
-    duration: "৮ ঘণ্টা",
-    total_lessons: 15,
-    price: 1000,
-    teacher_name: "পিটি ইন্সট্রাক্টর রাসেল মিয়া",
-    teacher: sampleTeacher("পিটি ইন্সট্রাক্টর রাসেল মিয়া", "ফিটনেস বিশেষজ্ঞ"),
-    short_description: "ক্যাডেট কলেজ শারীরিক পরীক্ষার জন্য বিশেষ ফিটনেস প্ল্যান ও ব্যায়ামের রুটিন।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 2600,
-    rating_average: 4.7,
-    rating_count: 510,
-    modules: buildModules(),
-    includes: { ...baseIncludes, certificate: false },
-    reviews: baseReviews,
-    created_at: "2026-03-20T10:00:00Z",
-  },
-  {
-    id: "cadet7",
-    title: "ক্যাডেট কলেজ সম্পূর্ণ প্যাকেজ",
-    slug: "cadet-complete-bundle",
-    category: "Cadet",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&auto=format&fit=crop",
-    duration: "৯৫ ঘণ্টা",
-    total_lessons: 180,
-    price: 8999,
-    discount_price: 4999,
-    discount_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 6).toISOString(),
-    teacher_name: "মোহাম্মদ জাহিদুল ইসলাম",
-    teacher: sampleTeacher("মোহাম্মদ জাহিদুল ইসলাম", "শিক্ষক"),
-    short_description: "গণিত, বিজ্ঞান, বাংলা, ইংরেজি, সাধারণ জ্ঞান, মৌখিক ও শারীরিক — সব প্রস্তুতি এক প্যাকেজে।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 5800,
-    rating_average: 4.9,
-    rating_count: 1500,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-04-22T10:00:00Z",
-  },
-  {
-    id: "cadet8",
-    title: "ক্যাডেট কলেজ মডেল টেস্ট সিরিজ",
-    slug: "cadet-model-test",
-    category: "Cadet",
-    thumbnail_url:
-      "https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=1200&auto=format&fit=crop",
-    duration: "১৪ ঘণ্টা",
-    total_lessons: 25,
-    price: 1500,
-    discount_price: 999,
-    teacher_name: "শাহানা পারভীন",
-    teacher: sampleTeacher("শাহানা পারভীন", "শিক্ষক"),
-    short_description: "পূর্ণাঙ্গ মডেল পরীক্ষা ও বিস্তারিত সমাধান। আসল পরীক্ষার আগে নিজেকে পরীক্ষা করুন।",
-    long_description: longDescription,
-    highlights: baseHighlights,
-    enrollment_count: 1400,
-    rating_average: 4.8,
-    rating_count: 290,
-    modules: buildModules(),
-    includes: baseIncludes,
-    reviews: baseReviews,
-    created_at: "2026-04-01T10:00:00Z",
-  },
 ];
+
+// Written & Prelim Viva course appended after the two base ISSB courses
+ISSB_COURSES.push({
+  id: "issb3",
+  title: "Online Written & Preliminary Viva",
+  slug: "issb-written-prelim-viva",
+  category: "ISSB",
+  thumbnail_url: "/issb-written-banner.jpg",
+  duration: "১৬ দিন",
+  total_lessons: 19,
+  price: 5000,
+  discount_price: 3000,
+  teacher_name: "বিশেষজ্ঞ শিক্ষক প্যানেল",
+  teachers: issbWrittenTeachers,
+  short_description:
+    "97 BMA · 27 A · 94 BAFA — অনলাইনে ১৬ দিনের লিখিত পরীক্ষা ও প্রিলিমিনারি ভাইভা প্রস্তুতি। বাংলা, ইংরেজি, গণিত, সাধারণ জ্ঞান ও সব ISSB মডিউল একসাথে।",
+  long_description: `97 BMA | 27 A | 94 BAFA ভর্তি পরীক্ষার জন্য বিশেষভাবে তৈরি অনলাইন কোর্স।
+
+কোর্সের বিশেষত্ব:
+• ১৬ দিনের নিবিড় অনলাইন প্রশিক্ষণ
+• বাংলা, ইংরেজি, গণিত, সাধারণ জ্ঞান — সব বিষয় একসাথে
+• IQ Practice, WAT, IST, Extempore Essay সহ সব ISSB মডিউল
+• ৪ জন বিশেষজ্ঞ শিক্ষকের সমন্বিত প্যানেল
+• Preliminary Viva কৌশল ও মক সেশন
+• প্রতিটি বিষয়ে মক টেস্ট ও মডেল উত্তর`,
+  highlights: [
+    "97 BMA · 27 A · 94 BAFA — সব ব্যাচের জন্য প্রযোজ্য",
+    "সব ISSB মডিউল একসাথে (WAT, IST, IQ, Extempore)",
+    "৪ জন বিশেষজ্ঞ শিক্ষকের প্যানেল",
+    "১৬ দিনের নিবিড় অনলাইন প্রস্তুতি",
+  ],
+  enrollment_count: 1240,
+  rating_average: 4.9,
+  rating_count: 310,
+  modules: buildIssbWrittenModules(),
+  includes: { ...baseIncludes, videos: 19, pdfs: 5, quizzes: 4, assignments: 1 },
+  reviews: baseReviews,
+  created_at: "2026-05-01T10:00:00Z",
+});
+
+// Online ISSB Full Preparation
+ISSB_COURSES.push({
+  id: "issb4",
+  title: "Online ISSB Full Preparation",
+  slug: "issb-online-full-preparation",
+  category: "ISSB",
+  thumbnail_url: "/issb-full-prep-banner.jpg",
+  duration: "৮ সপ্তাহ / ৪৮ দিন",
+  total_lessons: 19,
+  price: 9000,
+  teacher_name: "বিশেষজ্ঞ শিক্ষক প্যানেল",
+  teachers: issbWrittenTeachers,
+  short_description:
+    "Army · Navy · Airforce — Future Officer Cadet-দের জন্য সম্পূর্ণ ISSB অনলাইন প্রস্তুতি। সব মডিউল, বিশেষজ্ঞ শিক্ষক প্যানেল ও লাইভ মক সেশন।",
+  long_description: `Army · Navy · Airforce — Future Officer Cadet-দের জন্য iCAN Academy-র সম্পূর্ণ ISSB অনলাইন কোর্স।
+
+কোর্সের বিশেষত্ব:
+• সব ISSB মডিউল: IQ Practice, WAT, IST, Extempore Essay, Picture Story, Incomplete Story, PPDT
+• ৪ জন বিশেষজ্ঞ শিক্ষকের সমন্বিত প্যানেল
+• ৮ সপ্তাহ / ৪৮ দিনের নিবিড় অনলাইন প্রশিক্ষণ
+• লাইভ মক সেশন ও ব্যক্তিগত ফিডব্যাক
+• "Dream It. Prepare It. Achieve It."`,
+  highlights: [
+    "Army · Navy · Airforce — সব বাহিনীর জন্য প্রযোজ্য",
+    "সব ISSB মডিউল একসাথে (WAT, IST, IQ, Extempore, PPDT)",
+    "৪ জন বিশেষজ্ঞ শিক্ষকের প্যানেল",
+    "৮ সপ্তাহ / ৪৮ দিনের নিবিড় প্রশিক্ষণ",
+  ],
+  enrollment_count: 1850,
+  rating_average: 4.9,
+  rating_count: 420,
+  modules: buildIssbWrittenModules(),
+  includes: { ...baseIncludes, videos: 19, pdfs: 5, quizzes: 4, assignments: 1 },
+  reviews: baseReviews,
+  created_at: "2026-05-10T10:00:00Z",
+});
 
 // Combined export for useCourses hook (courses page shows all)
 export const MOCK_COURSES: Course[] = [...ISSB_COURSES, ...CADET_COURSES];

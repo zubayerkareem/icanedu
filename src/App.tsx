@@ -45,6 +45,9 @@ import WATHome from "./pages/WATHome";
 import WATTest from "./pages/WATTest";
 import ISTHome from "./pages/ISTHome";
 import ISTTest from "./pages/ISTTest";
+import ExtemporeHome from "./pages/ExtemporeHome";
+import ExtemporeTest from "./pages/ExtemporeTest";
+import CourseLearn from "./pages/dashboard/CourseLearn";
 import SuccessCadet from "./pages/SuccessCadet";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import MyCourses from "./pages/dashboard/MyCourses";
@@ -87,6 +90,8 @@ const App = () => (
                 <Route path="/courses/:id/wat/:setId" element={<WATTest />} />
                 <Route path="/courses/:id/ist" element={<ISTHome />} />
                 <Route path="/courses/:id/ist/:setId" element={<ISTTest />} />
+                <Route path="/courses/:id/extempore" element={<ExtemporeHome />} />
+                <Route path="/courses/:id/extempore/:setId" element={<ExtemporeTest />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/gallery" element={<Gallery />} />
@@ -118,7 +123,7 @@ const App = () => (
               >
                 <Route path="/dashboard" element={<DashboardHome />} />
                 <Route path="/dashboard/courses" element={<MyCourses />} />
-                <Route path="/dashboard/courses/:id" element={<ComingSoon />} />
+                <Route path="/dashboard/courses/:id" element={<CourseLearn />} />
                 <Route path="/dashboard/orders" element={<MyOrders />} />
                 <Route path="/dashboard/exams" element={<Exams />} />
                 <Route path="/dashboard/profile" element={<ComingSoon />} />

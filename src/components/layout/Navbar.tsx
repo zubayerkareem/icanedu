@@ -141,10 +141,15 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile menu */}
-        <Sheet open={open} onOpenChange={setOpen}>
+        {/* Mobile CTA */}
+        <div className="flex items-center gap-2 md:hidden">
+          <Button asChild size="sm" className="bg-blue-600 text-white hover:bg-blue-700">
+            <Link to="/courses">ভর্তি হন</Link>
+          </Button>
+          {/* Mobile menu */}
+          <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden" aria-label={t.nav.menu}>
+            <Button variant="ghost" size="icon" aria-label={t.nav.menu}>
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -226,6 +231,7 @@ export function Navbar() {
             </div>
           </SheetContent>
         </Sheet>
+        </div>
       </div>
     </header>
   );

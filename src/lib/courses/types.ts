@@ -75,6 +75,7 @@ export interface Course {
   teacher_name?: string;
   teacher_avatar?: string;
   teacher?: Teacher;
+  teachers?: Teacher[]; // multi-teacher courses
 
   modules?: Module[];
   includes?: CourseIncludes;

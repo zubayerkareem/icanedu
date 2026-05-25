@@ -1,69 +1,7 @@
 import { Link } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const STORIES = [
-  {
-    id: 1,
-    name: "মোঃ রাকিবুল হাসান",
-    batch: "ISSB ২০২৫",
-    force: "বাংলাদেশ সেনাবাহিনী",
-    avatar: "র",
-    quote:
-      "iCANBD-এর ISSB কোর্সটি আমার জীবন বদলে দিয়েছে। মনোবিজ্ঞান পরীক্ষার প্রস্তুতি থেকে শুরু করে শারীরিক পরীক্ষার গাইডলাইন — সবকিছুই এখানে পেয়েছি।",
-    result: "সফলভাবে উত্তীর্ণ",
-  },
-  {
-    id: 2,
-    name: "তানভীর আহমেদ",
-    batch: "ISSB ২০২৫",
-    force: "বাংলাদেশ নৌবাহিনী",
-    avatar: "ত",
-    quote:
-      "গ্রুপ ডিসকাশন এবং লেকচারেট প্র্যাকটিস সেশনগুলো অসাধারণ ছিল। স্যারদের গাইডেন্সে আমি আত্মবিশ্বাসী হয়ে পরীক্ষা দিতে পেরেছিলাম।",
-    result: "সফলভাবে উত্তীর্ণ",
-  },
-  {
-    id: 3,
-    name: "সাদিয়া ইসলাম",
-    batch: "ISSB ২০২৪",
-    force: "বাংলাদেশ বিমানবাহিনী",
-    avatar: "স",
-    quote:
-      "মেয়ে হিসেবে সশস্ত্র বাহিনীতে যোগ দেওয়ার স্বপ্ন ছিল। iCANBD-এর কোর্স আমাকে সেই স্বপ্ন পূরণে সাহায্য করেছে।",
-    result: "সফলভাবে উত্তীর্ণ",
-  },
-  {
-    id: 4,
-    name: "মাহমুদুল করিম",
-    batch: "ISSB ২০২৪",
-    force: "বাংলাদেশ সেনাবাহিনী",
-    avatar: "ম",
-    quote:
-      "দুবার ব্যর্থ হওয়ার পর iCANBD-এ ভর্তি হই। তৃতীয়বার ISSB-তে উত্তীর্ণ হই। সঠিক গাইডেন্স কতটা গুরুত্বপূর্ণ তা এখন বুঝি।",
-    result: "৩য় চেষ্টায় সফল",
-  },
-  {
-    id: 5,
-    name: "রিফাত হোসেন",
-    batch: "ISSB ২০২৫",
-    force: "বাংলাদেশ সেনাবাহিনী",
-    avatar: "রি",
-    quote:
-      "সাইকোলজিক্যাল টেস্টের প্রস্তুতি নিয়ে খুব চিন্তায় ছিলাম। iCANBD-এর বিশেষ মডিউলগুলো আমার সব ভয় দূর করে দিয়েছে।",
-    result: "সফলভাবে উত্তীর্ণ",
-  },
-  {
-    id: 6,
-    name: "নুসরাত জাহান",
-    batch: "ISSB ২০২৫",
-    force: "বাংলাদেশ নৌবাহিনী",
-    avatar: "ন",
-    quote:
-      "লাইভ ক্লাসগুলো অনেক কার্যকর ছিল। বিশেষত গ্রুপ ডিসকাশনের মক সেশনগুলো আমাকে অনেক আত্মবিশ্বাসী করে তুলেছিল।",
-    result: "সফলভাবে উত্তীর্ণ",
-  },
-];
+import { SUCCESS_STORIES } from "@/lib/success/stories";
 
 
 export default function SuccessISSB() {
@@ -99,7 +37,7 @@ export default function SuccessISSB() {
             <p className="mt-2 text-sm text-muted-foreground">আমাদের শিক্ষার্থীরা যা অর্জন করেছেন</p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {STORIES.map((s) => (
+            {SUCCESS_STORIES.map((s) => (
               <div
                 key={s.id}
                 className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
@@ -111,7 +49,10 @@ export default function SuccessISSB() {
                     </svg>
                   </div>
                 </div>
-                <p className="flex-1 text-sm leading-relaxed text-muted-foreground">"{s.quote}"</p>
+                <div>
+                  <h3 className="font-heading font-semibold text-foreground text-base">{s.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+                </div>
               </div>
             ))}
           </div>

@@ -3,53 +3,95 @@ import { Button } from "@/components/ui/button";
 
 export function FounderSection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0a0f1e] via-[#0d1530] to-[#1a0a2e] py-16 sm:py-20">
-      {/* Subtle gradient orbs */}
-      <div className="pointer-events-none absolute -left-32 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-violet-600/10 blur-3xl" />
-      <div className="pointer-events-none absolute -right-32 top-1/2 h-80 w-80 -translate-y-1/2 rounded-full bg-rose-500/10 blur-3xl" />
+    <section className="relative overflow-hidden bg-[#07091a] py-16 sm:py-24">
+      {/* Background glow blobs */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-0 top-1/2 h-[500px] w-[500px] -translate-y-1/2 -translate-x-1/2 rounded-full bg-violet-700/20 blur-[120px]" />
+        <div className="absolute right-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 translate-x-1/2 rounded-full bg-pink-700/15 blur-[100px]" />
+      </div>
 
       <div className="container relative">
-        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-16">
+        <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-10">
 
-          {/* Image */}
-          <div className="flex justify-center md:justify-start">
-            <div className="relative h-[340px] w-[280px] overflow-hidden rounded-2xl bg-gradient-to-br from-slate-700 to-slate-800 shadow-2xl sm:h-[400px] sm:w-[320px]">
-              {/* Placeholder */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-500">
-                <svg className="h-20 w-20" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
-                </svg>
-                <span className="text-sm">ছবি শীঘ্রই আসছে</span>
+          {/* ── LEFT: framed photo ── */}
+          <div className="flex justify-center lg:justify-start">
+            <div className="relative">
+              {/* Outer animated glow border */}
+              <div className="absolute -inset-[3px] rounded-[1.6rem] bg-gradient-to-br from-cyan-500 via-violet-500 to-pink-500 opacity-70 blur-[2px]" />
+
+              {/* Monitor frame */}
+              <div className="relative rounded-[1.5rem] border border-cyan-500/30 bg-[#0d1530] p-2 shadow-2xl">
+                {/* Corner accents */}
+                <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-md" />
+                <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-cyan-400 rounded-tr-md" />
+                <div className="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-violet-400 rounded-bl-md" />
+                <div className="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-violet-400 rounded-br-md" />
+
+                {/* Photo */}
+                <div className="overflow-hidden rounded-[1.2rem]" style={{ width: "clamp(300px, 46vw, 580px)" }}>
+                  <img
+                    src="/chairman.png"
+                    alt="প্রতিষ্ঠাতা ও চেয়ারম্যান — iCAN Academy Bangladesh"
+                    className="w-full object-cover object-top"
+                    style={{ aspectRatio: "4/3" }}
+                  />
+                </div>
+
+                {/* Bottom HUD bar */}
+                <div className="mt-2 flex items-center justify-between px-2 pb-1">
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                    <span className="text-[10px] font-mono text-cyan-400/80 tracking-widest uppercase">Live</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-500 tracking-wider">iCAN ACADEMY BD</span>
+                  <div className="flex gap-1">
+                    <div className="h-1 w-4 rounded-full bg-violet-500/60" />
+                    <div className="h-1 w-2 rounded-full bg-violet-500/40" />
+                    <div className="h-1 w-1 rounded-full bg-violet-500/30" />
+                  </div>
+                </div>
               </div>
-              {/* Bottom gradient overlay */}
-              <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
           </div>
 
-          {/* Text */}
-          <div className="flex flex-col gap-5">
-            <h2 className="font-heading text-2xl font-bold leading-tight text-accent sm:text-3xl md:text-4xl">
-              সকল উদ্যমী নেতা ও পরিবর্তনকামীদের প্রতি শুভেচ্ছা
+          {/* ── RIGHT: content ── */}
+          <div className="flex flex-col gap-6">
+            {/* Heading */}
+            <h2 className="font-heading text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
+              সকল উদ্যমী নেতা ও{" "}
+              <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
+                পরিবর্তনকামীদের প্রতি শুভেচ্ছা
+              </span>
             </h2>
+            {/* Underline accent */}
+            <div className="h-[2px] w-28 bg-gradient-to-r from-violet-500 to-pink-500 rounded-full -mt-2" />
 
-            <div className="space-y-4 text-sm leading-relaxed text-slate-300 sm:text-base">
+            {/* Body */}
+            <div className="space-y-3 text-sm leading-relaxed text-slate-300 sm:text-base">
               <p>
-                যখন আমি iCAN Academy-র স্বপ্ন দেখেছিলাম, তখন শুধু একটি শিক্ষাপ্রতিষ্ঠান গড়ার কথা ভাবিনি — আমি চেয়েছিলাম এমন একটি আলোকবর্তিকা তৈরি করতে যা তরুণদের আশা, ক্ষমতায়ন ও উৎকর্ষতার পথ দেখাবে।
+                যখন আমি iCAN Academy-র স্বপ্ন দেখেছিলাম, তখন শুধু একটি শিক্ষাপ্রতিষ্ঠান গড়ার কথা ভাবিনি — আমি চেয়েছিলাম এমন একটি আলোকবর্তিকা তৈরি করতে যা তরুণদের আশা, ক্ষমতায়ন ও উৎকর্ষতার পথ দেখাবে। আমাদের বিশ্ব দ্রুত পরিবর্তিত হচ্ছে, এবং এর সাথে আসছে নতুন সুযোগ ও চ্যালেঞ্জ।
               </p>
               <p>
-                আমাদের বিশ্ব দ্রুত পরিবর্তিত হচ্ছে। আগামীর নেতাদের শুধু একাডেমিক সাফল্য নয় — দরকার মানসিক দৃঢ়তা, অভিযোজন ক্ষমতা, নৈতিকতা এবং অটল আত্মবিশ্বাস। আমি বিশ্বাস করি, প্রতিটি তরুণের মধ্যে অপার সম্ভাবনা লুকিয়ে আছে।
+                আগামীর নেতাদের শুধু একাডেমিক সাফল্য নয় — দরকার মানসিক দৃঢ়তা, অভিযোজন ক্ষমতা, নৈতিকতা এবং অটল আত্মবিশ্বাস। বছরের পর বছর ধরে আমি দেখেছি, অগণিত মেধাবী তরুণ সঠিক দিকনির্দেশনার অভাবে পিছিয়ে পড়ছে।
               </p>
             </div>
 
-            <div className="pt-2">
-              <Button asChild size="lg" variant="gradient">
-                <Link to="/about">আরও জানুন</Link>
+            {/* CTA */}
+            <div className="pt-1">
+              <Button
+                asChild
+                size="lg"
+                className="rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white hover:from-violet-700 hover:to-pink-600 border-0 px-8 shadow-lg shadow-violet-900/40"
+              >
+                <Link to="/about">আরও জানুন →</Link>
               </Button>
             </div>
           </div>
 
         </div>
       </div>
+
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
     </section>
   );
 }

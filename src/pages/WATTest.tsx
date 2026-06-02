@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Maximize2, Minimize2, Pause, Play, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WAT_SETS } from "@/lib/wat/mock";
+import { useWATSets } from "@/hooks/useISSBContent";
 
 const WORD_SECONDS = 10;
 
@@ -288,8 +289,19 @@ type Phase = "instructions" | "test" | "complete";
 export default function WATTest() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const [phase, setPhase] = useState<Phase>("instructions");
+  const { data: dbSets = [], isLoading } = useWATSets(courseId);
 
-  const set = WAT_SETS.find((s) => s.id === setId);
+  const dbSet = dbSets.find((s) => s.id === setId);
+  const mockSet = !dbSet ? WAT_SETS.find((s) => s.id === setId) : undefined;
+  const set = dbSet ?? mockSet ?? null;
+
+  if (isLoading) {
+    return (
+      <div className="container flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!set) {
     return (

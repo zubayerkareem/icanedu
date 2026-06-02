@@ -18,17 +18,6 @@ export default function WATHome() {
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
-      <nav className="text-sm text-muted-foreground mb-6">
-        <ol className="flex flex-wrap items-center gap-2">
-          <li><Link to="/" className="hover:text-foreground">হোম</Link></li>
-          <li aria-hidden>›</li>
-          <li><Link to="/courses" className="hover:text-foreground">কোর্সসমূহ</Link></li>
-          <li aria-hidden>›</li>
-          <li><Link to={`/courses/${courseId}`} className="hover:text-foreground">কোর্স</Link></li>
-          <li aria-hidden>›</li>
-          <li className="text-foreground">WAT</li>
-        </ol>
-      </nav>
 
       <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl text-center mb-8">WAT</h1>
 

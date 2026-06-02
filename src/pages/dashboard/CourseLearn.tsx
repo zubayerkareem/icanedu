@@ -354,7 +354,7 @@ function LearnContent({
 
 function CourseLearnSkeleton() {
   return (
-    <div className="-m-6 flex flex-col md:flex-row h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col md:flex-row h-screen">
       <div className="w-full md:w-[280px] shrink-0 border-b md:border-b-0 md:border-r border-border bg-card p-4 space-y-3">
         <div className="h-3 w-24 animate-pulse rounded bg-muted" />
         <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
@@ -394,7 +394,7 @@ export default function CourseLearn() {
   }
 
   return (
-    <div className="-m-6 flex flex-col md:flex-row h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col md:flex-row h-screen">
       <CurriculumSidebar course={course} activeLessonId={activeLessonId} />
       <LearnContent course={course} activeLessonId={activeLessonId} enrolled={enrolled} />
     </div>

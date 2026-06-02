@@ -508,19 +508,6 @@ export default function PictureStoryTest() {
       )}
 
       <div className="container py-10 sm:py-14">
-        {/* Breadcrumb */}
-        <nav className="text-sm text-muted-foreground mb-6">
-          <ol className="flex flex-wrap items-center gap-2">
-            <li><Link to="/" className="hover:text-foreground">হোম</Link></li>
-            <li aria-hidden>›</li>
-            <li><Link to="/courses" className="hover:text-foreground">কোর্সসমূহ</Link></li>
-            <li aria-hidden>›</li>
-            <li><Link to={`/courses/${courseId}`} className="hover:text-foreground">কোর্স</Link></li>
-            <li aria-hidden>›</li>
-            <li className="text-foreground">পিকচার স্টোরি</li>
-          </ol>
-        </nav>
-
         {/* Title + language toggle */}
         <div className="flex flex-col items-center gap-4 mb-8">
           <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">{L.title}</h1>

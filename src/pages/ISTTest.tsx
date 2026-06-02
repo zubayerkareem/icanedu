@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { CheckCircle2, Clock, SkipForward, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IST_SETS, type ISTSentence } from "@/lib/ist/mock";
+import { useISTSets } from "@/hooks/useISSBContent";
 
 // ─── Audio ─────────────────────────────────────────────────────────────────────
 
@@ -418,8 +419,32 @@ export default function ISTTest() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const [phase, setPhase] = useState<Phase>("instructions");
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const { data: dbSets = [], isLoading } = useISTSets(courseId);
 
-  const set = IST_SETS.find((s) => s.id === setId);
+  // Normalize DB set to the shape the test components expect
+  const dbSet = dbSets.find((s) => s.id === setId);
+  const mockSet = !dbSet ? IST_SETS.find((s) => s.id === setId) : undefined;
+  const set: { id: string; title: string; timerSeconds: number; sentences: ISTSentence[] } | null =
+    dbSet
+      ? {
+          id: dbSet.id,
+          title: dbSet.title,
+          timerSeconds: dbSet.timer_seconds,
+          sentences: (dbSet.ist_sentences ?? []).map((s) => ({
+            id: s.id,
+            stem: s.stem,
+            example: s.example,
+          })),
+        }
+      : mockSet ?? null;
+
+  if (isLoading) {
+    return (
+      <div className="container flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
 
   if (!set) {
     return (

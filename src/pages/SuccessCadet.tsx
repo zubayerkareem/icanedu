@@ -42,12 +42,12 @@ export default function SuccessCadet() {
                 key={s.id}
                 className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-muted to-secondary">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg className="h-12 w-12 text-muted-foreground/30" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                    </svg>
-                  </div>
+                <div className="w-full overflow-hidden rounded-lg bg-muted">
+                  <img
+                    src={s.image}
+                    alt={s.title}
+                    className="w-full h-auto object-contain"
+                  />
                 </div>
                 <div>
                   <h3 className="font-heading font-semibold text-foreground text-base">{s.title}</h3>

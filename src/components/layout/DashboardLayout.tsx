@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon } from "lucide-react";
 import {
   Sidebar,
@@ -95,6 +95,17 @@ function ThemeToggle() {
 }
 
 export default function DashboardLayout() {
+  const location = useLocation();
+  const onCourseLearn = /^\/dashboard\/courses\/[^/]+$/.test(location.pathname);
+
+  if (onCourseLearn) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <Outlet />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">

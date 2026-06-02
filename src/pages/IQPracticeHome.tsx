@@ -34,17 +34,6 @@ export default function IQPracticeHome() {
     <>
       <section className="border-b border-border bg-gradient-to-b from-muted/40 to-background">
         <div className="container py-10 sm:py-14">
-          <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
-            <ol className="flex flex-wrap items-center gap-2">
-              <li><Link to="/" className="hover:text-foreground">হোম</Link></li>
-              <li aria-hidden>›</li>
-              <li><Link to="/courses" className="hover:text-foreground">কোর্সসমূহ</Link></li>
-              <li aria-hidden>›</li>
-              <li><Link to={`/courses/${courseId}`} className="hover:text-foreground">কোর্স</Link></li>
-              <li aria-hidden>›</li>
-              <li className="text-foreground">IQ Practice</li>
-            </ol>
-          </nav>
           <h1 className="mt-4 font-heading text-3xl font-bold text-foreground sm:text-4xl">
             IQ Practice Sets
           </h1>

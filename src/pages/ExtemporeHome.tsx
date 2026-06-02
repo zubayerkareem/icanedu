@@ -24,18 +24,6 @@ export default function ExtemporeHome() {
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
-      <nav className="text-sm text-muted-foreground mb-6">
-        <ol className="flex flex-wrap items-center gap-2">
-          <li><Link to="/" className="hover:text-foreground">হোম</Link></li>
-          <li aria-hidden>›</li>
-          <li><Link to="/courses" className="hover:text-foreground">কোর্সসমূহ</Link></li>
-          <li aria-hidden>›</li>
-          <li><Link to={`/courses/${courseId}`} className="hover:text-foreground">কোর্স</Link></li>
-          <li aria-hidden>›</li>
-          <li className="text-foreground">Extempore Essay</li>
-        </ol>
-      </nav>
-
       <div className="text-center mb-10">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background font-heading font-bold text-sm mb-4">
           EE

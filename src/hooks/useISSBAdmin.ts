@@ -13,6 +13,7 @@ import type {
 export function useAdminIQSets(courseId?: string) {
   return useQuery<IQSet[]>({
     queryKey: ["admin_iq_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("iq_sets").select("*, iq_questions(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -26,6 +27,7 @@ export function useAdminIQSets(courseId?: string) {
 export function useAdminWATSets(courseId?: string) {
   return useQuery<WATSet[]>({
     queryKey: ["admin_wat_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("wat_sets").select("*").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -39,6 +41,7 @@ export function useAdminWATSets(courseId?: string) {
 export function useAdminISTSets(courseId?: string) {
   return useQuery<ISTSet[]>({
     queryKey: ["admin_ist_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("ist_sets").select("*, ist_sentences(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -52,6 +55,7 @@ export function useAdminISTSets(courseId?: string) {
 export function useAdminExtemporeSets(courseId?: string) {
   return useQuery<ExtemporeSet[]>({
     queryKey: ["admin_extempore_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("extempore_sets").select("*, extempore_topics(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -65,6 +69,7 @@ export function useAdminExtemporeSets(courseId?: string) {
 export function useAdminPPDTSets(courseId?: string) {
   return useQuery<PPDTSet[]>({
     queryKey: ["admin_ppdt_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("ppdt_sets").select("*, ppdt_pictures(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -78,6 +83,7 @@ export function useAdminPPDTSets(courseId?: string) {
 export function useAdminPictureStorySets(courseId?: string) {
   return useQuery<PictureStorySet[]>({
     queryKey: ["admin_picture_story_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("picture_story_sets").select("*, picture_story_pictures(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);
@@ -91,6 +97,7 @@ export function useAdminPictureStorySets(courseId?: string) {
 export function useAdminIncompleteStorySets(courseId?: string) {
   return useQuery<IncompleteStorySet[]>({
     queryKey: ["admin_incomplete_story_sets", courseId ?? "all"],
+    staleTime: 30_000,
     queryFn: async () => {
       let q = supabase.from("incomplete_story_sets").select("*, incomplete_stories(*)").order("order_index");
       if (courseId) q = q.eq("course_id", courseId);

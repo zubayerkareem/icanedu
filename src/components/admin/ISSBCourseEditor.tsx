@@ -779,29 +779,50 @@ function StoryCard({ story, index, expanded, onToggle, upsertS, deleteS }: {
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
 
+const TABS = [
+  { id: "iq",        label: "IQ" },
+  { id: "wat",       label: "WAT" },
+  { id: "ist",       label: "IST" },
+  { id: "extempore", label: "Extempore" },
+  { id: "pictures",  label: "PPDT / Picture" },
+  { id: "stories",   label: "গল্প" },
+] as const;
+
+type TabId = typeof TABS[number]["id"];
+
 export function ISSBCourseEditor({ courseId }: { courseId: string }) {
+  const [active, setActive] = useState<TabId>("iq");
+
   return (
     <div className="mt-3 rounded-lg border border-accent/20 bg-accent/5 p-4">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-accent">
         ISSB কন্টেন্ট — এই কোর্সের জন্য
       </p>
-      <Tabs defaultValue="iq">
-        <TabsList className="mb-4 flex w-full flex-wrap justify-start gap-0.5 h-auto">
-          <TabsTrigger value="iq" className="text-xs h-7">IQ</TabsTrigger>
-          <TabsTrigger value="wat" className="text-xs h-7">WAT</TabsTrigger>
-          <TabsTrigger value="ist" className="text-xs h-7">IST</TabsTrigger>
-          <TabsTrigger value="extempore" className="text-xs h-7">Extempore</TabsTrigger>
-          <TabsTrigger value="pictures" className="text-xs h-7">PPDT / Picture</TabsTrigger>
-          <TabsTrigger value="stories" className="text-xs h-7">গল্প</TabsTrigger>
-        </TabsList>
 
-        <TabsContent value="iq"><IQTab courseId={courseId} /></TabsContent>
-        <TabsContent value="wat"><WATTab courseId={courseId} /></TabsContent>
-        <TabsContent value="ist"><ISTTab courseId={courseId} /></TabsContent>
-        <TabsContent value="extempore"><ExtemporeTab courseId={courseId} /></TabsContent>
-        <TabsContent value="pictures"><PictureTab courseId={courseId} /></TabsContent>
-        <TabsContent value="stories"><IncompleteStoryTab courseId={courseId} /></TabsContent>
-      </Tabs>
+      {/* Manual tabs — only the active tab mounts, preventing 6 simultaneous queries */}
+      <div className="mb-4 flex flex-wrap gap-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActive(tab.id)}
+            className={[
+              "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+              active === tab.id
+                ? "bg-accent text-accent-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+            ].join(" ")}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {active === "iq"        && <IQTab courseId={courseId} />}
+      {active === "wat"       && <WATTab courseId={courseId} />}
+      {active === "ist"       && <ISTTab courseId={courseId} />}
+      {active === "extempore" && <ExtemporeTab courseId={courseId} />}
+      {active === "pictures"  && <PictureTab courseId={courseId} />}
+      {active === "stories"   && <IncompleteStoryTab courseId={courseId} />}
     </div>
   );
 }

@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/lib/i18n";
 
 export function FounderSection() {
+  const tr = useTranslation();
+  const f = tr.home.founder;
+
   return (
     <section className="relative overflow-hidden bg-[#07091a] py-16 sm:py-24">
       {/* Background glow blobs */}
@@ -16,28 +20,23 @@ export function FounderSection() {
           {/* ── LEFT: framed photo ── */}
           <div className="flex justify-center lg:justify-start">
             <div className="relative">
-              {/* Outer animated glow border */}
               <div className="absolute -inset-[3px] rounded-[1.6rem] bg-gradient-to-br from-cyan-500 via-violet-500 to-pink-500 opacity-70 blur-[2px]" />
 
-              {/* Monitor frame */}
               <div className="relative rounded-[1.5rem] border border-cyan-500/30 bg-[#0d1530] p-2 shadow-2xl">
-                {/* Corner accents */}
                 <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-md" />
                 <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-cyan-400 rounded-tr-md" />
                 <div className="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-violet-400 rounded-bl-md" />
                 <div className="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-violet-400 rounded-br-md" />
 
-                {/* Photo */}
                 <div className="overflow-hidden rounded-[1.2rem]" style={{ width: "clamp(300px, 46vw, 580px)" }}>
                   <img
                     src="/chairman.png"
-                    alt="প্রতিষ্ঠাতা ও চেয়ারম্যান — iCAN Academy Bangladesh"
+                    alt="Founder & Chairman — iCAN Academy Bangladesh"
                     className="w-full object-cover object-top"
                     style={{ aspectRatio: "4/3" }}
                   />
                 </div>
 
-                {/* Bottom HUD bar */}
                 <div className="mt-2 flex items-center justify-between px-2 pb-1">
                   <div className="flex items-center gap-1.5">
                     <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -56,34 +55,26 @@ export function FounderSection() {
 
           {/* ── RIGHT: content ── */}
           <div className="flex flex-col gap-6">
-            {/* Heading */}
             <h2 className="font-heading text-3xl font-extrabold leading-tight text-white sm:text-4xl lg:text-5xl">
-              সকল উদ্যমী নেতা ও{" "}
+              {f.heading}{" "}
               <span className="bg-gradient-to-r from-violet-400 to-pink-400 bg-clip-text text-transparent">
-                পরিবর্তনকামীদের প্রতি শুভেচ্ছা
+                {f.headingHighlight}
               </span>
             </h2>
-            {/* Underline accent */}
             <div className="h-[2px] w-28 bg-gradient-to-r from-violet-500 to-pink-500 rounded-full -mt-2" />
 
-            {/* Body */}
             <div className="space-y-3 text-sm leading-relaxed text-slate-300 sm:text-base">
-              <p>
-                যখন আমি iCAN Academy-র স্বপ্ন দেখেছিলাম, তখন শুধু একটি শিক্ষাপ্রতিষ্ঠান গড়ার কথা ভাবিনি — আমি চেয়েছিলাম এমন একটি আলোকবর্তিকা তৈরি করতে যা তরুণদের আশা, ক্ষমতায়ন ও উৎকর্ষতার পথ দেখাবে। আমাদের বিশ্ব দ্রুত পরিবর্তিত হচ্ছে, এবং এর সাথে আসছে নতুন সুযোগ ও চ্যালেঞ্জ।
-              </p>
-              <p>
-                আগামীর নেতাদের শুধু একাডেমিক সাফল্য নয় — দরকার মানসিক দৃঢ়তা, অভিযোজন ক্ষমতা, নৈতিকতা এবং অটল আত্মবিশ্বাস। বছরের পর বছর ধরে আমি দেখেছি, অগণিত মেধাবী তরুণ সঠিক দিকনির্দেশনার অভাবে পিছিয়ে পড়ছে।
-              </p>
+              <p>{f.body1}</p>
+              <p>{f.body2}</p>
             </div>
 
-            {/* CTA */}
             <div className="pt-1">
               <Button
                 asChild
                 size="lg"
                 className="rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white hover:from-violet-700 hover:to-pink-600 border-0 px-8 shadow-lg shadow-violet-900/40"
               >
-                <Link to="/about">আরও জানুন →</Link>
+                <Link to="/about">{f.cta}</Link>
               </Button>
             </div>
           </div>

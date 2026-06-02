@@ -2,9 +2,13 @@ import { Link } from "react-router-dom";
 import { Facebook, Youtube, Instagram, Mail, Phone, MapPin, Navigation } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { t } from "@/lib/strings";
+import { BRANCHES } from "@/lib/branches";
+import { useTranslation, useLanguage } from "@/lib/i18n";
 
 export function Footer() {
   const { data: settings } = useSiteSettings();
+  const tr = useTranslation();
+  const { lang } = useLanguage();
 
   return (
     <footer className="mt-16 border-t border-border bg-muted/30">
@@ -101,36 +105,16 @@ export function Footer() {
 
         {/* Branch boxes */}
         <div className="mt-10 border-t border-border pt-8">
-          <h4 className="mb-5 font-heading text-base font-semibold text-foreground">আমাদের শাখাসমূহ</h4>
+          <h4 className="mb-5 font-heading text-base font-semibold text-foreground">
+            {tr.home.branches.title}
+          </h4>
           <div className="grid gap-4 sm:grid-cols-3">
-            {[
-              {
-                name: "রংপুর শাখা",
-                phone: "01894734005",
-                email: "icanedu23@gmail.com",
-                address: "Lalkuthi More, Rangpur",
-                mapUrl: "https://www.google.com/maps/search/iCAN+Academy+Rangpur",
-              },
-              {
-                name: "মিরপুর শাখা",
-                phone: "01894734003",
-                email: "icanedu23@gmail.com",
-                address: "Pallabi Metro, Mirpur, Dhaka",
-                mapUrl: "https://www.google.com/maps/search/iCAN+Academy+Mirpur+Dhaka",
-              },
-              {
-                name: "ফার্মগেট শাখা",
-                phone: "01894734002",
-                email: "icanedu23@gmail.com",
-                address: "RH Home Center, Farmgate, Dhaka",
-                mapUrl: "https://www.google.com/maps/dir/23.7013164,90.4246481/iCAN+Academy+Farmgate+Branch+(ISSB,+Cadet+College),+74%2FB%2F1+Room+no+211,212,213,+R+H+Home+Centre,+18+Green+Rd,+Dhaka+1215/@23.7252123,90.3712112,13z/data=!3m1!4b1!4m9!4m8!1m1!4e1!1m5!1m1!1s0x3755b9006b97113d:0x252e63af34149ef4!2m2!1d90.3889921!2d23.7545164?entry=ttu&g_ep=EgoyMDI2MDUyMC4wIKXMDSoASAFQAw%3D%3D",
-              },
-            ].map((branch) => (
+            {BRANCHES.map((branch) => (
               <div
-                key={branch.name}
+                key={branch.name.en}
                 className="rounded-lg border border-border bg-background p-4 text-sm"
               >
-                <p className="font-heading font-semibold text-foreground">{branch.name}</p>
+                <p className="font-heading font-semibold text-foreground">{branch.name[lang]}</p>
                 <ul className="mt-3 space-y-2 text-muted-foreground">
                   <li className="flex items-center gap-2">
                     <Phone className="h-3.5 w-3.5 shrink-0" />
@@ -142,7 +126,7 @@ export function Footer() {
                   </li>
                   <li className="flex items-start gap-2">
                     <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{branch.address}</span>
+                    <span>{branch.address[lang]}</span>
                   </li>
                 </ul>
                 <a
@@ -152,7 +136,7 @@ export function Footer() {
                   className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent"
                 >
                   <Navigation className="h-3 w-3" />
-                  Google Maps-এ দেখুন
+                  {tr.home.branches.viewOnMap}
                 </a>
               </div>
             ))}

@@ -1,30 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-
-const BRANCHES = [
-  {
-    name: "রংপুর শাখা",
-    address: "iCAN Building, Lalkuthi More, Rangpur",
-    phone: "01894734005",
-  },
-  {
-    name: "মিরপুর ১২ শাখা",
-    address: "House 73, 2nd Floor, Rd No. 6, Pallabi Metro, Mirpur Dhaka 1216",
-    phone: "01894734003",
-  },
-  {
-    name: "ফার্মগেট শাখা",
-    address: "Room No-212-213, RH Home Center, Green Road, Farmgate",
-    phone: "01894734002",
-  },
-];
+import { BRANCHES } from "@/lib/branches";
+import { useTranslation, useLanguage } from "@/lib/i18n";
 
 export default function Contact() {
+  const tr = useTranslation();
+  const { lang } = useLanguage();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -87,15 +73,16 @@ export default function Contact() {
                   </h2>
                 </div>
                 <ul className="space-y-3">
-                  <li className="text-sm">
-                    <p className="font-medium text-foreground">রংপুর শাখা: <a href="tel:01894734005" className="text-muted-foreground hover:text-accent transition-colors font-normal">01894734005</a></p>
-                  </li>
-                  <li className="text-sm">
-                    <p className="font-medium text-foreground">মিরপুর ১২ শাখা : <a href="tel:01894734003" className="text-muted-foreground hover:text-accent transition-colors font-normal">01894734003</a></p>
-                  </li>
-                  <li className="text-sm">
-                    <p className="font-medium text-foreground">ফার্মগেট শাখা : <a href="tel:01894734002" className="text-muted-foreground hover:text-accent transition-colors font-normal">01894734002</a></p>
-                  </li>
+                  {BRANCHES.map((b) => (
+                    <li key={b.name.en} className="text-sm">
+                      <p className="font-medium text-foreground">
+                        {b.name[lang]}:{" "}
+                        <a href={`tel:${b.phone}`} className="text-muted-foreground hover:text-accent transition-colors font-normal">
+                          {b.phone}
+                        </a>
+                      </p>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -124,24 +111,33 @@ export default function Contact() {
                     <MapPin className="h-5 w-5 text-accent" />
                   </div>
                   <h2 className="font-heading text-xl font-bold text-foreground">
-                    আমাদের শাখাসমূহ
+                    {tr.home.branches.title}
                   </h2>
                 </div>
                 <div className="grid gap-4">
                   {BRANCHES.map((b) => (
                     <div
-                      key={b.name}
+                      key={b.name.en}
                       className="rounded-lg border border-border bg-card p-4 shadow-sm"
                     >
                       <p className="font-heading font-semibold text-foreground text-sm">
-                        {b.name}
+                        {b.name[lang]}
                       </p>
-                      <p className="mt-1 text-sm text-muted-foreground">{b.address}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{b.address[lang]}</p>
                       <a
                         href={`tel:${b.phone}`}
-                        className="mt-1 text-sm text-accent hover:underline"
+                        className="mt-1 block text-sm text-accent hover:underline"
                       >
                         {b.phone}
+                      </a>
+                      <a
+                        href={b.mapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-accent"
+                      >
+                        <Navigation className="h-3.5 w-3.5" />
+                        {tr.home.branches.viewOnMap}
                       </a>
                     </div>
                   ))}

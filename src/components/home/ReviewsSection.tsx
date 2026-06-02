@@ -1,41 +1,4 @@
-const REVIEWS = [
-  {
-    id: 1,
-    name: "মোহাম্মদ রাফিউল হাসান",
-    course: "ISSB Complete Bundle",
-    rating: 5,
-    comment:
-      "iCANBD-এর ISSB কোর্সটি আমার জীবন বদলে দিয়েছে। কোর্সের গাইডলাইন অনুসরণ করে আমি প্রথমবারেই ISSB পাস করেছি। শিক্ষকদের অভিজ্ঞতা ও শেখানোর ধরন অতুলনীয়।",
-    date: "এপ্রিল ২০২৬",
-  },
-  {
-    id: 2,
-    name: "সাবরিনা আক্তার",
-    course: "ক্যাডেট কলেজ সম্পূর্ণ প্যাকেজ",
-    rating: 5,
-    comment:
-      "আমার ছেলে এই কোর্সটি করে ফৌজদারহাট ক্যাডেট কলেজে ভর্তির সুযোগ পেয়েছে। কোর্সের প্রতিটি বিষয় এত সুন্দরভাবে সাজানো যে পড়তে ভালো লাগে।",
-    date: "মার্চ ২০২৬",
-  },
-  {
-    id: 3,
-    name: "তানভীর আহমেদ",
-    course: "ISSB Written Test Preparation",
-    rating: 5,
-    comment:
-      "লিখিত পরীক্ষার প্রস্তুতিটা আগে কীভাবে নেব বুঝতাম না। এই কোর্সের পর সব পরিষ্কার হয়ে গেছে। মডেল টেস্টগুলো বিশেষভাবে সহায়ক ছিল।",
-    date: "মার্চ ২০২৬",
-  },
-  {
-    id: 4,
-    name: "ফারহান মাহমুদ",
-    course: "ক্যাডেট কলেজ গণিত প্রস্তুতি",
-    rating: 5,
-    comment:
-      "গণিতে আগে অনেক দুর্বল ছিলাম। এই কোর্সের পর গণিত আমার প্রিয় বিষয় হয়ে গেছে। শিক্ষক মহোদয়ের ব্যাখ্যা এতটাই সহজ যে কঠিন বিষয়ও সহজ লাগে।",
-    date: "ফেব্রুয়ারি ২০২৬",
-  },
-];
+import { useTranslation } from "@/lib/i18n";
 
 function StarRating({ count }: { count: number }) {
   return (
@@ -55,22 +18,25 @@ function StarRating({ count }: { count: number }) {
 }
 
 export function ReviewsSection() {
+  const tr = useTranslation();
+  const { title, subtitle, items } = tr.home.reviews;
+
   return (
     <section className="bg-muted/30 py-12 sm:py-16">
       <div className="container">
         <div className="mb-8 text-center">
           <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-            শিক্ষার্থীদের মতামত
+            {title}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            আমাদের শিক্ষার্থীরা যা বলছেন
+            {subtitle}
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {REVIEWS.map((r) => (
+          {items.map((r, i) => (
             <div
-              key={r.id}
+              key={i}
               className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
               <StarRating count={r.rating} />

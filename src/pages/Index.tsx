@@ -7,6 +7,7 @@ import { ISSB_COURSES, CADET_COURSES } from "@/lib/courses/mock";
 import { supabase } from "@/lib/supabase";
 import type { Product } from "@/lib/products/types";
 import type { Course } from "@/lib/courses/types";
+import { useTranslation } from "@/lib/i18n";
 import { SuccessStoriesSection } from "@/components/home/SuccessStoriesSection";
 import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { NoticesSection } from "@/components/home/NoticesSection";
@@ -36,6 +37,7 @@ function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlight
   mobileSlider?: boolean;
   highlighted?: boolean;
 }) {
+  const tr = useTranslation();
   return (
     <section className={highlighted ? "relative py-12 sm:py-16 bg-gradient-to-b from-accent/5 to-transparent" : "py-12 sm:py-16"}>
       {highlighted && (
@@ -52,7 +54,7 @@ function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlight
             <h2 className={["font-heading text-2xl font-bold sm:text-3xl", highlighted ? "text-foreground" : "text-foreground"].join(" ")}>{title}</h2>
           </div>
           <Button variant={highlighted ? "default" : "outline"} size="sm" asChild>
-            <Link to="/courses">সব কোর্স দেখুন</Link>
+            <Link to="/courses">{tr.home.seeAllCourses}</Link>
           </Button>
         </div>
         {isLoading ? (
@@ -120,20 +122,21 @@ function useSupabaseProducts() {
 
 function ProductsGrid() {
   const { data: products = [], isLoading } = useSupabaseProducts();
+  const tr = useTranslation();
   return (
     <section className="bg-muted/30 py-12 sm:py-16">
       <div className="container">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div>
             <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-              আমাদের পণ্যসমূহ
+              {tr.home.productsTitle}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              বই, গাইড, নোট ও প্রশ্নব্যাংক
+              {tr.home.productsSubtitle}
             </p>
           </div>
           <Button variant="outline" size="sm" asChild>
-            <Link to="/products">সব পণ্য দেখুন</Link>
+            <Link to="/products">{tr.home.seeAllProducts}</Link>
           </Button>
         </div>
         {isLoading ? (
@@ -154,17 +157,20 @@ function ProductsGrid() {
 
 function IssbGrid() {
   const { data = [], isLoading } = useStaticCourses(ISSB_COURSES, "issb_home");
-  return <CoursesGrid title="Courses OF ISSB" courses={data} isLoading={isLoading} mobileSlider={false} highlighted />;
+  const tr = useTranslation();
+  return <CoursesGrid title={tr.home.issbTitle} courses={data} isLoading={isLoading} mobileSlider={false} highlighted />;
 }
 
 function CadetGrid() {
   const { data = [], isLoading } = useStaticCourses(CADET_COURSES, "cadet_home");
-  return <CoursesGrid title="Courses OF Cadet" courses={data} isLoading={isLoading} />;
+  const tr = useTranslation();
+  return <CoursesGrid title={tr.home.cadetTitle} courses={data} isLoading={isLoading} />;
 }
 
 function ExampleGrid() {
   const { data = [], isLoading } = useStaticCourses(ISSB_COURSES, "example_home");
-  return <CoursesGrid title="Example course grid" courses={data.slice(0, 4)} isLoading={isLoading} />;
+  const tr = useTranslation();
+  return <CoursesGrid title={tr.home.exampleTitle} courses={data.slice(0, 4)} isLoading={isLoading} />;
 }
 
 const Index = () => (

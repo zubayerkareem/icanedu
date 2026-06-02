@@ -253,7 +253,7 @@ export const t = {
     showMore: "আরও পড়ুন",
     showLess: "কম দেখান",
     teacherTitle: "শিক্ষক পরিচিতি",
-    reviewsTitle: "শিক্ষার্থীদের মতামত",
+    reviewsTitle: "শিক্ষার্থীদের ফিডব্যাক",
     averageRating: "গড় রেটিং",
     ratingsUnit: "টি রেটিং",
     relatedTitle: "আমাদের আরও কিছু কোর্স",

@@ -5,13 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichContent } from "@/components/RichEditor";
 import { useNotices } from "@/hooks/useNotices";
+import { useTranslation, useLanguage } from "@/lib/i18n";
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" });
+function formatDate(iso: string, lang: string) {
+  return new Date(iso).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 export function NoticesSection() {
   const { data: notices = [], isLoading } = useNotices(1);
+  const tr = useTranslation();
+  const { lang } = useLanguage();
 
   return (
     <section className="bg-muted/30 py-12 sm:py-16">
@@ -21,10 +28,12 @@ export function NoticesSection() {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
               <Bell className="h-5 w-5 text-accent" />
             </div>
-            <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">সাম্প্রতিক নোটিশ</h2>
+            <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
+              {tr.home.notices.title}
+            </h2>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link to="/notices">সব নোটিশ দেখুন</Link>
+            <Link to="/notices">{tr.home.notices.seeAll}</Link>
           </Button>
         </div>
 
@@ -37,7 +46,7 @@ export function NoticesSection() {
             </div>
           ) : notices.length === 0 ? (
             <div className="rounded-lg border border-border bg-card p-5 text-sm text-muted-foreground">
-              কোনো নোটিশ নেই
+              {tr.home.notices.empty}
             </div>
           ) : notices.map((n) => (
             <article
@@ -48,7 +57,7 @@ export function NoticesSection() {
                 <Badge variant={n.badge_variant} className="text-xs">{n.badge}</Badge>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3" />
-                  {formatDate(n.created_at)}
+                  {formatDate(n.created_at, lang)}
                 </span>
               </div>
               <h3 className="mt-2 font-heading text-base font-semibold text-foreground">{n.title}</h3>

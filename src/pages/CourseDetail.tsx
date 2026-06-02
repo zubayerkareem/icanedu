@@ -19,7 +19,7 @@ import {
   MessageSquare,
   PenLine,
   PlayCircle,
-  ShieldCheck,
+
   Star,
   Users,
 } from "lucide-react";
@@ -368,10 +368,7 @@ function CourseHero({ course }: { course: Course }) {
                   </p>
                 )}
 
-                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-success" />
-                  {t.courseDetail.moneyBack}
-                </div>
+
 
                 <div className="border-t border-border pt-4">
                   <div className="text-sm font-semibold text-foreground">

@@ -3,6 +3,7 @@ import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/lib/i18n";
 import type { Product } from "@/lib/products/types";
 
 function formatBnNumber(n: number): string {
@@ -14,6 +15,7 @@ function formatBnNumber(n: number): string {
 }
 
 export function ProductCard({ product }: { product: Product }) {
+  const tr = useTranslation();
   const href = `/products/${product.slug ?? product.id}`;
   const cover = product.image_url ?? product.images?.[0];
   const hasDiscount =
@@ -69,7 +71,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         <Button asChild variant="default" size="sm" className="mt-4 w-full gap-2">
-          <Link to={href}><ShoppingCart className="h-4 w-4" />অর্ডার করুন</Link>
+          <Link to={href}><ShoppingCart className="h-4 w-4" />{tr.home.cards.orderNow}</Link>
         </Button>
       </div>
     </article>

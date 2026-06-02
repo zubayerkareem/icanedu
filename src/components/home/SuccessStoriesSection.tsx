@@ -1,61 +1,63 @@
-const STORIES = [
+import { useTranslation } from "@/lib/i18n";
+
+const ACHIEVEMENTS = [
   {
-    id: 1,
-    quote:
-      "iCANBD-এর কোর্স করে আমি মাত্র ৬ মাসে একটি সফটওয়্যার কোম্পানিতে চাকরি পেয়েছি। এই প্ল্যাটফর্ম আমার জীবন বদলে দিয়েছে।",
+    image: "/7d8406ab-c3b7-4ca5-afc1-35c280e7809d.jpeg",
+    text: "110+ Green Card Achievements | 94 BMA",
   },
   {
-    id: 2,
-    quote:
-      "ঘরে বসেই বিশ্বমানের ডিজাইন শিখতে পেরেছি। এখন প্রতি মাসে ভালো আয় করছি। iCANBD আমার স্বপ্নকে বাস্তবে রূপ দিয়েছে।",
+    image: "/263925f5-4614-4fd7-9f76-e81cbb2c598f.jpeg",
+    text: "350+ Green Card Achievements | Success Reloaded (2024–25)",
   },
   {
-    id: 3,
-    quote:
-      "কোর্সের কন্টেন্ট এত সহজ ও গোছানো যে শেখাটা আনন্দদায়ক হয়ে ওঠে। শিক্ষকরা সবসময় সাহায্য করেছেন।",
+    image: "/84b0e899-dc1c-48d6-bbb5-b66e1dcc3cb7.jpeg",
+    text: "Shining Stars of 2025: 18 Students Secure Seats in Cadet College!",
   },
   {
-    id: 4,
-    quote:
-      "iCANBD-এর হাত ধরে আমি আজ একজন সফল কন্টেন্ট ক্রিয়েটর। লক্ষাধিক মানুষের কাছে পৌঁছাতে পারছি।",
+    image: "/effcf2a8-0776-4456-a3dd-5c34a9429127.jpeg",
+    text: "Shining Stars of 2024: 13 Students Secure Seats in Cadet College!",
+  },
+  {
+    image: "/88775003-a6dd-488f-a279-610129e6cece.jpeg",
+    text: "Besides BUP, Bangabandhu Sheikh Mujibur Rahman Maritime University (BSMRMU) 5 more students from BUP HUNT family got chances in different faculties.",
+  },
+  {
+    image: "/7f2aac9a-4e88-4f60-b9f8-7d19558f32d4.jpeg",
+    text: "Alhamdulillah....\nThe first batch of BUP HUNT was an incredible success.\n50% success rate...\n10 people got chance in different faculties in BUP.",
   },
 ];
 
 export function SuccessStoriesSection() {
+  const tr = useTranslation();
+  const { title, subtitle } = tr.home.success;
+
   return (
     <section className="py-12 sm:py-16">
       <div className="container">
         <div className="mb-8 text-center">
           <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-            আমাদের অর্জন এক নজরে
+            {title}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            আমাদের শিক্ষার্থীরা যা অর্জন করেছেন
+            {subtitle}
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {STORIES.map((story) => (
+          {ACHIEVEMENTS.map((a) => (
             <div
-              key={story.id}
+              key={a.image}
               className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
             >
-              {/* Placeholder image */}
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-gradient-to-br from-muted to-secondary">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg
-                    className="h-12 w-12 text-muted-foreground/30"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                  </svg>
-                </div>
+              <div className="w-full overflow-hidden rounded-lg bg-muted">
+                <img
+                  src={a.image}
+                  alt={a.text}
+                  className="w-full h-auto object-contain"
+                />
               </div>
-
-              {/* Quote */}
-              <p className="flex-1 text-sm leading-relaxed text-muted-foreground">
-                "{story.quote}"
+              <p className="flex-1 text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                {a.text}
               </p>
             </div>
           ))}

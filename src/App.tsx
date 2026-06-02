@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { FontProvider } from "@/components/FontProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { LanguageProvider } from "@/lib/i18n";
 import { ProtectedRoute, AdminRoute } from "@/components/route-guards";
 
 import PublicLayout from "@/components/layout/PublicLayout";
@@ -66,6 +67,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <LanguageProvider>
     <ThemeProvider>
     <AuthProvider>
       <FontProvider>
@@ -156,6 +158,7 @@ const App = () => (
       </FontProvider>
     </AuthProvider>
     </ThemeProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 

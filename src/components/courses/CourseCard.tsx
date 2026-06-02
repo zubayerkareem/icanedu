@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { t } from "@/lib/strings";
+import { useTranslation } from "@/lib/i18n";
 import type { Course } from "@/lib/courses/types";
 
 function formatBnNumber(n: number): string {
@@ -16,6 +17,7 @@ function formatBnNumber(n: number): string {
 }
 
 export function CourseCard({ course }: { course: Course }) {
+  const tr = useTranslation();
   const href = `/courses/${course.slug ?? course.id}`;
   const hasDiscount =
     typeof course.discount_price === "number" &&
@@ -78,7 +80,7 @@ export function CourseCard({ course }: { course: Course }) {
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
               <span>
-                {formatBnNumber(course.enrollment_count)} {t.home.students}
+                {formatBnNumber(course.enrollment_count)} {tr.home.cards.students}
               </span>
             </div>
           )}
@@ -100,13 +102,13 @@ export function CourseCard({ course }: { course: Course }) {
             </span>
           ) : (
             <span className="font-heading text-base font-semibold text-success">
-              {t.home.free}
+              {tr.home.cards.free}
             </span>
           )}
         </div>
 
         <Button asChild variant="outline" size="sm" className="mt-4">
-          <Link to={href}>{t.home.details}</Link>
+          <Link to={href}>{tr.home.cards.viewDetails}</Link>
         </Button>
       </div>
     </article>

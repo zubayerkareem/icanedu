@@ -54,7 +54,7 @@ import SuccessCadet from "./pages/SuccessCadet";
 import DashboardHome from "./pages/dashboard/DashboardHome";
 import MyCourses from "./pages/dashboard/MyCourses";
 import MyOrders from "./pages/dashboard/MyOrders";
-import Exams from "./pages/dashboard/Exams";
+import Profile from "./pages/dashboard/Profile";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminCourses from "./pages/admin/Courses";
@@ -131,8 +131,7 @@ const App = () => (
                 <Route path="/dashboard/courses" element={<MyCourses />} />
                 <Route path="/dashboard/courses/:id" element={<CourseLearn />} />
                 <Route path="/dashboard/orders" element={<MyOrders />} />
-                <Route path="/dashboard/exams" element={<Exams />} />
-                <Route path="/dashboard/profile" element={<ComingSoon />} />
+                <Route path="/dashboard/profile" element={<Profile />} />
               </Route>
 
               {/* Admin */}

@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { LayoutDashboard, BookOpen, ShoppingBag, ClipboardList, User, LogOut, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,11 +20,10 @@ import { t } from "@/lib/strings";
 import { toast } from "sonner";
 
 const items = [
-  { title: t.dashboard.overview,  url: "/dashboard",          icon: LayoutDashboard, end: true },
-  { title: "আমার কোর্স",          url: "/dashboard/courses",  icon: BookOpen },
-  { title: "আমার অর্ডার",         url: "/dashboard/orders",   icon: ShoppingBag },
-  { title: "পরীক্ষা",             url: "/dashboard/exams",    icon: ClipboardList },
-  { title: t.nav.profile,         url: "/dashboard/profile",  icon: User },
+  { title: t.dashboard.overview, url: "/dashboard",         icon: LayoutDashboard, end: true },
+  { title: "আমার কোর্স",         url: "/dashboard/courses", icon: BookOpen },
+  { title: "আমার অর্ডার",        url: "/dashboard/orders",  icon: ShoppingBag },
+  { title: t.nav.profile,        url: "/dashboard/profile", icon: User },
 ];
 
 function StudentSidebar() {

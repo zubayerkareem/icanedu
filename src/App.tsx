@@ -36,6 +36,7 @@ import ThankYou from "./pages/ThankYou";
 import Privacy from "./pages/Privacy";
 import Refund from "./pages/Refund";
 import SuccessISSB from "./pages/SuccessISSB";
+import LessonView from "./pages/LessonView";
 import IQPracticeHome from "./pages/IQPracticeHome";
 import IQPracticeExam from "./pages/IQPracticeExam";
 import IncompleteStoryHome from "./pages/IncompleteStoryHome";
@@ -57,6 +58,7 @@ import Exams from "./pages/dashboard/Exams";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminCourses from "./pages/admin/Courses";
+import CourseEditor from "./pages/admin/CourseEditor";
 import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminStudents from "./pages/admin/Students";
@@ -82,6 +84,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/courses" element={<Courses />} />
                 <Route path="/courses/:id" element={<CourseDetail />} />
+                <Route path="/courses/:id/lessons/:lessonId" element={<LessonView />} />
                 <Route path="/courses/:id/iq-practice" element={<IQPracticeHome />} />
                 <Route path="/courses/:id/iq-practice/:setId" element={<IQPracticeExam />} />
                 <Route path="/courses/:id/incomplete-story" element={<IncompleteStoryHome />} />
@@ -141,6 +144,8 @@ const App = () => (
               >
                 <Route path="/admin" element={<AdminHome />} />
                 <Route path="/admin/courses" element={<AdminCourses />} />
+                <Route path="/admin/courses/new" element={<CourseEditor />} />
+                <Route path="/admin/courses/:id/edit" element={<CourseEditor />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />
                 <Route path="/admin/students" element={<AdminStudents />} />

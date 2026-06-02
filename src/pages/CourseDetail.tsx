@@ -34,17 +34,32 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseCard } from "@/components/courses/CourseCard";
+import { DynamicIcon } from "@/components/admin/IconPicker";
 import { useCourse, useRelatedCourses } from "@/hooks/useCourse";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { getEmbedUrl } from "@/lib/video";
 import { t } from "@/lib/strings";
-import type { Course, CourseVideo, LessonType, Module } from "@/lib/courses/types";
+import { isLessonFree } from "@/lib/courses/types";
+import type { Course, CourseVideo, LessonType, Module, Coupon } from "@/lib/courses/types";
 
 const LESSON_ICON: Record<LessonType, typeof PlayCircle> = {
   video: PlayCircle,
   pdf: FileText,
   quiz: HelpCircle,
   assignment: ClipboardList,
+  text: FileText,
 };
+
+// Validate a coupon against the course list; returns the final price or an error.
+function applyCoupon(course: Course, code: string, base: number): { price: number; error?: string } {
+  const c = (course.coupons ?? []).find((x) => x.code.toUpperCase() === code.trim().toUpperCase());
+  if (!c) return { price: base, error: "কুপন কোডটি সঠিক নয়" };
+  if (c.expires_at && new Date(c.expires_at) < new Date()) return { price: base, error: "কুপনের মেয়াদ শেষ" };
+  if (typeof c.max_uses === "number" && (c.used_count ?? 0) >= c.max_uses) return { price: base, error: "কুপনের সীমা শেষ" };
+  const discounted = c.type === "percent" ? base - (base * c.value) / 100 : base - c.value;
+  return { price: Math.max(0, Math.round(discounted)) };
+}
 
 function bnNum(n: number): string {
   try {
@@ -152,7 +167,30 @@ function CourseHero({ course }: { course: Course }) {
   const countdown = useCountdown(pct ? course.discount_ends_at : undefined);
   const inc = course.includes ?? {};
   const { user } = useAuth();
-  const checkoutUrl = `/checkout?type=course&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&price=${course.discount_price ?? course.price ?? 0}`;
+
+  const basePrice = course.discount_price ?? course.price ?? 0;
+  const [couponInput, setCouponInput] = useState("");
+  const [applied, setApplied] = useState<{ code: string; price: number } | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
+  const finalPrice = applied?.price ?? basePrice;
+
+  function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code) return;
+    const res = applyCoupon(course, code, basePrice);
+    if (res.error) {
+      setCouponError(res.error);
+      setApplied(null);
+    } else {
+      setCouponError(null);
+      setApplied({ code: code.toUpperCase(), price: res.price });
+    }
+  }
+
+  const checkoutUrl =
+    `/checkout?type=course&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&price=${finalPrice}` +
+    (applied ? `&coupon=${encodeURIComponent(applied.code)}` : "");
   const buyHref = user ? checkoutUrl : `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
 
   return (
@@ -160,26 +198,8 @@ function CourseHero({ course }: { course: Course }) {
       <div className="container grid items-start gap-10 py-12 lg:grid-cols-[1fr_420px] lg:py-16">
         {/* Left: title + meta */}
         <div>
-          <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
-            <ol className="flex flex-wrap items-center gap-2">
-              <li>
-                <Link to="/" className="hover:text-foreground">
-                  {t.courses.breadcrumbHome}
-                </Link>
-              </li>
-              <li aria-hidden>›</li>
-              <li>
-                <Link to="/courses" className="hover:text-foreground">
-                  {t.courses.breadcrumbCourses}
-                </Link>
-              </li>
-              <li aria-hidden>›</li>
-              <li className="line-clamp-1 text-foreground">{course.title}</li>
-            </ol>
-          </nav>
-
           {course.category && (
-            <Badge variant="secondary" className="mt-4">
+            <Badge variant="secondary">
               {course.category}
             </Badge>
           )}
@@ -261,7 +281,7 @@ function CourseHero({ course }: { course: Course }) {
           )}
 
           {/* Course highlights block */}
-          {(course.long_description || (course.highlights && course.highlights.length > 0)) && (
+          {(course.long_description || (course.highlight_items?.length ?? course.highlights?.length ?? 0) > 0) && (
             <div className="mt-8 rounded-lg border border-border bg-muted/40 p-5">
               <h2 className="font-heading text-base font-bold text-foreground">
                 কোর্স সম্পর্কে বিস্তারিত
@@ -271,18 +291,27 @@ function CourseHero({ course }: { course: Course }) {
                   {course.long_description.split("\n")[0]}
                 </p>
               )}
-              {course.highlights && course.highlights.length > 0 && (
+              {((course.highlight_items?.length ?? 0) > 0 || (course.highlights?.length ?? 0) > 0) && (
                 <>
                   <p className="mt-4 text-sm font-semibold text-foreground">
                     কোর্সটি যে কারণে আলাদা:
                   </p>
                   <ul className="mt-2 space-y-1.5">
-                    {course.highlights.map((h) => (
-                      <li key={h} className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />
-                        {h}
-                      </li>
-                    ))}
+                    {course.highlight_items?.length ? (
+                      course.highlight_items.map((h) => (
+                        <li key={h.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <DynamicIcon name={h.icon} className="h-4 w-4 shrink-0 text-accent" />
+                          {h.text}
+                        </li>
+                      ))
+                    ) : (
+                      course.highlights?.map((h) => (
+                        <li key={h} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-accent" />
+                          {h}
+                        </li>
+                      ))
+                    )}
                   </ul>
                 </>
               )}
@@ -309,20 +338,26 @@ function CourseHero({ course }: { course: Course }) {
               <div className="space-y-4 p-5">
                 {/* Price */}
                 <div>
-                  {pct ? (
+                  {(pct || applied) ? (
                     <>
                       <div className="flex items-baseline gap-3">
                         <span className="font-heading text-3xl font-bold text-accent">
-                          ৳{bnNum(course.discount_price!)}
+                          ৳{bnNum(finalPrice)}
                         </span>
                         <span className="text-base text-muted-foreground line-through">
                           ৳{bnNum(course.price!)}
                         </span>
-                        <Badge className="bg-destructive text-destructive-foreground">
-                          {bnNum(pct)}% {t.courseDetail.discountBadge}
-                        </Badge>
+                        {applied ? (
+                          <Badge variant="secondary" className="text-success border-success/30 bg-success/10">
+                            {applied.code}
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-destructive text-destructive-foreground">
+                            {bnNum(pct!)}% {t.courseDetail.discountBadge}
+                          </Badge>
+                        )}
                       </div>
-                      {countdown && !countdown.finished && (
+                      {countdown && !countdown.finished && !applied && (
                         <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
                           <div className="text-xs text-muted-foreground">
                             {t.courseDetail.offerEndsIn}:
@@ -338,7 +373,7 @@ function CourseHero({ course }: { course: Course }) {
                     </>
                   ) : course.price && course.price > 0 ? (
                     <span className="font-heading text-3xl font-bold text-foreground">
-                      ৳{bnNum(course.price)}
+                      ৳{bnNum(finalPrice)}
                     </span>
                   ) : (
                     <span className="font-heading text-2xl font-bold text-success">
@@ -359,6 +394,31 @@ function CourseHero({ course }: { course: Course }) {
                   </Link>
                 </Button>
 
+                {/* Coupon input */}
+                {course.coupons && course.coupons.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => { setCouponInput(e.target.value.toUpperCase()); setCouponError(null); }}
+                        placeholder="কুপন কোড"
+                        className="h-9 flex-1 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      />
+                      <Button size="sm" variant="outline" onClick={handleApplyCoupon} className="shrink-0">
+                        প্রয়োগ
+                      </Button>
+                      {applied && (
+                        <Button size="sm" variant="ghost" className="shrink-0 text-destructive" onClick={() => { setApplied(null); setCouponInput(""); }}>
+                          ✕
+                        </Button>
+                      )}
+                    </div>
+                    {couponError && <p className="text-xs text-destructive">{couponError}</p>}
+                    {applied && <p className="text-xs text-success">কুপন প্রয়োগ হয়েছে! ৳{bnNum(basePrice - applied.price)} ছাড় পেয়েছেন।</p>}
+                  </div>
+                )}
+
                 {!user && (
                   <p className="text-center text-xs text-muted-foreground">
                     কোর্স কিনতে{" "}
@@ -374,44 +434,38 @@ function CourseHero({ course }: { course: Course }) {
                   <div className="text-sm font-semibold text-foreground">
                     {t.courseDetail.youGet}
                   </div>
-                  <ul className="mt-3 space-y-2 text-sm">
-                    {typeof inc.videos === "number" && (
-                      <IncludeRow
-                        icon={<PlayCircle className="h-4 w-4 text-accent" />}
-                        text={`${bnNum(inc.videos)} ${t.courseDetail.videos}`}
-                      />
-                    )}
-                    {typeof inc.pdfs === "number" && (
-                      <IncludeRow
-                        icon={<FileText className="h-4 w-4 text-accent" />}
-                        text={`${bnNum(inc.pdfs)} ${t.courseDetail.pdfs}`}
-                      />
-                    )}
-                    {typeof inc.quizzes === "number" && (
-                      <IncludeRow
-                        icon={<HelpCircle className="h-4 w-4 text-accent" />}
-                        text={`${bnNum(inc.quizzes)} ${t.courseDetail.quizzes}`}
-                      />
-                    )}
-                    {typeof inc.assignments === "number" && (
-                      <IncludeRow
-                        icon={<ClipboardList className="h-4 w-4 text-accent" />}
-                        text={`${bnNum(inc.assignments)} ${t.courseDetail.assignments}`}
-                      />
-                    )}
-                    {inc.lifetime_access && (
-                      <IncludeRow
-                        icon={<InfinityIcon className="h-4 w-4 text-accent" />}
-                        text={t.courseDetail.lifetimeAccess}
-                      />
-                    )}
-                    {inc.certificate && (
-                      <IncludeRow
-                        icon={<CheckCircle2 className="h-4 w-4 text-accent" />}
-                        text={t.courseDetail.certificate}
-                      />
-                    )}
-                  </ul>
+                  {course.feature_items && course.feature_items.length > 0 ? (
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {course.feature_items.map((f) => (
+                        <IncludeRow
+                          key={f.id}
+                          icon={<DynamicIcon name={f.icon} className="h-4 w-4 text-accent" />}
+                          text={f.text}
+                        />
+                      ))}
+                    </ul>
+                  ) : (
+                    <ul className="mt-3 space-y-2 text-sm">
+                      {typeof inc.videos === "number" && (
+                        <IncludeRow icon={<PlayCircle className="h-4 w-4 text-accent" />} text={`${bnNum(inc.videos)} ${t.courseDetail.videos}`} />
+                      )}
+                      {typeof inc.pdfs === "number" && (
+                        <IncludeRow icon={<FileText className="h-4 w-4 text-accent" />} text={`${bnNum(inc.pdfs)} ${t.courseDetail.pdfs}`} />
+                      )}
+                      {typeof inc.quizzes === "number" && (
+                        <IncludeRow icon={<HelpCircle className="h-4 w-4 text-accent" />} text={`${bnNum(inc.quizzes)} ${t.courseDetail.quizzes}`} />
+                      )}
+                      {typeof inc.assignments === "number" && (
+                        <IncludeRow icon={<ClipboardList className="h-4 w-4 text-accent" />} text={`${bnNum(inc.assignments)} ${t.courseDetail.assignments}`} />
+                      )}
+                      {inc.lifetime_access && (
+                        <IncludeRow icon={<InfinityIcon className="h-4 w-4 text-accent" />} text={t.courseDetail.lifetimeAccess} />
+                      )}
+                      {inc.certificate && (
+                        <IncludeRow icon={<CheckCircle2 className="h-4 w-4 text-accent" />} text={t.courseDetail.certificate} />
+                      )}
+                    </ul>
+                  )}
                 </div>
               </div>
             </div>
@@ -444,11 +498,11 @@ const ISSB_MODULES = [
 ];
 
 function CurriculumSection({ course, modules }: { course: Course; modules: Module[] }) {
+  const { user } = useAuth();
+  const { enrolled } = useIsEnrolled(course.id, course.slug);
   if (modules.length === 0) return null;
-  // Track which lessons should be marked as preview (first 2 of first module).
-  const previewIds = new Set<string>(
-    modules[0]?.lessons.slice(0, 2).map((l) => l.id) ?? [],
-  );
+
+  const courseBase = course.slug ?? course.id;
 
   return (
     <section className="py-12 sm:py-16">
@@ -480,6 +534,7 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
                       {bnNum(m.lessons.length)}
                       {t.courseDetail.lessonsUnit}
                       {m.total_duration ? ` • ${m.total_duration}` : ""}
+                      {m.isFree && <span className="ml-2 text-success font-medium">· ফ্রি</span>}
                     </div>
                   </div>
                 </div>
@@ -487,29 +542,42 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
               <AccordionContent className="px-5 pb-4">
                 <ul className="divide-y divide-border">
                   {m.lessons.map((l) => {
-                    const Icon = LESSON_ICON[l.type];
-                    const isPreview = l.isPreview ?? previewIds.has(l.id);
+                    const Icon = LESSON_ICON[l.type] ?? PlayCircle;
+                    const free = isLessonFree(m, l);
+                    const canView = free || enrolled;
+                    const lessonHref = `/courses/${courseBase}/lessons/${l.id}`;
                     return (
-                      <li
-                        key={l.id}
-                        className="flex items-center gap-3 py-3 text-sm"
-                      >
+                      <li key={l.id} className="flex items-center gap-3 py-3 text-sm">
                         <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="flex-1 text-foreground">{l.title}</span>
-                        {l.duration && l.duration !== "—" && (
-                          <span className="text-xs text-muted-foreground">
-                            {l.duration}
-                          </span>
+                        {canView ? (
+                          <Link to={lessonHref} className="flex-1 text-foreground hover:text-accent hover:underline">
+                            {l.title}
+                          </Link>
+                        ) : (
+                          <span className="flex-1 text-foreground">{l.title}</span>
                         )}
-                        {isPreview ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
-                            <Eye className="h-3 w-3" />
-                            {t.courseDetail.preview}
-                          </span>
+                        {l.duration && l.duration !== "—" && (
+                          <span className="text-xs text-muted-foreground">{l.duration}</span>
+                        )}
+                        {free ? (
+                          <Link to={lessonHref}>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                              <Eye className="h-3 w-3" />
+                              {t.courseDetail.preview}
+                            </span>
+                          </Link>
+                        ) : enrolled ? (
+                          <Link to={lessonHref}>
+                            <PlayCircle className="h-4 w-4 text-accent" />
+                          </Link>
                         ) : (
                           <Lock
-                            className="h-3.5 w-3.5 text-muted-foreground"
+                            className="h-3.5 w-3.5 text-muted-foreground cursor-pointer"
                             aria-label={t.courseDetail.locked}
+                            onClick={() => {
+                              if (!user) window.location.href = `/login?redirect=${encodeURIComponent(window.location.href)}`;
+                              else document.querySelector(".order-first")?.scrollIntoView({ behavior: "smooth" });
+                            }}
                           />
                         )}
                       </li>
@@ -549,29 +617,6 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
 }
 
 // ============ Videos ============
-
-function getEmbedUrl(url: string): string | null {
-  try {
-    const u = new URL(url);
-    // YouTube: youtube.com/watch?v=ID or youtu.be/ID
-    if (u.hostname.includes("youtube.com")) {
-      const id = u.searchParams.get("v");
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    if (u.hostname === "youtu.be") {
-      const id = u.pathname.slice(1);
-      return id ? `https://www.youtube.com/embed/${id}` : null;
-    }
-    // Vimeo: vimeo.com/ID
-    if (u.hostname.includes("vimeo.com")) {
-      const id = u.pathname.split("/").filter(Boolean)[0];
-      return id ? `https://player.vimeo.com/video/${id}` : null;
-    }
-  } catch {
-    // invalid URL
-  }
-  return null;
-}
 
 function VideosSection({ videos }: { videos: CourseVideo[] }) {
   const [active, setActive] = useState(0);

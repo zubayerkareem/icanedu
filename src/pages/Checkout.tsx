@@ -23,6 +23,7 @@ export default function Checkout() {
   const itemId      = params.get(isCourse ? "courseId"   : "productId") ?? "";
   const itemName    = params.get(isCourse ? "courseName" : "productName") ?? (isCourse ? "কোর্স" : "পণ্য");
   const itemPrice   = Number(params.get("price") ?? 0);
+  const couponCode  = params.get("coupon") ?? null;
 
   const [name,     setName]     = useState("");
   const [phone,    setPhone]    = useState("");
@@ -62,6 +63,7 @@ export default function Checkout() {
       shipping_type: isCourse ? null  : shipping,
       shipping_cost: shippingCost,
       total_price:   total,
+      coupon_code:   couponCode,
     };
 
     const { error } = await supabase.from("orders").insert([order]);
@@ -71,6 +73,15 @@ export default function Checkout() {
       toast.error("অর্ডার সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
       return;
     }
+
+    // Best-effort: increment the coupon usage count
+    if (isCourse && couponCode && itemId) {
+      supabase.rpc("increment_coupon_use", {
+        p_course_id: itemId,
+        p_code: couponCode,
+      }).then(() => {}).catch(() => {});
+    }
+
     navigate("/thank-you");
   }
 
@@ -231,6 +242,12 @@ export default function Checkout() {
                   <span className="text-muted-foreground leading-snug">{itemName}</span>
                   <span className="shrink-0 font-medium text-foreground">৳{itemPrice.toLocaleString("bn-BD")}</span>
                 </div>
+                {couponCode && (
+                  <div className="flex items-center justify-between text-success">
+                    <span className="flex items-center gap-1">🏷 কুপন: <span className="font-mono font-semibold">{couponCode}</span></span>
+                    <span className="font-medium">প্রয়োগ হয়েছে</span>
+                  </div>
+                )}
                 {!isCourse && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">ডেলিভারি চার্জ</span>

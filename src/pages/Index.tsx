@@ -40,9 +40,7 @@ function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlight
   const tr = useTranslation();
   return (
     <section className={highlighted ? "relative py-12 sm:py-16 bg-gradient-to-b from-accent/5 to-transparent" : "py-12 sm:py-16"}>
-      {highlighted && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent" />
-      )}
+
       <div className="container">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="flex items-center gap-3">

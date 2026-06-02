@@ -71,6 +71,16 @@ export const bn = {
         },
       ],
     },
+    footer: {
+      quickLinks: "দ্রুত লিংক",
+      support: "সহায়তা",
+      contactInfo: "যোগাযোগ তথ্য",
+      privacy: "গোপনীয়তা নীতি",
+      refund: "রিফান্ড নীতি",
+      rights: "© ২০২৬ iCAN Academy। সর্বস্বত্ব সংরক্ষিত।",
+      tagline: "আপনার শিক্ষার সঙ্গী",
+      mirpur: "মিরপুর ১২",
+    },
     cards: {
       viewDetails: "বিস্তারিত দেখুন",
       orderNow: "অর্ডার করুন",

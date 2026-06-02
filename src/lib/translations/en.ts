@@ -71,6 +71,16 @@ export const en = {
         },
       ],
     },
+    footer: {
+      quickLinks: "Quick Links",
+      support: "Support",
+      contactInfo: "Contact Info",
+      privacy: "Privacy Policy",
+      refund: "Refund Policy",
+      rights: "© 2026 iCAN Academy. All rights reserved.",
+      tagline: "Your Learning Companion",
+      mirpur: "Mirpur 12",
+    },
     cards: {
       viewDetails: "View Details",
       orderNow: "Order Now",

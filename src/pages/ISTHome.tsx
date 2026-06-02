@@ -3,9 +3,20 @@ import { FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IST_SETS } from "@/lib/ist/mock";
+import { useISTSets } from "@/hooks/useISSBContent";
 
 export default function ISTHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
+  const { data: dbSets = [] } = useISTSets(courseId);
+  const sets = dbSets.length > 0
+    ? dbSets.map((s) => ({
+        id: s.id,
+        title: s.title,
+        isPremium: false,
+        timerSeconds: s.timer_seconds,
+        sentences: s.ist_sentences ?? [],
+      }))
+    : IST_SETS;
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
@@ -35,10 +46,10 @@ export default function ISTHome() {
       </div>
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        {IST_SETS.map((set, idx) => (
+        {sets.map((set, idx) => (
           <div
             key={set.id}
-            className={["flex items-center gap-4 px-5 py-4", idx < IST_SETS.length - 1 ? "border-b" : ""].join(" ")}
+            className={["flex items-center gap-4 px-5 py-4", idx < sets.length - 1 ? "border-b" : ""].join(" ")}
           >
             <div className={["flex h-9 w-9 shrink-0 items-center justify-center rounded-full", set.isPremium ? "bg-amber-100 dark:bg-amber-900/30" : "bg-accent/10"].join(" ")}>
               {set.isPremium

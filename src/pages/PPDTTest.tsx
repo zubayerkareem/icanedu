@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PPDT_MOCK_SET, type PPDTPicture } from "@/lib/ppdt/mock";
 import { saveSession, loadSession, type PPDTSubmission, type PPDTSessionData } from "@/lib/ppdt/storage";
 import { useCountdown } from "@/hooks/useCountdown";
+import { usePPDTSets } from "@/hooks/useISSBContent";
 
 // ─── Timer ────────────────────────────────────────────────────────────────────
 
@@ -381,7 +382,22 @@ function PPDTCard({
 
 export default function PPDTTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const setData = PPDT_MOCK_SET;
+  const { data: dbSets = [] } = usePPDTSets(courseId);
+  const setData = dbSets.length > 0
+    ? {
+        id: dbSets[0].id,
+        name: dbSets[0].title,
+        is_active: dbSets[0].is_published,
+        pictures: (dbSets[0].ppdt_pictures ?? []).map((p): PPDTPicture => ({
+          id: p.id,
+          picture_number: p.picture_number,
+          image_url: p.image_url,
+          title: p.title,
+          description: p.idea,
+          idea: p.idea,
+        })),
+      }
+    : PPDT_MOCK_SET;
 
   const [activePicture, setActivePicture] = useState<PPDTPicture | null>(null);
   const [session, setSession] = useState<PPDTSessionData>(() => {

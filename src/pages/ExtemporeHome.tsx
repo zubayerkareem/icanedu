@@ -3,9 +3,20 @@ import { FileEdit, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EXTEMPORE_SETS, EXTEMPORE_TIMER_SECONDS } from "@/lib/extempore/mock";
+import { useExtemporeSets } from "@/hooks/useISSBContent";
 
 export default function ExtemporeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
+  const { data: dbSets = [] } = useExtemporeSets(courseId);
+  const sets = dbSets.length > 0
+    ? dbSets.map((s) => ({
+        id: s.id,
+        title: s.title,
+        isPremium: false,
+        topics: s.extempore_topics ?? [],
+      }))
+    : EXTEMPORE_SETS;
+  const timerSeconds = dbSets.length > 0 ? (dbSets[0]?.timer_seconds ?? EXTEMPORE_TIMER_SECONDS) : EXTEMPORE_TIMER_SECONDS;
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
@@ -30,15 +41,15 @@ export default function ExtemporeHome() {
           Extempore Essay
         </h1>
         <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-          বিষয় দেওয়া হবে, প্রস্তুতি ছাড়াই {Math.floor(EXTEMPORE_TIMER_SECONDS / 60)} মিনিটে একটি সুগঠিত প্রবন্ধ লিখুন।
+          বিষয় দেওয়া হবে, প্রস্তুতি ছাড়াই {Math.floor(timerSeconds / 60)} মিনিটে একটি সুগঠিত প্রবন্ধ লিখুন।
         </p>
       </div>
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        {EXTEMPORE_SETS.map((set, idx) => (
+        {sets.map((set, idx) => (
           <div
             key={set.id}
-            className={["flex items-center gap-4 px-5 py-4", idx < EXTEMPORE_SETS.length - 1 ? "border-b" : ""].join(" ")}
+            className={["flex items-center gap-4 px-5 py-4", idx < sets.length - 1 ? "border-b" : ""].join(" ")}
           >
             <div className={["flex h-9 w-9 shrink-0 items-center justify-center rounded-full", set.isPremium ? "bg-amber-100 dark:bg-amber-900/30" : "bg-accent/10"].join(" ")}>
               {set.isPremium
@@ -50,7 +61,7 @@ export default function ExtemporeHome() {
             <div className="flex-1 min-w-0">
               <span className="font-medium text-foreground">{set.title}</span>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {set.topics.length}টি বিষয় · {Math.floor(EXTEMPORE_TIMER_SECONDS / 60)} মিনিট প্রতিটি
+                {set.topics.length}টি বিষয় · {Math.floor(timerSeconds / 60)} মিনিট প্রতিটি
               </p>
             </div>
 

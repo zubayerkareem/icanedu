@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { IQ_SETS, IQ_COURSE_ID } from "@/lib/iq-practice/mock";
 import type { IQQuestion, IQSet } from "@/lib/iq-practice/mock";
 import { loadProgress, saveProgress } from "@/hooks/useIQProgress";
+import { useIQSets } from "@/hooks/useISSBContent";
+import { useSaveIQResult } from "@/hooks/useIQResult";
 
 // ─── Timer display ────────────────────────────────────────────────────────────
 
@@ -288,8 +290,19 @@ function ResultScreen({
 export default function IQPracticeExam() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const navigate = useNavigate();
+  const saveResult = useSaveIQResult();
 
-  const set = IQ_SETS.find((s) => s.id === setId);
+  const { data: dbSets = [] } = useIQSets(courseId);
+  const dbSet = dbSets.find((s) => s.id === setId);
+  const set: IQSet | undefined = dbSet
+    ? {
+        id: dbSet.id,
+        title: dbSet.title,
+        description: dbSet.description ?? "",
+        timerSeconds: dbSet.timer_seconds,
+        questions: (dbSet.iq_questions ?? []) as IQQuestion[],
+      }
+    : IQ_SETS.find((s) => s.id === setId);
 
   const initProgress = useCallback(() => loadProgress(courseId, setId), [courseId, setId]);
 
@@ -330,6 +343,14 @@ export default function IQPracticeExam() {
       completed: true,
       score,
       total: set.questions.length,
+    });
+    saveResult.mutate({
+      set_id: setId,
+      course_id: courseId || undefined,
+      score,
+      total: set.questions.length,
+      answers: answersRef.current,
+      time_taken_seconds: set.timerSeconds - timeLeftRef.current,
     });
     setSubmitted(true);
     if (timerRef.current) clearInterval(timerRef.current);

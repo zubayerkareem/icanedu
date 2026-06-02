@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { INCOMPLETE_STORIES, type IncompleteStory } from "@/lib/incomplete-story/mock";
 import { loadSubmission, saveSubmission } from "@/hooks/useStorySubmission";
 import { useCountdown } from "@/hooks/useCountdown";
+import { useIncompleteStorySets } from "@/hooks/useISSBContent";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,7 @@ function playBeep() {
 
 function ModalContent({
   story,
+  storyIndex,
   courseId,
   lang,
   L,
@@ -110,6 +112,7 @@ function ModalContent({
   onDone,
 }: {
   story: IncompleteStory;
+  storyIndex: number;
   courseId: string;
   lang: Lang;
   L: typeof BN;
@@ -197,7 +200,7 @@ function ModalContent({
       {/* Story number + text */}
       <div className="flex items-start gap-3">
         <span className="flex h-7 w-10 shrink-0 items-center justify-center rounded bg-foreground text-background text-xs font-bold font-heading">
-          #{INCOMPLETE_STORIES.findIndex((s) => s.id === story.id) + 1}
+          #{storyIndex + 1}
         </span>
         <p
           className="text-sm leading-relaxed text-foreground font-medium whitespace-pre-line transition-all duration-500 select-none"
@@ -303,6 +306,7 @@ function ModalContent({
 
 function StoryModal({
   story,
+  storyIndex,
   courseId,
   lang,
   L,
@@ -310,6 +314,7 @@ function StoryModal({
   onDone,
 }: {
   story: IncompleteStory;
+  storyIndex: number;
   courseId: string;
   lang: Lang;
   L: typeof BN;
@@ -336,6 +341,7 @@ function StoryModal({
 
         <ModalContent
           story={story}
+          storyIndex={storyIndex}
           courseId={courseId}
           lang={lang}
           L={L}
@@ -506,7 +512,22 @@ export default function IncompleteStoryHome() {
 
   const L = lang === "bn" ? BN : EN;
 
-  const submissions = INCOMPLETE_STORIES.map((s) => loadSubmission(courseId, s.id));
+  const { data: dbSets = [] } = useIncompleteStorySets(courseId);
+  const stories: IncompleteStory[] = dbSets.length > 0
+    ? dbSets.flatMap((set) =>
+        (set.incomplete_stories ?? []).map((s) => ({
+          id: s.id,
+          title: s.title,
+          instruction: s.instruction ?? "",
+          body: s.body,
+          wordLimit: String(s.word_limit),
+          timeGuide: `${s.time_guide_minutes} minutes`,
+          idea: s.idea ?? "",
+        }))
+      )
+    : INCOMPLETE_STORIES;
+
+  const submissions = stories.map((s) => loadSubmission(courseId, s.id));
 
   return (
     <>
@@ -514,6 +535,7 @@ export default function IncompleteStoryHome() {
       {activeStory && (
         <StoryModal
           story={activeStory}
+          storyIndex={stories.findIndex((s) => s.id === activeStory.id)}
           courseId={courseId}
           lang={lang}
           L={L}
@@ -559,7 +581,7 @@ export default function IncompleteStoryHome() {
 
         {/* 3-column grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {INCOMPLETE_STORIES.map((story, idx) => {
+          {stories.map((story, idx) => {
             const isSubmitted = !!submissions[idx];
             const isLocked = idx > 0 && !submissions[idx - 1];
 

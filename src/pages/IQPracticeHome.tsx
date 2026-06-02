@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IQ_SETS } from "@/lib/iq-practice/mock";
 import { loadProgress } from "@/hooks/useIQProgress";
+import { useIQSets } from "@/hooks/useISSBContent";
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -13,6 +14,16 @@ function formatTime(seconds: number) {
 
 export default function IQPracticeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
+  const { data: dbSets = [] } = useIQSets(courseId);
+  const sets = dbSets.length > 0
+    ? dbSets.map((s) => ({
+        id: s.id,
+        title: s.title,
+        description: s.description ?? "",
+        timerSeconds: s.timer_seconds,
+        questions: s.iq_questions ?? [],
+      }))
+    : IQ_SETS;
 
   return (
     <>
@@ -41,14 +52,14 @@ export default function IQPracticeHome() {
       <section className="py-10 sm:py-14">
         <div className="container max-w-3xl">
           <div className="grid gap-4">
-            {IQ_SETS.map((set, idx) => {
+            {sets.map((set, idx) => {
               const saved = loadProgress(courseId, set.id);
               const isCompleted = saved?.completed ?? false;
               const isInProgress = saved && !isCompleted;
               const score = saved?.score;
               const total = saved?.total ?? set.questions.length;
               const answeredCount = saved ? Object.keys(saved.answers).length : 0;
-              const isLocked = idx > 0 && !(loadProgress(courseId, IQ_SETS[idx - 1].id)?.completed);
+              const isLocked = idx > 0 && !(loadProgress(courseId, sets[idx - 1].id)?.completed);
 
               return (
                 <div

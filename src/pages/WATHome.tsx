@@ -3,9 +3,14 @@ import { Brain } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { WAT_SETS } from "@/lib/wat/mock";
+import { useWATSets } from "@/hooks/useISSBContent";
 
 export default function WATHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
+  const { data: dbSets = [] } = useWATSets(courseId);
+  const sets = dbSets.length > 0
+    ? dbSets.map((s) => ({ id: s.id, title: s.title, isPremium: false, words: s.words }))
+    : WAT_SETS;
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
@@ -25,10 +30,10 @@ export default function WATHome() {
       <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl text-center mb-8">WAT</h1>
 
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        {WAT_SETS.map((set, idx) => (
+        {sets.map((set, idx) => (
           <div
             key={set.id}
-            className={["flex items-center gap-4 px-5 py-4", idx < WAT_SETS.length - 1 ? "border-b" : ""].join(" ")}
+            className={["flex items-center gap-4 px-5 py-4", idx < sets.length - 1 ? "border-b" : ""].join(" ")}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/10">
               <Brain className="h-5 w-5 text-accent" />

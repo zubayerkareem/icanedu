@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PICTURE_STORY_MOCK_SET, type PictureStoryPicture } from "@/lib/picture-story/mock";
 import { saveSession, loadSession, type PictureStorySubmission, type PictureStorySession } from "@/lib/picture-story/storage";
 import { useCountdown } from "@/hooks/useCountdown";
+import { usePictureStorySets } from "@/hooks/useISSBContent";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -438,7 +439,21 @@ function PictureCard({
 
 export default function PictureStoryTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const setData = PICTURE_STORY_MOCK_SET;
+  const { data: dbSets = [] } = usePictureStorySets(courseId);
+  const setData = dbSets.length > 0
+    ? {
+        id: dbSets[0].id,
+        name: dbSets[0].title,
+        pictures: (dbSets[0].picture_story_pictures ?? []).map((p): PictureStoryPicture => ({
+          id: p.id,
+          picture_number: p.picture_number,
+          image_url: p.image_url,
+          title: p.title,
+          description: p.idea,
+          idea: p.idea,
+        })),
+      }
+    : PICTURE_STORY_MOCK_SET;
 
   const [lang, setLang] = useState<Lang>("bn");
   const [activePicture, setActivePicture] = useState<PictureStoryPicture | null>(null);

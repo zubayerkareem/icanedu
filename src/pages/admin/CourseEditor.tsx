@@ -22,6 +22,7 @@ import type {
   ISSBModuleConfig,
 } from "@/lib/courses/types";
 import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
+import { ISSBCourseEditor } from "@/components/admin/ISSBCourseEditor";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -436,25 +437,34 @@ export default function CourseEditor() {
                 </Button>
               </div>
 
-              {/* ISSB Module: element checkboxes */}
+              {/* ISSB Module: element visibility toggles + full content editor */}
               {m.type === "issb" && (
-                <div className="mt-3 pl-9">
-                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">সক্রিয় এলিমেন্টসমূহ</p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    {ISSB_ELEMENT_DEFS.map((el) => (
-                      <label key={el.key} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer hover:bg-muted/50">
-                        <input
-                          type="checkbox"
-                          checked={!!(m.issb as ISSBModuleConfig | undefined)?.[el.key]}
-                          onChange={(e) => setModule(mi, {
-                            issb: { ...(m.issb ?? { iq: false, wat: false, ist: false, extempore: false, ppdt: false, pictureStory: false, incompleteStory: false }), [el.key]: e.target.checked } as ISSBModuleConfig,
-                          })}
-                          className="accent-accent"
-                        />
-                        {el.label}
-                      </label>
-                    ))}
+                <div className="mt-3 pl-9 space-y-3">
+                  <div>
+                    <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">কোর্স কারিকুলামে দেখানো হবে</p>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      {ISSB_ELEMENT_DEFS.map((el) => (
+                        <label key={el.key} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer hover:bg-muted/50">
+                          <input
+                            type="checkbox"
+                            checked={!!(m.issb as ISSBModuleConfig | undefined)?.[el.key]}
+                            onChange={(e) => setModule(mi, {
+                              issb: { ...(m.issb ?? { iq: false, wat: false, ist: false, extempore: false, ppdt: false, pictureStory: false, incompleteStory: false }), [el.key]: e.target.checked } as ISSBModuleConfig,
+                            })}
+                            className="accent-accent"
+                          />
+                          {el.label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
+                  {form.id ? (
+                    <ISSBCourseEditor courseId={form.id} />
+                  ) : (
+                    <p className="rounded-md border border-dashed border-border px-4 py-3 text-xs text-muted-foreground text-center">
+                      ISSB কন্টেন্ট যোগ করতে প্রথমে কোর্সটি সেভ করুন।
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -10,83 +10,91 @@ import type {
 
 // ─── Admin fetch: all sets (including unpublished) ────────────
 
-export function useAdminIQSets() {
+export function useAdminIQSets(courseId?: string) {
   return useQuery<IQSet[]>({
-    queryKey: ["admin_iq_sets"],
+    queryKey: ["admin_iq_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("iq_sets").select("*, iq_questions(*)").order("order_index");
+      let q = supabase.from("iq_sets").select("*, iq_questions(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminWATSets() {
+export function useAdminWATSets(courseId?: string) {
   return useQuery<WATSet[]>({
-    queryKey: ["admin_wat_sets"],
+    queryKey: ["admin_wat_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("wat_sets").select("*").order("order_index");
+      let q = supabase.from("wat_sets").select("*").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminISTSets() {
+export function useAdminISTSets(courseId?: string) {
   return useQuery<ISTSet[]>({
-    queryKey: ["admin_ist_sets"],
+    queryKey: ["admin_ist_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ist_sets").select("*, ist_sentences(*)").order("order_index");
+      let q = supabase.from("ist_sets").select("*, ist_sentences(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminExtemporeSets() {
+export function useAdminExtemporeSets(courseId?: string) {
   return useQuery<ExtemporeSet[]>({
-    queryKey: ["admin_extempore_sets"],
+    queryKey: ["admin_extempore_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("extempore_sets").select("*, extempore_topics(*)").order("order_index");
+      let q = supabase.from("extempore_sets").select("*, extempore_topics(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminPPDTSets() {
+export function useAdminPPDTSets(courseId?: string) {
   return useQuery<PPDTSet[]>({
-    queryKey: ["admin_ppdt_sets"],
+    queryKey: ["admin_ppdt_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ppdt_sets").select("*, ppdt_pictures(*)").order("order_index");
+      let q = supabase.from("ppdt_sets").select("*, ppdt_pictures(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminPictureStorySets() {
+export function useAdminPictureStorySets(courseId?: string) {
   return useQuery<PictureStorySet[]>({
-    queryKey: ["admin_picture_story_sets"],
+    queryKey: ["admin_picture_story_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("picture_story_sets").select("*, picture_story_pictures(*)").order("order_index");
+      let q = supabase.from("picture_story_sets").select("*, picture_story_pictures(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
   });
 }
 
-export function useAdminIncompleteStorySets() {
+export function useAdminIncompleteStorySets(courseId?: string) {
   return useQuery<IncompleteStorySet[]>({
-    queryKey: ["admin_incomplete_story_sets"],
+    queryKey: ["admin_incomplete_story_sets", courseId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("incomplete_story_sets").select("*, incomplete_stories(*)").order("order_index");
+      let q = supabase.from("incomplete_story_sets").select("*, incomplete_stories(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },

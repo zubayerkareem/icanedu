@@ -14,12 +14,39 @@ export interface Lesson {
   content?: string; // TipTap HTML (type: text / quiz / assignment)
 }
 
+export interface ISSBModuleConfig {
+  iq: boolean;
+  wat: boolean;
+  ist: boolean;
+  extempore: boolean;
+  ppdt: boolean;
+  pictureStory: boolean;
+  incompleteStory: boolean;
+}
+
+export const ISSB_ELEMENT_DEFS: Array<{
+  key: keyof ISSBModuleConfig;
+  label: string;
+  labelBn: string;
+  path: string;
+}> = [
+  { key: "iq",              label: "IQ Practice",      labelBn: "IQ প্র্যাকটিস",       path: "iq-practice" },
+  { key: "wat",             label: "WAT Practice",     labelBn: "WAT প্র্যাকটিস",      path: "wat" },
+  { key: "ist",             label: "IST Practice",     labelBn: "IST প্র্যাকটিস",      path: "ist" },
+  { key: "extempore",       label: "Extempore Essay",  labelBn: "Extempore Essay",      path: "extempore" },
+  { key: "ppdt",            label: "PPDT Practice",    labelBn: "PPDT প্র্যাকটিস",     path: "ppdt" },
+  { key: "pictureStory",    label: "Picture Story",    labelBn: "পিকচার স্টোরি",       path: "picture-story" },
+  { key: "incompleteStory", label: "Incomplete Story", labelBn: "অসম্পূর্ণ গল্প",       path: "incomplete-story" },
+];
+
 export interface Module {
   id: string;
   title: string;
+  type?: "lessons" | "issb";
   lessons: Lesson[];
   total_duration?: string; // e.g. "২ ঘণ্টা ১৫ মিনিট"
   isFree?: boolean; // whole module viewable without enrollment
+  issb?: ISSBModuleConfig;
 }
 
 // A list row with a chosen lucide icon (overview "why different" + "what you get").

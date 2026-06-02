@@ -41,7 +41,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { getEmbedUrl } from "@/lib/video";
 import { t } from "@/lib/strings";
-import { isLessonFree } from "@/lib/courses/types";
+import { isLessonFree, ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
 import type { Course, CourseVideo, LessonType, Module, Coupon } from "@/lib/courses/types";
 
 const LESSON_ICON: Record<LessonType, typeof PlayCircle> = {
@@ -486,16 +486,6 @@ function IncludeRow({ icon, text }: { icon: React.ReactNode; text: string }) {
 
 // ============ Curriculum ============
 
-const ISSB_MODULES = [
-  { label: "IQ Practice",       icon: Brain,         path: "iq-practice" },
-  { label: "WAT Practice",      icon: PenLine,       path: "wat" },
-  { label: "IST Practice",      icon: FileEdit,      path: "ist" },
-  { label: "Extempore Essay",   icon: MessageSquare, path: "extempore" },
-  { label: "Picture Story",     icon: Image,         path: "picture-story" },
-  { label: "Incomplete Story",  icon: Layers,        path: "incomplete-story" },
-  { label: "PPDT Practice",     icon: FileQuestion,  path: "ppdt" },
-];
-
 function CurriculumSection({ course, modules }: { course: Course; modules: Module[] }) {
   const { user } = useAuth();
   const { enrolled } = useIsEnrolled(course.id, course.slug);
@@ -526,19 +516,60 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
                     {bnNum(i + 1)}
                   </div>
                   <div className="flex-1">
-                    <div className="font-heading text-base font-semibold text-foreground">
+                    <div className="flex items-center gap-2 font-heading text-base font-semibold text-foreground">
                       {m.title}
+                      {m.type === "issb" && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                          <Brain className="h-2.5 w-2.5" /> ISSB
+                        </span>
+                      )}
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
-                      {bnNum(m.lessons.length)}
-                      {t.courseDetail.lessonsUnit}
-                      {m.total_duration ? ` • ${m.total_duration}` : ""}
+                      {m.type === "issb"
+                        ? `${ISSB_ELEMENT_DEFS.filter((el) => m.issb?.[el.key]).length}টি প্র্যাকটিস মডিউল`
+                        : `${bnNum(m.lessons.length)}${t.courseDetail.lessonsUnit}${m.total_duration ? ` • ${m.total_duration}` : ""}`}
                       {m.isFree && <span className="ml-2 text-success font-medium">· ফ্রি</span>}
                     </div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-5 pb-4">
+                {m.type === "issb" ? (
+                  <ul className="divide-y divide-border">
+                    {ISSB_ELEMENT_DEFS.filter((el) => m.issb?.[el.key]).map((el) => {
+                      const canView = m.isFree || enrolled;
+                      const href = `/courses/${courseBase}/${el.path}`;
+                      return (
+                        <li key={el.key} className="flex items-center gap-3 py-3 text-sm">
+                          <Brain className="h-4 w-4 shrink-0 text-accent" />
+                          {canView ? (
+                            <Link to={href} className="flex-1 text-foreground hover:text-accent hover:underline">
+                              {el.labelBn}
+                            </Link>
+                          ) : (
+                            <span className="flex-1 text-foreground">{el.labelBn}</span>
+                          )}
+                          {m.isFree ? (
+                            <Link to={href}>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-medium text-success">
+                                <Eye className="h-3 w-3" /> ফ্রি প্রিভিউ
+                              </span>
+                            </Link>
+                          ) : enrolled ? (
+                            <Link to={href}><PlayCircle className="h-4 w-4 text-accent" /></Link>
+                          ) : (
+                            <Lock className="h-3.5 w-3.5 text-muted-foreground cursor-pointer"
+                              onClick={() => {
+                                if (!user) window.location.href = `/login?redirect=${encodeURIComponent(window.location.href)}`;
+                                else document.querySelector(".order-first")?.scrollIntoView({ behavior: "smooth" });
+                              }}
+                            />
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
                 <ul className="divide-y divide-border">
                   {m.lessons.map((l) => {
                     const Icon = LESSON_ICON[l.type] ?? PlayCircle;
@@ -583,33 +614,12 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
                     );
                   })}
                 </ul>
+                )}
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
 
-        {course.category === "ISSB" && (
-          <div className="mt-8 space-y-4">
-            <h3 className="font-heading text-xl font-bold text-foreground">
-              ISSB প্র্যাকটিস মডিউলসমূহ
-            </h3>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {ISSB_MODULES.map((mod) => {
-                const Icon = mod.icon;
-                return (
-                  <Link
-                    key={mod.path}
-                    to={`/courses/${course.id}/${mod.path}`}
-                    className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground hover:bg-accent/10 hover:border-accent/40 transition-colors shadow-sm"
-                  >
-                    <Icon className="h-4 w-4 shrink-0 text-accent" />
-                    {mod.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
     </section>
   );

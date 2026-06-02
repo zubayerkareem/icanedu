@@ -15,6 +15,7 @@ import {
 import { useCourse } from "@/hooks/useCourse";
 import { ComingSoon } from "@/components/ComingSoon";
 import type { Course, LessonType, Lesson, Module } from "@/lib/courses/types";
+import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -25,15 +26,6 @@ const LESSON_ICON: Record<LessonType, typeof PlayCircle> = {
   assignment: ClipboardList,
 };
 
-const ISSB_MODULES = [
-  { label: "IQ Practice",      icon: Brain,         path: "iq-practice" },
-  { label: "WAT Practice",     icon: PenLine,       path: "wat" },
-  { label: "IST Practice",     icon: FileEdit,      path: "ist" },
-  { label: "Extempore Essay",  icon: MessageSquare, path: "extempore" },
-  { label: "Picture Story",    icon: Image,         path: "picture-story" },
-  { label: "Incomplete Story", icon: Layers,        path: "incomplete-story" },
-  { label: "PPDT Practice",    icon: FileQuestion,  path: "ppdt" },
-];
 
 // ─── Lesson Row ───────────────────────────────────────────────────────────────
 
@@ -63,7 +55,12 @@ function LessonRow({ lesson }: { lesson: Lesson }) {
 
 // ─── Module Accordion Item ────────────────────────────────────────────────────
 
-function ModuleAccordionItem({ module, index }: { module: Module; index: number }) {
+function ModuleAccordionItem({ module, index, courseId }: { module: Module; index: number; courseId: string }) {
+  const isISSB = module.type === "issb";
+  const enabledElements = isISSB
+    ? ISSB_ELEMENT_DEFS.filter((el) => module.issb?.[el.key])
+    : [];
+
   return (
     <AccordionItem value={module.id} className="border-b border-border/60 last:border-b-0">
       <AccordionTrigger className="px-3 py-3 hover:no-underline hover:bg-muted/50 rounded-md [&>svg]:shrink-0">
@@ -76,14 +73,32 @@ function ModuleAccordionItem({ module, index }: { module: Module; index: number 
               {module.title}
             </p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
-              {module.lessons.length}টি লেসন
-              {module.total_duration ? ` • ${module.total_duration}` : ""}
+              {isISSB
+                ? `${enabledElements.length}টি প্র্যাকটিস`
+                : `${module.lessons.length}টি লেসন${module.total_duration ? ` • ${module.total_duration}` : ""}`}
             </p>
           </div>
+          {isISSB && (
+            <span className="shrink-0 rounded-full bg-accent/10 px-1.5 py-0.5 text-[9px] font-medium text-accent">ISSB</span>
+          )}
         </div>
       </AccordionTrigger>
       <AccordionContent className="pb-1 px-0">
-        {module.lessons.length === 0 ? (
+        {isISSB ? (
+          <ul>
+            {enabledElements.map((el) => (
+              <li key={el.key}>
+                <Link
+                  to={`/courses/${courseId}/${el.path}`}
+                  className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left hover:bg-muted/60 transition-colors"
+                >
+                  <Brain className="h-3.5 w-3.5 shrink-0 text-accent" />
+                  <span className="flex-1 text-xs text-foreground line-clamp-2 leading-snug">{el.labelBn}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : module.lessons.length === 0 ? (
           <p className="px-4 py-2 text-xs text-muted-foreground">কোনো লেসন নেই।</p>
         ) : (
           <ul>
@@ -101,6 +116,7 @@ function ModuleAccordionItem({ module, index }: { module: Module; index: number 
 
 function CurriculumSidebar({ course }: { course: Course }) {
   const modules = course.modules ?? [];
+  const courseId = course.id;
 
   return (
     <aside className="w-full md:w-[280px] shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-border bg-card overflow-hidden">
@@ -131,7 +147,7 @@ function CurriculumSidebar({ course }: { course: Course }) {
               defaultValue={modules[0] ? [modules[0].id] : []}
             >
               {modules.map((mod, i) => (
-                <ModuleAccordionItem key={mod.id} module={mod} index={i} />
+                <ModuleAccordionItem key={mod.id} module={mod} index={i} courseId={courseId} />
               ))}
             </Accordion>
           )}
@@ -145,6 +161,11 @@ function CurriculumSidebar({ course }: { course: Course }) {
 
 function LearnContent({ course }: { course: Course }) {
   const courseId = course.id;
+  const issbModule = (course.modules ?? []).find((m) => m.type === "issb");
+  const issbElements = issbModule
+    ? ISSB_ELEMENT_DEFS.filter((el) => issbModule.issb?.[el.key])
+    : [];
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto">
       {/* Top bar */}
@@ -153,7 +174,7 @@ function LearnContent({ course }: { course: Course }) {
         <span className="font-heading text-sm font-semibold text-foreground line-clamp-1">
           {course.title}
         </span>
-        <Badge variant="secondary" className="ml-auto shrink-0">ISSB</Badge>
+        {issbModule && <Badge variant="secondary" className="ml-auto shrink-0">ISSB</Badge>}
       </div>
 
       {/* Welcome / Coming Soon body */}
@@ -175,29 +196,28 @@ function LearnContent({ course }: { course: Course }) {
           </p>
         </div>
 
-        {/* ISSB module quick links */}
-        <div className="w-full max-w-sm space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            এখনই অ্যাক্সেস করুন
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {ISSB_MODULES.map((mod) => {
-              const Icon = mod.icon;
-              return (
+        {/* ISSB quick links — only for courses with an ISSB module */}
+        {issbElements.length > 0 && (
+          <div className="w-full max-w-sm space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              ISSB প্র্যাকটিস — এখনই শুরু করুন
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {issbElements.map((el) => (
                 <Link
-                  key={mod.path}
-                  to={`/courses/${courseId}/${mod.path}`}
+                  key={el.path}
+                  to={`/courses/${courseId}/${el.path}`}
                   className="flex items-center gap-2 rounded-lg border border-border bg-muted/40
                              px-3 py-2.5 text-xs font-medium text-foreground
                              hover:bg-accent/10 hover:border-accent/40 transition-colors"
                 >
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-accent" />
-                  {mod.label}
+                  <Brain className="h-3.5 w-3.5 shrink-0 text-accent" />
+                  {el.labelBn}
                 </Link>
-              );
-            })}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

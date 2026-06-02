@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import {
-  ArrowLeft, Plus, X, GripVertical, Trash2, Save, Ticket,
+  ArrowLeft, Brain, Plus, X, GripVertical, Trash2, Save, Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,9 @@ import { useCourse } from "@/hooks/useCourse";
 import { useUpsertCourse } from "@/hooks/useAdminCourses";
 import type {
   Course, Module, Lesson, LessonType, IconListItem, Coupon, CourseVideo, CourseResource,
+  ISSBModuleConfig,
 } from "@/lib/courses/types";
+import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -135,6 +137,15 @@ export default function CourseEditor() {
   // ── Modules ─────────────────────────────────────────────────
   function addModule() {
     setForm((f) => ({ ...f, modules: [...f.modules, { id: uid(), title: "", lessons: [], total_duration: "" }] }));
+  }
+  function addISSBModule() {
+    setForm((f) => ({
+      ...f,
+      modules: [...f.modules, {
+        id: uid(), title: "ISSB প্র্যাকটিস মডিউল", lessons: [], type: "issb" as const,
+        issb: { iq: true, wat: true, ist: true, extempore: true, ppdt: true, pictureStory: true, incompleteStory: true },
+      }],
+    }));
   }
   function setModule(mi: number, patch: Partial<Module>) {
     setForm((f) => ({ ...f, modules: f.modules.map((m, i) => (i === mi ? { ...m, ...patch } : m)) }));
@@ -400,15 +411,22 @@ export default function CourseEditor() {
                 <Input
                   value={m.title}
                   onChange={(e) => setModule(mi, { title: e.target.value })}
-                  placeholder="মডিউলের শিরোনাম (যেমন: শুরুর কথা ও পরিচিতি)"
+                  placeholder={m.type === "issb" ? "ISSB মডিউলের শিরোনাম" : "মডিউলের শিরোনাম"}
                   className="flex-1"
                 />
-                <Input
-                  value={m.total_duration ?? ""}
-                  onChange={(e) => setModule(mi, { total_duration: e.target.value })}
-                  placeholder="১ ঘণ্টা ২০ মিনিট"
-                  className="w-40"
-                />
+                {m.type !== "issb" && (
+                  <Input
+                    value={m.total_duration ?? ""}
+                    onChange={(e) => setModule(mi, { total_duration: e.target.value })}
+                    placeholder="১ ঘণ্টা ২০ মিনিট"
+                    className="w-40"
+                  />
+                )}
+                {m.type === "issb" && (
+                  <span className="flex shrink-0 items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                    <Brain className="h-3 w-3" /> ISSB
+                  </span>
+                )}
                 <label className="flex shrink-0 items-center gap-1.5 text-xs">
                   <Switch checked={!!m.isFree} onCheckedChange={(v) => setModule(mi, { isFree: v })} />
                   ফ্রি
@@ -418,7 +436,30 @@ export default function CourseEditor() {
                 </Button>
               </div>
 
-              {/* Lessons */}
+              {/* ISSB Module: element checkboxes */}
+              {m.type === "issb" && (
+                <div className="mt-3 pl-9">
+                  <p className="mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">সক্রিয় এলিমেন্টসমূহ</p>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    {ISSB_ELEMENT_DEFS.map((el) => (
+                      <label key={el.key} className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-xs cursor-pointer hover:bg-muted/50">
+                        <input
+                          type="checkbox"
+                          checked={!!(m.issb as ISSBModuleConfig | undefined)?.[el.key]}
+                          onChange={(e) => setModule(mi, {
+                            issb: { ...(m.issb ?? { iq: false, wat: false, ist: false, extempore: false, ppdt: false, pictureStory: false, incompleteStory: false }), [el.key]: e.target.checked } as ISSBModuleConfig,
+                          })}
+                          className="accent-accent"
+                        />
+                        {el.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Regular module: Lessons */}
+              {m.type !== "issb" && (
               <div className="mt-3 space-y-2 pl-9">
                 {m.lessons.map((l, li) => (
                   <div key={l.id} className="rounded-md border border-border p-3">
@@ -476,11 +517,17 @@ export default function CourseEditor() {
                   <Plus className="mr-2 h-4 w-4" /> লেসন যোগ করুন
                 </Button>
               </div>
+              )}
             </div>
           ))}
-          <Button variant="outline" onClick={addModule} className="w-full">
-            <Plus className="mr-2 h-4 w-4" /> মডিউল যোগ করুন
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={addModule} className="flex-1">
+              <Plus className="mr-2 h-4 w-4" /> সাধারণ মডিউল যোগ
+            </Button>
+            <Button variant="outline" onClick={addISSBModule} className="flex-1 border-accent/40 text-accent hover:bg-accent/10">
+              <Brain className="mr-2 h-4 w-4" /> ISSB মডিউল যোগ
+            </Button>
+          </div>
         </TabsContent>
 
         {/* ─── MEDIA (legacy global videos/resources) ─── */}

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CourseCard } from "@/components/courses/CourseCard";
 import { DynamicIcon } from "@/components/admin/IconPicker";
+import { RichContent } from "@/components/RichEditor";
 import { useCourse, useRelatedCourses } from "@/hooks/useCourse";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
@@ -287,9 +288,7 @@ function CourseHero({ course }: { course: Course }) {
                 কোর্স সম্পর্কে বিস্তারিত
               </h2>
               {course.long_description && (
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {course.long_description.split("\n")[0]}
-                </p>
+                <RichContent html={course.long_description} className="mt-2 text-sm leading-relaxed text-muted-foreground" />
               )}
               {((course.highlight_items?.length ?? 0) > 0 || (course.highlights?.length ?? 0) > 0) && (
                 <>

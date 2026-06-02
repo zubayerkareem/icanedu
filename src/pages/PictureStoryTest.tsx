@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ImagePlus, Lightbulb, Lock, RotateCcw, Trash2, X } from "lucide-react";
+import { ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PICTURE_STORY_MOCK_SET, type PictureStoryPicture } from "@/lib/picture-story/mock";
 import { saveSession, loadSession, type PictureStorySubmission, type PictureStorySession } from "@/lib/picture-story/storage";
 import { useCountdown } from "@/hooks/useCountdown";
 import { usePictureStorySets } from "@/hooks/useISSBContent";
+import { useIsEnrolled } from "@/hooks/useEnrollment";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -440,7 +441,13 @@ function PictureCard({
 export default function PictureStoryTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
   const { data: dbSets = [] } = usePictureStorySets(courseId);
-  const setData = dbSets.length > 0
+  const { enrolled } = useIsEnrolled(courseId);
+
+  const usingDb = dbSets.length > 0;
+  const isFreeSet = usingDb ? (dbSets[0].is_free ?? false) : true;
+  const canAccess = isFreeSet || enrolled;
+
+  const setData = usingDb
     ? {
         id: dbSets[0].id,
         name: dbSets[0].title,
@@ -533,8 +540,24 @@ export default function PictureStoryTest() {
           </div>
         </div>
 
+        {/* Locked state */}
+        {!canAccess && (
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+              <Lock className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h2 className="font-heading text-lg font-semibold text-foreground">এই কন্টেন্টটি প্রিমিয়াম</h2>
+            <p className="text-sm text-muted-foreground max-w-xs">Picture Story সেটগুলো অ্যাক্সেস করতে কোর্সটি কিনুন।</p>
+            <Button asChild>
+              <Link to={`/courses/${courseId}`}>
+                <ShoppingCart className="mr-2 h-4 w-4" /> কোর্সটি কিনুন
+              </Link>
+            </Button>
+          </div>
+        )}
+
         {/* Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {canAccess && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {setData.pictures.map((pic, idx) => {
             const submitted = isSubmitted(pic.picture_number);
             const locked = idx > 0 && !isSubmitted(setData.pictures[idx - 1].picture_number);
@@ -552,7 +575,7 @@ export default function PictureStoryTest() {
               />
             );
           })}
-        </div>
+        </div>}
       </div>
     </>
   );

@@ -125,10 +125,11 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
   const [title, setTitle] = useState(set.title);
   const [timer, setTimer] = useState(String(set.timer_seconds));
   const [pub, setPub] = useState(set.is_published);
+  const [free, setFree] = useState(set.is_free ?? false);
   const [courseId, setCourseId] = useState(set.course_id ?? "");
 
   async function save() {
-    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, course_id: courseId || undefined });
+    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, is_free: free, course_id: courseId || undefined });
     toast.success("সেট আপডেট হয়েছে");
   }
 
@@ -152,12 +153,17 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
         onDelete={onDelete} isPending={false} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+          </div>
+          <div className="flex items-center gap-6">
             <Field label="প্রকাশিত">
               <div className="flex items-center gap-2 pt-1"><Switch checked={pub} onCheckedChange={setPub} /><span className="text-sm">{pub ? "হ্যাঁ" : "না"}</span></div>
+            </Field>
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
           <Button size="sm" onClick={save}><Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ</Button>
@@ -260,12 +266,13 @@ function WATSetCard({ set, expanded, onToggle, onDelete, upsert }: {
   const [title, setTitle] = useState(set.title);
   const [wordSec, setWordSec] = useState(String(set.word_seconds));
   const [pub, setPub] = useState(set.is_published);
+  const [free, setFree] = useState(set.is_free ?? false);
   const [courseId, setCourseId] = useState(set.course_id ?? "");
   const [wordsText, setWordsText] = useState((set.words ?? []).join("\n"));
 
   async function save() {
     const words = wordsText.split("\n").map((w) => w.trim()).filter(Boolean);
-    await upsert.mutateAsync({ id: set.id, title, words, word_seconds: Number(wordSec), is_published: pub, course_id: courseId || undefined });
+    await upsert.mutateAsync({ id: set.id, title, words, word_seconds: Number(wordSec), is_published: pub, is_free: free, course_id: courseId || undefined });
     toast.success("WAT সেট সংরক্ষিত");
   }
 
@@ -278,12 +285,17 @@ function WATSetCard({ set, expanded, onToggle, onDelete, upsert }: {
         onDelete={onDelete} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="প্রতি শব্দ (সেকেন্ড)"><Input type="number" value={wordSec} onChange={(e) => setWordSec(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+          </div>
+          <div className="flex items-center gap-6">
             <Field label="প্রকাশিত">
               <div className="flex items-center gap-2 pt-1"><Switch checked={pub} onCheckedChange={setPub} /></div>
+            </Field>
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
           <Field label={`শব্দ তালিকা (প্রতি লাইনে একটি) — ${wordCount}টি শব্দ`}>
@@ -340,6 +352,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
   const [title, setTitle] = useState(set.title);
   const [timer, setTimer] = useState(String(set.timer_seconds));
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [free, setFree] = useState(set.is_free ?? false);
   const sentences = (set.ist_sentences ?? []).sort((a, b) => a.order_index - b.order_index);
 
   async function addSentence() {
@@ -357,7 +370,12 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
             <Field label="মোট সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <div className="flex items-center gap-6">
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+            </Field>
+          </div>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -439,6 +457,7 @@ function ExtemporeSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsert
   const [title, setTitle] = useState(set.title);
   const [timer, setTimer] = useState(String(set.timer_seconds));
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [free, setFree] = useState(set.is_free ?? false);
   const topics = (set.extempore_topics ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
@@ -457,7 +476,12 @@ function ExtemporeSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsert
             <Field label="সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <div className="flex items-center gap-6">
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+            </Field>
+          </div>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -624,6 +648,7 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
   const [obsS, setObsS] = useState(String(set.observe_seconds));
   const [wrS, setWrS] = useState(String(set.write_seconds));
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [free, setFree] = useState(set.is_free ?? false);
 
   async function addPicture() {
     (upsertP as ReturnType<typeof useUpsertPPDTPicture>).mutateAsync({
@@ -642,14 +667,19 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
         title={set.title} badge={`${pictures.length} ছবি`} onDelete={onDelete} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="পর্যবেক্ষণ (সেকেন্ড)"><Input type="number" value={obsS} onChange={(e) => setObsS(e.target.value)} /></Field>
             <Field label="লেখার সময় (সেকেন্ড)"><Input type="number" value={wrS} onChange={(e) => setWrS(e.target.value)} /></Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+            </Field>
           </div>
           <Button size="sm" onClick={async () => {
-            await (upsertSet as ReturnType<typeof useUpsertPPDTSet>).mutateAsync({ id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), course_id: courseId || undefined });
+            await (upsertSet as ReturnType<typeof useUpsertPPDTSet>).mutateAsync({ id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), is_free: free, course_id: courseId || undefined });
             toast.success("সংরক্ষিত");
           }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
@@ -746,6 +776,7 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
 }) {
   const [title, setTitle] = useState(set.title);
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [free, setFree] = useState(set.is_free ?? false);
   const stories = (set.incomplete_stories ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
 
@@ -763,7 +794,10 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Field label="ফ্রি প্রিভিউ">
+            <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+          </Field>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">

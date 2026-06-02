@@ -24,6 +24,7 @@ export interface IQSet {
   timer_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   iq_questions?: IQQuestion[];
 }
@@ -49,6 +50,7 @@ export interface WATSet {
   word_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
 }
 
@@ -68,6 +70,7 @@ export interface ISTSet {
   timer_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   ist_sentences?: ISTSentence[];
 }
@@ -91,6 +94,7 @@ export interface ExtemporeSet {
   timer_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   extempore_topics?: ExtemporeTopic[];
 }
@@ -114,6 +118,7 @@ export interface PPDTSet {
   write_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   ppdt_pictures?: PPDTPicture[];
 }
@@ -137,6 +142,7 @@ export interface PictureStorySet {
   write_seconds: number;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   picture_story_pictures?: PictureStoryPicture[];
 }
@@ -160,6 +166,7 @@ export interface IncompleteStorySet {
   title: string;
   order_index: number;
   is_published: boolean;
+  is_free: boolean;
   created_at?: string;
   incomplete_stories?: IncompleteStory[];
 }

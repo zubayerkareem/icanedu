@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ImagePlus, Lightbulb, Lock, RotateCcw, Trash2, X } from "lucide-react";
+import { ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { INCOMPLETE_STORIES, type IncompleteStory } from "@/lib/incomplete-story/mock";
 import { loadSubmission, saveSubmission } from "@/hooks/useStorySubmission";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useIncompleteStorySets } from "@/hooks/useISSBContent";
+import { useIsEnrolled } from "@/hooks/useEnrollment";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -513,7 +514,12 @@ export default function IncompleteStoryHome() {
   const L = lang === "bn" ? BN : EN;
 
   const { data: dbSets = [] } = useIncompleteStorySets(courseId);
-  const stories: IncompleteStory[] = dbSets.length > 0
+  const { enrolled } = useIsEnrolled(courseId);
+
+  const usingDb = dbSets.length > 0;
+  type StoryWithAccess = IncompleteStory & { is_free: boolean };
+
+  const stories: StoryWithAccess[] = usingDb
     ? dbSets.flatMap((set) =>
         (set.incomplete_stories ?? []).map((s) => ({
           id: s.id,
@@ -523,9 +529,10 @@ export default function IncompleteStoryHome() {
           wordLimit: String(s.word_limit),
           timeGuide: `${s.time_guide_minutes} minutes`,
           idea: s.idea ?? "",
+          is_free: set.is_free ?? false,
         }))
       )
-    : INCOMPLETE_STORIES;
+    : INCOMPLETE_STORIES.map((s) => ({ ...s, is_free: true }));
 
   const submissions = stories.map((s) => loadSubmission(courseId, s.id));
 
@@ -582,11 +589,22 @@ export default function IncompleteStoryHome() {
         {/* 3-column grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map((story, idx) => {
-            const isSubmitted = !!submissions[idx];
-            const isLocked = idx > 0 && !submissions[idx - 1];
+            const canAccess = story.is_free || enrolled;
+            const isSubmitted = canAccess ? !!submissions[idx] : false;
+            const isLocked = !canAccess;
 
             return (
               <div key={story.id} className="relative">
+                {!canAccess && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
+                    <Lock className="h-6 w-6 text-muted-foreground" />
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/courses/${courseId}`}>
+                        <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
+                      </Link>
+                    </Button>
+                  </div>
+                )}
                 <StoryCard
                   story={story}
                   index={idx}
@@ -595,7 +613,7 @@ export default function IncompleteStoryHome() {
                   isSubmitted={isSubmitted}
                   lang={lang}
                   L={L}
-                  onTestStart={() => setActiveStory(story)}
+                  onTestStart={() => canAccess && setActiveStory(story)}
                 />
               </div>
             );

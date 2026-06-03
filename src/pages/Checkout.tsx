@@ -255,13 +255,13 @@ export default function Checkout() {
                   <div className="rounded-xl border-2 border-[#E2136E]/30 bg-[#E2136E]/5 p-5 space-y-4">
                     <div className="flex items-center gap-2">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E2136E] text-white font-bold text-xs">b</div>
-                      <span className="font-semibold text-foreground text-sm">bKash পেমেন্ট নির্দেশনা</span>
+                      <span className="font-semibold text-foreground text-sm">bKash পেমেন্ট গাইড</span>
                     </div>
 
                     <ol className="space-y-2 text-sm text-muted-foreground list-none">
                       <li className="flex items-start gap-2">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E2136E]/15 text-[#E2136E] text-xs font-bold mt-0.5">১</span>
-                        <span>আপনার bKash অ্যাপ বা *247# খুলুন এবং <strong className="text-foreground">Send Money</strong> নির্বাচন করুন</span>
+                        <span>আপনার bKash অ্যাপ বা *247# এ যান এবং <strong className="text-foreground">Payment</strong> select করুন</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E2136E]/15 text-[#E2136E] text-xs font-bold mt-0.5">২</span>
@@ -332,7 +332,7 @@ export default function Checkout() {
                   ? <BookOpen className="mr-2 h-5 w-5" />
                   : <ShoppingBag className="mr-2 h-5 w-5" />
                 }
-                {loading ? "প্রক্রিয়া হচ্ছে..." : (isCourse ? "নিবন্ধন সম্পন্ন করুন" : "অর্ডার দিন")}
+                {loading ? "প্রক্রিয়া হচ্ছে..." : (isCourse ? "কনফার্ম করুন" : "অর্ডার দিন")}
               </Button>
 
               {isCourse && (
@@ -375,7 +375,7 @@ export default function Checkout() {
               {isCourse && (
                 <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 space-y-1">
                   <p className="font-semibold">⚠️ গুরুত্বপূর্ণ</p>
-                  <p>Transaction ID ছাড়া নিবন্ধন গ্রহণযোগ্য হবে না। সঠিক তথ্য দিন।</p>
+                  <p>Transaction ID ছাড়া পারচেজ করতে পারবেন না, তাই সঠিক তথ্য দিন।</p>
                 </div>
               )}
             </div>

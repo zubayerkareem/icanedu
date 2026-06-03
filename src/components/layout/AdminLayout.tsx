@@ -59,11 +59,11 @@ function AdminSidebar() {
         <div className="border-b border-sidebar-border px-4 py-4">
           {!collapsed ? (
             <div>
-              <div className="font-heading text-lg font-bold text-sidebar-primary">{t.brand.name}</div>
-              <div className="text-xs text-muted-foreground">{t.admin.title}</div>
+              <img src="/icanbdlogo.webp" alt="iCANBD" className="h-8 w-auto" />
+              <div className="mt-1 text-xs text-muted-foreground">{t.admin.title}</div>
             </div>
           ) : (
-            <span className="font-heading text-lg font-bold text-sidebar-primary">A</span>
+            <img src="/icanbdlogo.webp" alt="iCANBD" className="h-7 w-auto" />
           )}
         </div>
         <SidebarGroup>

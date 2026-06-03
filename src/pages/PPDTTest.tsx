@@ -182,7 +182,7 @@ function PPDTModal({
               <div className="text-4xl">🧠</div>
               <p className="text-sm font-medium text-muted-foreground text-center px-6 leading-relaxed">
                 ছবি সরিয়ে দেওয়া হয়েছে।<br />
-                <span className="font-semibold text-foreground">স্মৃতি থেকে গল্প লিখুন।</span>
+                <span className="font-semibold text-foreground">গল্প লিখুন।</span>
               </p>
             </div>
           )}

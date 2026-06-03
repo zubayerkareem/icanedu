@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { MOCK_COURSES } from "@/lib/courses/mock";
 import { supabase } from "@/lib/supabase";
 import type { Course, CourseSort } from "@/lib/courses/types";
 
 export interface UseCoursesParams {
   search?: string;
-  category?: string; // "" / "all" means no filter
+  category?: string;
   sort?: CourseSort;
   page?: number;
   pageSize?: number;
@@ -40,19 +39,15 @@ export function useCourses(params: UseCoursesParams = {}) {
         .select("*")
         .eq("is_published", true);
 
-      const supabaseCourses: Course[] = (!error && data && data.length > 0)
-        ? data.map((row) => ({
-            ...row,
-            teacher: row.teacher_name
-              ? { name: row.teacher_name, avatar: row.teacher_avatar, short_bio: row.teacher_short_bio, long_bio: row.teacher_long_bio }
-              : undefined,
-          }))
-        : [];
+      if (error) throw error;
 
-      // Merge: Supabase courses take precedence by id; fill remaining with mock
-      const supabaseIds = new Set(supabaseCourses.map((c) => c.id));
-      const mockOnly = MOCK_COURSES.filter((c) => !supabaseIds.has(c.id));
-      const all: Course[] = [...supabaseCourses, ...mockOnly];
+      const all: Course[] = (data ?? []).map((row) => ({
+        ...row,
+        teacher: row.teacher_name
+          ? { name: row.teacher_name, avatar: row.teacher_avatar, short_bio: row.teacher_short_bio, long_bio: row.teacher_long_bio }
+          : undefined,
+      }));
+
       const categories = Array.from(
         new Set(all.map((c) => c.category).filter((x): x is string => Boolean(x))),
       ).sort();

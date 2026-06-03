@@ -3,23 +3,33 @@ import { Link } from "react-router-dom";
 import { CourseCard, CourseCardSkeleton } from "@/components/courses/CourseCard";
 import { useCourses } from "@/hooks/useCourses";
 import { t } from "@/lib/strings";
-import { Button } from "@/components/ui/button";
 
-const CATEGORIES = [
-  { value: "all",   label: "সব কোর্স" },
-  { value: "ISSB",  label: "ISSB" },
-  { value: "Cadet", label: "ক্যাডেট কলেজ" },
-];
+// Human-readable labels for known categories
+const CATEGORY_LABELS: Record<string, string> = {
+  ISSB:   "ISSB",
+  Cadet:  "ক্যাডেট কলেজ",
+  Skills: "স্কিলস",
+};
+
+function catLabel(cat: string) {
+  return CATEGORY_LABELS[cat] ?? cat;
+}
+
+function groupLabel(cat: string) {
+  return CATEGORY_LABELS[cat] ? `${CATEGORY_LABELS[cat]} কোর্সসমূহ` : `${cat} কোর্সসমূহ`;
+}
 
 export default function Courses() {
   const [category, setCategory] = useState("all");
 
   const { data, isLoading } = useCourses({ category, sort: "newest", pageSize: 100 });
-  const items = data?.items ?? [];
+  const items      = data?.items      ?? [];
+  const categories = data?.categories ?? [];
 
-  // Group by category for sectioned display
   const groups = useMemo(() => {
-    if (category !== "all") return [{ label: CATEGORIES.find(c => c.value === category)?.label ?? category, items }];
+    if (category !== "all") {
+      return [{ label: catLabel(category), items }];
+    }
     const map: Record<string, typeof items> = {};
     items.forEach((c) => {
       const cat = c.category ?? "অন্যান্য";
@@ -27,7 +37,7 @@ export default function Courses() {
       map[cat].push(c);
     });
     return Object.entries(map).map(([cat, list]) => ({
-      label: cat === "ISSB" ? "ISSB কোর্সসমূহ" : cat === "Cadet" ? "ক্যাডেট কলেজ কোর্সসমূহ" : cat,
+      label: groupLabel(cat),
       items: list,
     }));
   }, [category, items]);
@@ -51,23 +61,36 @@ export default function Courses() {
             {t.courses.pageSubtitle}
           </p>
 
-          {/* Category filter pills */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {CATEGORIES.map((c) => (
+          {/* Dynamic category pills */}
+          {!isLoading && categories.length > 0 && (
+            <div className="mt-6 flex flex-wrap gap-2">
               <button
-                key={c.value}
-                onClick={() => setCategory(c.value)}
+                onClick={() => setCategory("all")}
                 className={[
                   "rounded-full px-4 py-1.5 text-sm font-medium transition-colors border",
-                  category === c.value
+                  category === "all"
                     ? "bg-accent text-accent-foreground border-accent"
                     : "bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground",
                 ].join(" ")}
               >
-                {c.label}
+                সব কোর্স
               </button>
-            ))}
-          </div>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={[
+                    "rounded-full px-4 py-1.5 text-sm font-medium transition-colors border",
+                    category === cat
+                      ? "bg-accent text-accent-foreground border-accent"
+                      : "bg-background text-muted-foreground border-border hover:border-accent hover:text-foreground",
+                  ].join(" ")}
+                >
+                  {catLabel(cat)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

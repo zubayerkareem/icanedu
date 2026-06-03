@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MOCK_COURSES } from "@/lib/courses/mock";
 import { supabase } from "@/lib/supabase";
 import type { Course } from "@/lib/courses/types";
+// MOCK_COURSES kept for useCourse fallback (individual course pages by slug/id)
 
 export function useCourse(idOrSlug: string | undefined) {
   return useQuery({
@@ -47,20 +48,16 @@ export function useRelatedCourses(course: Course | null | undefined, limit = 4) 
         .neq("id", course.id)
         .limit(limit * 2);
 
-      if (!error && data && data.length > 0) {
-        const sameCat = data.filter((c) => c.category === course.category);
-        const other = data.filter((c) => c.category !== course.category);
-        return [...sameCat, ...other].slice(0, limit).map((row) => ({
-          ...row,
-          teacher: row.teacher_name
-            ? { name: row.teacher_name, avatar: row.teacher_avatar }
-            : undefined,
-        }));
-      }
+      if (error || !data) return [];
 
-      const sameCat = MOCK_COURSES.filter((c) => c.id !== course.id && c.category === course.category);
-      const filler = MOCK_COURSES.filter((c) => c.id !== course.id && c.category !== course.category);
-      return [...sameCat, ...filler].slice(0, limit);
+      const sameCat = data.filter((c) => c.category === course.category);
+      const other   = data.filter((c) => c.category !== course.category);
+      return [...sameCat, ...other].slice(0, limit).map((row) => ({
+        ...row,
+        teacher: row.teacher_name
+          ? { name: row.teacher_name, avatar: row.teacher_avatar }
+          : undefined,
+      }));
     },
   });
 }

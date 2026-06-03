@@ -20,7 +20,7 @@ export const bn = {
   home: {
     issbTitle: "ISSB কোর্সসমূহ",
     cadetTitle: "ক্যাডেট কোর্সসমূহ",
-    exampleTitle: "দক্ষতা উন্নয়ন কোর্সসমূহ",
+    exampleTitle: "স্কিল ডেভেলপমেন্ট কোর্সসমূহ",
     seeAllCourses: "সব কোর্স দেখুন",
     productsTitle: "আমাদের পণ্যসমূহ",
     productsSubtitle: "বই, গাইড, নোট ও প্রশ্নব্যাংক",

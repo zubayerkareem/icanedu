@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { BookOpen, ChevronRight, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 import { useMyOrders, type Order, type OrderStatus } from "@/hooks/useOrders";
 import { MOCK_COURSES } from "@/lib/courses/mock";
 import type { Course } from "@/lib/courses/types";
@@ -16,17 +18,32 @@ const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
   cancelled: { label: "বাতিল",         color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Hook: fetch enrolled DB courses by product_id ────────────────────────────
 
-function getCourse(order: Order): Course | undefined {
-  if (!order.product_id) return undefined;
-  return MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id);
+function useEnrolledDbCourses(productIds: string[]) {
+  return useQuery<Course[]>({
+    queryKey: ["enrolled_db_courses", productIds],
+    enabled: productIds.length > 0,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("id, slug, title, thumbnail_url, category, duration, total_lessons, modules")
+        .in("id", productIds);
+      if (error) return [];
+      return (data ?? []) as Course[];
+    },
+  });
 }
 
 // ─── Enrolled Course Card ─────────────────────────────────────────────────────
 
-function EnrolledCourseCard({ order }: { order: Order }) {
-  const course = getCourse(order);
+function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Course[] }) {
+  // DB course first, then mock fallback
+  const course: Course | undefined =
+    dbCourses.find((c) => c.id === order.product_id) ??
+    MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id);
+
   const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
   const isActive = order.status === "confirmed" || order.status === "shipped" || order.status === "delivered";
   const courseId = order.product_id ?? course?.id ?? "";
@@ -57,7 +74,6 @@ function EnrolledCourseCard({ order }: { order: Order }) {
 
       {/* Body */}
       <div className="p-4 space-y-4">
-        {/* Meta row */}
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -70,7 +86,6 @@ function EnrolledCourseCard({ order }: { order: Order }) {
           </span>
         </div>
 
-        {/* Continue button */}
         {isActive && courseId && (
           <Button asChild className="w-full" size="sm">
             <Link to={`/dashboard/courses/${courseId}`}>
@@ -88,6 +103,12 @@ function EnrolledCourseCard({ order }: { order: Order }) {
 export default function MyCourses() {
   const { data: allOrders = [], isLoading } = useMyOrders();
   const enrollments = allOrders.filter((o) => o.order_type === "course");
+
+  const productIds = enrollments
+    .map((o) => o.product_id)
+    .filter((id): id is string => !!id);
+
+  const { data: dbCourses = [] } = useEnrolledDbCourses(productIds);
 
   return (
     <div>
@@ -116,7 +137,7 @@ export default function MyCourses() {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {enrollments.map((order) => (
-              <EnrolledCourseCard key={order.id} order={order} />
+              <EnrolledCourseCard key={order.id} order={order} dbCourses={dbCourses} />
             ))}
           </div>
         )}

@@ -64,12 +64,12 @@ export default function Checkout() {
     const e: Record<string, string> = {};
     if (!name.trim())  e.name  = "নাম প্রয়োজন";
     if (!phone.trim()) e.phone = "ফোন নম্বর প্রয়োজন";
-    else if (!/^01[3-9]\d{8}$/.test(phone.trim())) e.phone = "সঠিক ফোন নম্বর দিন";
+    else if (!/^01[0-9]\d{8}$/.test(phone.trim())) e.phone = "সঠিক ফোন নম্বর দিন";
     if (!isCourse && !address.trim()) e.address = "সম্পূর্ণ ঠিকানা প্রয়োজন";
     if (isCourse) {
       if (!bkashTxnId.trim()) e.bkashTxnId = "ট্রানজেকশন আইডি লিখুন";
       if (!bkashPhone.trim()) e.bkashPhone = "bKash নম্বর লিখুন";
-      else if (!/^01[3-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
+      else if (!/^01[0-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
     }
     return e;
   }
@@ -103,7 +103,7 @@ export default function Checkout() {
     setLoading(false);
 
     if (error) {
-      toast.error("অর্ডার সম্পন্ন হয়নি। অনুগ্রহ করে আবার চেষ্টা করুন।");
+      toast.error("অর্ডার সম্পন্ন হয়নি: " + error.message);
       return;
     }
 

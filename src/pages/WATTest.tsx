@@ -82,53 +82,33 @@ function TestScreen({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pausedRef = useRef(false);
   const currentRef = useRef(0);
-  const timeLeftRef = useRef(WORD_SECONDS);
+  const wordEndTimeRef = useRef<number>(Date.now() + WORD_SECONDS * 1000);
+  const pausedRemainingRef = useRef<number>(WORD_SECONDS);
 
   const advance = useCallback(() => {
-    if (currentRef.current >= words.length - 1) {
-      onFinish();
-      return;
-    }
+    if (currentRef.current >= words.length - 1) { onFinish(); return; }
     currentRef.current += 1;
     setCurrent(currentRef.current);
-    timeLeftRef.current = WORD_SECONDS;
-    setTimeLeft(WORD_SECONDS);
   }, [words.length, onFinish]);
 
-  const startInterval = useCallback(() => {
+  const runInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      if (pausedRef.current) return;
-      timeLeftRef.current -= 1;
-      setTimeLeft(timeLeftRef.current);
-      if (timeLeftRef.current <= 0) {
-        playExpiry();
-        advance();
-      }
-    }, 1000);
+      const left = Math.max(0, Math.ceil((wordEndTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(left);
+      if (left <= 0) { playExpiry(); advance(); }
+    }, 200);
   }, [advance]);
 
+  // Reset word clock and start interval whenever the word changes
   useEffect(() => {
-    startInterval();
+    wordEndTimeRef.current = Date.now() + WORD_SECONDS * 1000;
+    setTimeLeft(WORD_SECONDS);
+    if (!paused) runInterval();
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [startInterval]);
-
-  // Restart interval when current changes (advance resets time)
-  useEffect(() => {
-    startInterval();
-  }, [current, startInterval]);
-
-  // Page visibility
-  useEffect(() => {
-    const handle = () => {
-      if (document.hidden) { pausedRef.current = true; setPaused(true); }
-      else { pausedRef.current = false; setPaused(false); }
-    };
-    document.addEventListener("visibilitychange", handle);
-    return () => document.removeEventListener("visibilitychange", handle);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -138,9 +118,15 @@ function TestScreen({
   }, []);
 
   const togglePause = () => {
-    const next = !paused;
-    setPaused(next);
-    pausedRef.current = next;
+    if (!paused) {
+      pausedRemainingRef.current = Math.max(0, Math.ceil((wordEndTimeRef.current - Date.now()) / 1000));
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      setPaused(true);
+    } else {
+      wordEndTimeRef.current = Date.now() + pausedRemainingRef.current * 1000;
+      setPaused(false);
+      runInterval();
+    }
   };
 
   const handleNext = () => {

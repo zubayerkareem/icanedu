@@ -133,6 +133,8 @@ function TestScreen({
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishedRef = useRef(false);
+  const endTimeRef = useRef<number>(Date.now() + timerSeconds * 1000);
+  const warned30Ref = useRef(false);
 
   const handleFinish = useCallback(() => {
     if (finishedRef.current) return;
@@ -144,15 +146,14 @@ function TestScreen({
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) {
-          handleFinish();
-          return 0;
-        }
-        if (t === 31) playBeep(440, 0.1, 0.3); // warning beep at 30s
-        return t - 1;
-      });
-    }, 1000);
+      const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(left);
+      if (left <= 30 && !warned30Ref.current) {
+        warned30Ref.current = true;
+        playBeep(440, 0.1, 0.3);
+      }
+      if (left <= 0) handleFinish();
+    }, 250);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [handleFinish]);
 

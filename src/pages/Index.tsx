@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { CourseCard, CourseCardSkeleton } from "@/components/courses/CourseCard";
 import { ProductCard, ProductCardSkeleton } from "@/components/products/ProductCard";
 import { Button } from "@/components/ui/button";
-import { ISSB_COURSES, CADET_COURSES } from "@/lib/courses/mock";
 import { supabase } from "@/lib/supabase";
 import type { Product } from "@/lib/products/types";
 import type { Course } from "@/lib/courses/types";
@@ -14,15 +13,27 @@ import { NoticesSection } from "@/components/home/NoticesSection";
 import { FounderSection } from "@/components/home/FounderSection";
 import { HeroSlider } from "@/components/home/HeroSlider";
 
-// ─── Generic lazy loaders ────────────────────────────────────────────────────
+// ─── DB courses by category ──────────────────────────────────────────────────
 
-function useStaticCourses(courses: Course[], key: string) {
-  return useQuery({
-    queryKey: [key],
-    staleTime: Infinity,
+function useHomeCourses(category: string) {
+  return useQuery<Course[]>({
+    queryKey: ["home_courses", category],
+    staleTime: 60 * 1000,
     queryFn: async () => {
-      await new Promise((r) => setTimeout(r, 150));
-      return courses.slice(0, 8);
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("is_published", true)
+        .eq("category", category)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        ...row,
+        teacher: row.teacher_name
+          ? { name: row.teacher_name, avatar: row.teacher_avatar, short_bio: row.teacher_short_bio }
+          : undefined,
+      })) as Course[];
     },
   });
 }
@@ -154,21 +165,24 @@ function ProductsGrid() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 function IssbGrid() {
-  const { data = [], isLoading } = useStaticCourses(ISSB_COURSES, "issb_home");
+  const { data = [], isLoading } = useHomeCourses("ISSB");
   const tr = useTranslation();
+  if (!isLoading && data.length === 0) return null;
   return <CoursesGrid title={tr.home.issbTitle} courses={data} isLoading={isLoading} mobileSlider={false} highlighted />;
 }
 
 function CadetGrid() {
-  const { data = [], isLoading } = useStaticCourses(CADET_COURSES, "cadet_home");
+  const { data = [], isLoading } = useHomeCourses("Cadet");
   const tr = useTranslation();
+  if (!isLoading && data.length === 0) return null;
   return <CoursesGrid title={tr.home.cadetTitle} courses={data} isLoading={isLoading} />;
 }
 
-function ExampleGrid() {
-  const { data = [], isLoading } = useStaticCourses(ISSB_COURSES, "example_home");
+function SkillsGrid() {
+  const { data = [], isLoading } = useHomeCourses("Skills");
   const tr = useTranslation();
-  return <CoursesGrid title={tr.home.exampleTitle} courses={data.slice(0, 4)} isLoading={isLoading} />;
+  if (!isLoading && data.length === 0) return null;
+  return <CoursesGrid title={tr.home.exampleTitle} courses={data} isLoading={isLoading} />;
 }
 
 const Index = () => (
@@ -177,7 +191,7 @@ const Index = () => (
     <NoticesSection />
     <IssbGrid />
     <CadetGrid />
-    <ExampleGrid />
+    <SkillsGrid />
     <FounderSection />
     <ProductsGrid />
     <ReviewsSection />

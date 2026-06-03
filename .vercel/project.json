@@ -1,1 +1,16 @@
-{"projectId":"prj_bofPHtEy9SqYNP5C16tG0pWCHhLS","orgId":"team_tqDPGSqaIJIIYvbxCZnDBvYB","projectName":"icanbd"}
+{
+  "projectId": "prj_bofPHtEy9SqYNP5C16tG0pWCHhLS",
+  "orgId": "team_tqDPGSqaIJIIYvbxCZnDBvYB",
+  "projectName": "icanbd",
+  "settings": {
+    "createdAt": 1777316472959,
+    "framework": "vite",
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

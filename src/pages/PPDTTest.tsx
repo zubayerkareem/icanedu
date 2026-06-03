@@ -57,13 +57,17 @@ function PPDTModal({
   picture,
   onClose,
   onSubmitted,
+  observeSecs = 30,
+  writeSecs = 270,
 }: {
   picture: PPDTPicture;
   onClose: () => void;
   onSubmitted: (sub: PPDTSubmission) => void;
+  observeSecs?: number;
+  writeSecs?: number;
 }) {
-  const OBSERVE_SECS = 30;
-  const WRITE_SECS = 270; // 4 min 30 sec
+  const OBSERVE_SECS = observeSecs;
+  const WRITE_SECS = writeSecs;
 
   const [phase, setPhase] = useState<ModalPhase>("observe");
   const [showIdea, setShowIdea] = useState(false);
@@ -159,17 +163,29 @@ function PPDTModal({
           <X className="h-4 w-4" />
         </button>
 
-        {/* Picture — always blurred in observe, clear in write/upload */}
+        {/* Picture — blurred during observe, completely hidden after */}
         <div className="relative">
-          <img
-            src={picture.image_url}
-            alt={picture.title}
-            className="w-full h-64 sm:h-80 object-cover transition-all duration-700"
-            style={phase === "observe" ? { filter: "blur(8px)" } : {}}
-          />
-          <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
-            #{picture.picture_number}
-          </span>
+          {phase === "observe" ? (
+            <>
+              <img
+                src={picture.image_url}
+                alt={picture.title}
+                className="w-full h-64 sm:h-80 object-cover"
+                style={{ filter: "blur(8px)" }}
+              />
+              <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
+                #{picture.picture_number}
+              </span>
+            </>
+          ) : (
+            <div className="w-full h-40 sm:h-52 bg-white dark:bg-zinc-950 flex flex-col items-center justify-center gap-3 border-b border-border">
+              <div className="text-4xl">🧠</div>
+              <p className="text-sm font-medium text-muted-foreground text-center px-6 leading-relaxed">
+                ছবি সরিয়ে দেওয়া হয়েছে।<br />
+                <span className="font-semibold text-foreground">স্মৃতি থেকে গল্প লিখুন।</span>
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="p-5 space-y-4">
@@ -390,6 +406,9 @@ export default function PPDTTest() {
   const isFreeSet = usingDb ? (dbSets[0].is_free ?? false) : true;
   const canAccess = isFreeSet || enrolled;
 
+  const observeSecs = usingDb ? (dbSets[0].observe_seconds ?? 30) : 30;
+  const writeSecs   = usingDb ? (dbSets[0].write_seconds   ?? 270) : 270;
+
   const setData = usingDb
     ? {
         id: dbSets[0].id,
@@ -452,6 +471,8 @@ export default function PPDTTest() {
           picture={activePicture}
           onClose={() => setActivePicture(null)}
           onSubmitted={(sub) => { handleSubmitted(sub); setActivePicture(null); }}
+          observeSecs={observeSecs}
+          writeSecs={writeSecs}
         />
       )}
 

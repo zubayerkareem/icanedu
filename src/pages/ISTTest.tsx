@@ -144,18 +144,27 @@ function TestScreen({
     onFinish(answers);
   }, [answers, onFinish]);
 
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
-      setTimeLeft(left);
-      if (left <= 30 && !warned30Ref.current) {
-        warned30Ref.current = true;
-        playBeep(440, 0.1, 0.3);
-      }
-      if (left <= 0) handleFinish();
-    }, 250);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  const checkTime = useCallback(() => {
+    const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+    setTimeLeft(left);
+    if (left <= 30 && !warned30Ref.current) {
+      warned30Ref.current = true;
+      playBeep(440, 0.1, 0.3);
+    }
+    if (left <= 0) handleFinish();
   }, [handleFinish]);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(checkTime, 250);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [checkTime]);
+
+  // Force-recalculate the instant the tab becomes visible
+  useEffect(() => {
+    const handle = () => { if (!document.hidden) checkTime(); };
+    document.addEventListener("visibilitychange", handle);
+    return () => document.removeEventListener("visibilitychange", handle);
+  }, [checkTime]);
 
   // Auto-focus current sentence input
   useEffect(() => {

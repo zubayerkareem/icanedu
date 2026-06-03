@@ -87,8 +87,10 @@ function WritingScreen({
 }) {
   const [text, setText] = useState(savedText);
   const [timeLeft, setTimeLeft] = useState(EXTEMPORE_TIMER_SECONDS);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const doneRef = useRef(false);
+  const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const doneRef      = useRef(false);
+  const endTimeRef   = useRef<number>(Date.now() + EXTEMPORE_TIMER_SECONDS * 1000);
+  const warned2mRef  = useRef(false);
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
   const finish = useCallback(() => {
@@ -99,16 +101,27 @@ function WritingScreen({
     onFinish();
   }, [text, onSave, onFinish]);
 
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) { finish(); return 0; }
-        if (t === 121) playBeep(440, 0.3, 0.1); // 2-min warning
-        return t - 1;
-      });
-    }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  const checkTime = useCallback(() => {
+    const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+    setTimeLeft(left);
+    if (left <= 120 && !warned2mRef.current) {
+      warned2mRef.current = true;
+      playBeep(440, 0.3, 0.1);
+    }
+    if (left <= 0) finish();
   }, [finish]);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(checkTime, 250);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [checkTime]);
+
+  // Force-recalculate the instant the tab becomes visible
+  useEffect(() => {
+    const handle = () => { if (!document.hidden) checkTime(); };
+    document.addEventListener("visibilitychange", handle);
+    return () => document.removeEventListener("visibilitychange", handle);
+  }, [checkTime]);
 
   // Auto-save to localStorage every 10s
   useEffect(() => {

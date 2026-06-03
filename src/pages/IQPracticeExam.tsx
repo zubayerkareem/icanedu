@@ -315,11 +315,11 @@ export default function IQPracticeExam() {
   const [currentQ, setCurrentQ] = useState(0);
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState<boolean>(() => initProgress()?.completed ?? false);
-  const [paused, setPaused] = useState(false);
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const answersRef = useRef(answers);
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
+  const answersRef  = useRef(answers);
   const timeLeftRef = useRef(timeLeft);
+  const endTimeRef  = useRef<number>(Date.now() + timeLeft * 1000);
 
   // Keep refs in sync
   useEffect(() => { answersRef.current = answers; }, [answers]);
@@ -356,48 +356,32 @@ export default function IQPracticeExam() {
     if (timerRef.current) clearInterval(timerRef.current);
   }, [courseId, setId, set]);
 
-  // Timer tick
-  const startTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          handleSubmit();
-          return 0;
-        }
-        const next = prev - 1;
-        // persist every 5s
-        if (next % 5 === 0) persist();
-        return next;
-      });
-    }, 1000);
+  // Timer tick — wall-clock based so tab switches count against time
+  const tickTimer = useCallback(() => {
+    const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+    setTimeLeft(left);
+    timeLeftRef.current = left;
+    if (left % 5 === 0 && left > 0) persist();
+    if (left <= 0) { handleSubmit(); }
   }, [handleSubmit, persist]);
 
-  // Page Visibility API — pause on hide, resume on show
   useEffect(() => {
     if (submitted) return;
+    endTimeRef.current = Date.now() + timeLeftRef.current * 1000;
+    timerRef.current = setInterval(tickTimer, 250);
 
+    // Force-recalculate the instant the tab becomes visible
     const handleVisibility = () => {
-      if (document.hidden) {
-        if (timerRef.current) clearInterval(timerRef.current);
-        persist();
-        setPaused(true);
-      } else {
-        setPaused(false);
-        startTimer();
-      }
+      if (!document.hidden) tickTimer();
     };
-
     document.addEventListener("visibilitychange", handleVisibility);
-    startTimer();
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       if (timerRef.current) clearInterval(timerRef.current);
       persist();
     };
-  }, [submitted, startTimer, persist]);
+  }, [submitted, tickTimer, persist]);
 
   const handleSelect = useCallback((optionId: string) => {
     if (!set) return;
@@ -453,11 +437,6 @@ export default function IQPracticeExam() {
           </div>
 
           <div className="flex items-center gap-3">
-            {paused && (
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                বিরতি
-              </span>
-            )}
             {!submitted && <TimerDisplay seconds={timeLeft} urgent={timeLeft <= 60} />}
           </div>
         </div>

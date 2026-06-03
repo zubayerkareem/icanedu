@@ -110,6 +110,19 @@ function TestScreen({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
 
+  // Force-recalculate timer the instant the tab becomes visible
+  useEffect(() => {
+    const handle = () => {
+      if (!document.hidden && !paused) {
+        const left = Math.max(0, Math.ceil((wordEndTimeRef.current - Date.now()) / 1000));
+        setTimeLeft(left);
+        if (left <= 0) { playExpiry(); advance(); }
+      }
+    };
+    document.addEventListener("visibilitychange", handle);
+    return () => document.removeEventListener("visibilitychange", handle);
+  }, [paused, advance]);
+
   // Fullscreen change listener
   useEffect(() => {
     const handle = () => setIsFullscreen(!!document.fullscreenElement);

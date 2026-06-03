@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useAdminProducts, useUpsertProduct, useDeleteProduct } from "@/hooks/useAdminProducts";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 import type { Product } from "@/lib/products/types";
 
 type FormData = {
@@ -284,11 +285,12 @@ export default function AdminProducts() {
                   />
                 </div>
               </Field>
-              <Field label="ছবির URL">
-                <Input value={form.image_url} onChange={(e) => set("image_url", e.target.value)} placeholder="https://..." />
-                {form.image_url && (
-                  <img src={form.image_url} alt="preview" className="mt-2 h-24 w-24 rounded object-cover" />
-                )}
+              <Field label="পণ্যের ছবি">
+                <ImageUpload
+                  value={form.image_url}
+                  onChange={(url) => set("image_url", url)}
+                  folder="products"
+                />
               </Field>
             </Section>
 

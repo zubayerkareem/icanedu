@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface UploadProps {
   value?: string;
   onChange: (url: string) => void;
-  folder?: "thumbnails" | "resources";
+  folder?: "thumbnails" | "resources" | "products";
   accept?: string;
   /** "image" shows a thumbnail preview; "file" shows a filename badge */
   kind?: "image" | "file";

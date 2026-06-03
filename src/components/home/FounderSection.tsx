@@ -19,37 +19,13 @@ export function FounderSection() {
 
           {/* ── LEFT: framed photo ── */}
           <div className="flex justify-center lg:justify-start">
-            <div className="relative">
-              <div className="absolute -inset-[3px] rounded-[1.6rem] bg-gradient-to-br from-cyan-500 via-violet-500 to-pink-500 opacity-70 blur-[2px]" />
-
-              <div className="relative rounded-[1.5rem] border border-cyan-500/30 bg-[#0d1530] p-2 shadow-2xl">
-                <div className="absolute top-3 left-3 h-4 w-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-md" />
-                <div className="absolute top-3 right-3 h-4 w-4 border-t-2 border-r-2 border-cyan-400 rounded-tr-md" />
-                <div className="absolute bottom-3 left-3 h-4 w-4 border-b-2 border-l-2 border-violet-400 rounded-bl-md" />
-                <div className="absolute bottom-3 right-3 h-4 w-4 border-b-2 border-r-2 border-violet-400 rounded-br-md" />
-
-                <div className="overflow-hidden rounded-[1.2rem]" style={{ width: "clamp(300px, 46vw, 580px)" }}>
-                  <img
-                    src="/chairman.png"
-                    alt="Founder & Chairman — iCAN Academy Bangladesh"
-                    className="w-full object-cover object-top"
-                    style={{ aspectRatio: "4/3" }}
-                  />
-                </div>
-
-                <div className="mt-2 flex items-center justify-between px-2 pb-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                    <span className="text-[10px] font-mono text-cyan-400/80 tracking-widest uppercase">Live</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-500 tracking-wider">iCAN ACADEMY BD</span>
-                  <div className="flex gap-1">
-                    <div className="h-1 w-4 rounded-full bg-violet-500/60" />
-                    <div className="h-1 w-2 rounded-full bg-violet-500/40" />
-                    <div className="h-1 w-1 rounded-full bg-violet-500/30" />
-                  </div>
-                </div>
-              </div>
+            <div className="overflow-hidden rounded-[1.5rem]" style={{ width: "clamp(300px, 46vw, 580px)" }}>
+              <img
+                src="/chairman.png"
+                alt="Founder & Chairman — iCAN Academy Bangladesh"
+                className="w-full object-cover object-top"
+                style={{ aspectRatio: "4/3" }}
+              />
             </div>
           </div>
 

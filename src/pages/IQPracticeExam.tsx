@@ -316,12 +316,13 @@ export default function IQPracticeExam() {
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState<boolean>(() => initProgress()?.completed ?? false);
 
-  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null);
-  const answersRef  = useRef(answers);
-  const timeLeftRef = useRef(timeLeft);
-  const endTimeRef  = useRef<number>(Date.now() + timeLeft * 1000);
+  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const answersRef     = useRef(answers);
+  const timeLeftRef    = useRef(timeLeft);
+  const endTimeRef     = useRef<number>(Date.now() + timeLeft * 1000);
+  const autoSubmitRef  = useRef(false);
 
-  // Keep refs in sync
+  // Keep refs in sync with state
   useEffect(() => { answersRef.current = answers; }, [answers]);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
 
@@ -354,34 +355,52 @@ export default function IQPracticeExam() {
     });
     setSubmitted(true);
     if (timerRef.current) clearInterval(timerRef.current);
-  }, [courseId, setId, set]);
+  }, [courseId, setId, set, saveResult]);
 
-  // Timer tick — wall-clock based so tab switches count against time
-  const tickTimer = useCallback(() => {
-    const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
-    setTimeLeft(left);
-    timeLeftRef.current = left;
-    if (left % 5 === 0 && left > 0) persist();
-    if (left <= 0) { handleSubmit(); }
-  }, [handleSubmit, persist]);
+  // Store latest handleSubmit in a ref so the timer closure never goes stale
+  const handleSubmitRef = useRef(handleSubmit);
+  useEffect(() => { handleSubmitRef.current = handleSubmit; }, [handleSubmit]);
 
+  // Single stable timer effect — only [submitted] as dep so endTimeRef is NEVER reset mid-exam
   useEffect(() => {
     if (submitted) return;
-    endTimeRef.current = Date.now() + timeLeftRef.current * 1000;
-    timerRef.current = setInterval(tickTimer, 250);
 
-    // Force-recalculate the instant the tab becomes visible
-    const handleVisibility = () => {
-      if (!document.hidden) tickTimer();
+    endTimeRef.current = Date.now() + timeLeftRef.current * 1000;
+    autoSubmitRef.current = false;
+
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(left);
+      timeLeftRef.current = left;
+      if (left % 5 === 0 && left > 0) {
+        saveProgress(courseId, setId, {
+          answers: answersRef.current,
+          timeLeft: left,
+          completed: false,
+        });
+      }
+      if (left <= 0 && !autoSubmitRef.current) {
+        autoSubmitRef.current = true;
+        handleSubmitRef.current();
+      }
     };
-    document.addEventListener("visibilitychange", handleVisibility);
+
+    timerRef.current = setInterval(tick, 250);
+
+    const onVisible = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVisible);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      if (timerRef.current) clearInterval(timerRef.current);
-      persist();
+      clearInterval(timerRef.current!);
+      document.removeEventListener("visibilitychange", onVisible);
+      saveProgress(courseId, setId, {
+        answers: answersRef.current,
+        timeLeft: timeLeftRef.current,
+        completed: false,
+      });
     };
-  }, [submitted, tickTimer, persist]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submitted]); // ← ONLY submitted — endTimeRef is never reset mid-exam
 
   const handleSelect = useCallback((optionId: string) => {
     if (!set) return;

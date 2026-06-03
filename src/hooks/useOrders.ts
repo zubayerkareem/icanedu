@@ -17,6 +17,9 @@ export interface Order {
   shipping_cost: number;
   total_price: number;
   status: OrderStatus;
+  bkash_txn_id: string | null;
+  bkash_number: string | null;
+  coupon_code: string | null;
   created_at: string;
 }
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronLeft, ShoppingBag, BookOpen, Truck } from "lucide-react";
+import { ChevronLeft, ShoppingBag, BookOpen, Truck, Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,34 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
+const BKASH_NUMBER = "01894734002";
+
 const SHIPPING = {
   inside:  { label: "ঢাকার ভেতরে",  cost: 60  },
   outside: { label: "ঢাকার বাইরে",  cost: 100 },
 } as const;
 type ShippingKey = keyof typeof SHIPPING;
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted transition-colors"
+    >
+      {copied
+        ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> কপি হয়েছে</>
+        : <><Copy className="h-3.5 w-3.5" /> কপি করুন</>}
+    </button>
+  );
+}
 
 export default function Checkout() {
   const [params] = useSearchParams();
@@ -25,12 +48,14 @@ export default function Checkout() {
   const itemPrice   = Number(params.get("price") ?? 0);
   const couponCode  = params.get("coupon") ?? null;
 
-  const [name,     setName]     = useState("");
-  const [phone,    setPhone]    = useState("");
-  const [address,  setAddress]  = useState("");
-  const [shipping, setShipping] = useState<ShippingKey>("inside");
-  const [loading,  setLoading]  = useState(false);
-  const [errors,   setErrors]   = useState<Record<string, string>>({});
+  const [name,       setName]       = useState("");
+  const [phone,      setPhone]      = useState("");
+  const [address,    setAddress]    = useState("");
+  const [shipping,   setShipping]   = useState<ShippingKey>("inside");
+  const [bkashTxnId, setBkashTxnId] = useState("");
+  const [bkashPhone, setBkashPhone] = useState("");
+  const [loading,    setLoading]    = useState(false);
+  const [errors,     setErrors]     = useState<Record<string, string>>({});
 
   const shippingCost = isCourse ? 0 : SHIPPING[shipping].cost;
   const total        = itemPrice + shippingCost;
@@ -41,6 +66,11 @@ export default function Checkout() {
     if (!phone.trim()) e.phone = "ফোন নম্বর প্রয়োজন";
     else if (!/^01[3-9]\d{8}$/.test(phone.trim())) e.phone = "সঠিক ফোন নম্বর দিন";
     if (!isCourse && !address.trim()) e.address = "সম্পূর্ণ ঠিকানা প্রয়োজন";
+    if (isCourse) {
+      if (!bkashTxnId.trim()) e.bkashTxnId = "ট্রানজেকশন আইডি লিখুন";
+      if (!bkashPhone.trim()) e.bkashPhone = "bKash নম্বর লিখুন";
+      else if (!/^01[3-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
+    }
     return e;
   }
 
@@ -64,6 +94,9 @@ export default function Checkout() {
       shipping_cost: shippingCost,
       total_price:   total,
       coupon_code:   couponCode,
+      bkash_txn_id:  isCourse ? bkashTxnId.trim() : null,
+      bkash_number:  isCourse ? bkashPhone.trim()  : null,
+      status:        "pending",
     };
 
     const { error } = await supabase.from("orders").insert([order]);
@@ -74,7 +107,6 @@ export default function Checkout() {
       return;
     }
 
-    // Best-effort: increment the coupon usage count
     if (isCourse && couponCode && itemId) {
       supabase.rpc("increment_coupon_use", {
         p_course_id: itemId,
@@ -82,7 +114,7 @@ export default function Checkout() {
       }).then(() => {}).catch(() => {});
     }
 
-    navigate("/thank-you");
+    navigate(isCourse ? "/thank-you?type=course" : "/thank-you");
   }
 
   return (
@@ -144,7 +176,7 @@ export default function Checkout() {
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <Label htmlFor="phone">ফোন নম্বর <span className="text-destructive">*</span></Label>
+                <Label htmlFor="phone">যোগাযোগের ফোন নম্বর <span className="text-destructive">*</span></Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -210,9 +242,83 @@ export default function Checkout() {
                 </>
               )}
 
+              {/* bKash payment — course only */}
               {isCourse && (
-                <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                  এটি একটি ডিজিটাল কোর্স। পেমেন্ট নিশ্চিত হলে আমরা আপনাকে ফোনে যোগাযোগ করব।
+                <div className="space-y-5">
+                  {/* Step indicator */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E2136E] text-white text-xs font-bold">২</div>
+                    <p className="text-sm font-semibold text-foreground">bKash-এ পেমেন্ট করুন</p>
+                  </div>
+
+                  {/* bKash instruction box */}
+                  <div className="rounded-xl border-2 border-[#E2136E]/30 bg-[#E2136E]/5 p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E2136E] text-white font-bold text-xs">b</div>
+                      <span className="font-semibold text-foreground text-sm">bKash পেমেন্ট নির্দেশনা</span>
+                    </div>
+
+                    <ol className="space-y-2 text-sm text-muted-foreground list-none">
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E2136E]/15 text-[#E2136E] text-xs font-bold mt-0.5">১</span>
+                        <span>আপনার bKash অ্যাপ বা *247# খুলুন এবং <strong className="text-foreground">Send Money</strong> নির্বাচন করুন</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#E2136E]/15 text-[#E2136E] text-xs font-bold mt-0.5">২</span>
+                        <span>নিচের নম্বরে <strong className="text-foreground">৳{total.toLocaleString("bn-BD")}</strong> পাঠান:</span>
+                      </li>
+                    </ol>
+
+                    {/* Merchant number highlight */}
+                    <div className="flex items-center justify-between rounded-lg border border-[#E2136E]/30 bg-background px-4 py-3">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-0.5">bKash নম্বর</p>
+                        <p className="font-heading text-2xl font-black text-foreground tracking-widest">{BKASH_NUMBER}</p>
+                      </div>
+                      <CopyButton text={BKASH_NUMBER} />
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      পেমেন্ট সম্পন্ন হলে <strong className="text-foreground">Transaction ID</strong> এবং যে নম্বর থেকে পাঠিয়েছেন সেটি নিচে লিখুন।
+                    </p>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">৩</div>
+                    <p className="text-sm font-semibold text-foreground">পেমেন্টের তথ্য দিন</p>
+                  </div>
+
+                  {/* Transaction ID */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bkash-txn">
+                      bKash Transaction ID <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bkash-txn"
+                      placeholder="যেমন: 8A6XXXXXXX"
+                      value={bkashTxnId}
+                      onChange={(e) => { setBkashTxnId(e.target.value); setErrors((p) => ({ ...p, bkashTxnId: "" })); }}
+                      className={errors.bkashTxnId ? "border-destructive font-mono" : "font-mono"}
+                    />
+                    {errors.bkashTxnId && <p className="text-xs text-destructive">{errors.bkashTxnId}</p>}
+                  </div>
+
+                  {/* bKash phone */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="bkash-phone">
+                      যে bKash নম্বর থেকে পাঠিয়েছেন <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bkash-phone"
+                      type="tel"
+                      placeholder="01XXXXXXXXX"
+                      value={bkashPhone}
+                      onChange={(e) => { setBkashPhone(e.target.value); setErrors((p) => ({ ...p, bkashPhone: "" })); }}
+                      className={errors.bkashPhone ? "border-destructive" : ""}
+                    />
+                    {errors.bkashPhone && <p className="text-xs text-destructive">{errors.bkashPhone}</p>}
+                  </div>
                 </div>
               )}
 
@@ -226,8 +332,14 @@ export default function Checkout() {
                   ? <BookOpen className="mr-2 h-5 w-5" />
                   : <ShoppingBag className="mr-2 h-5 w-5" />
                 }
-                {loading ? "প্রক্রিয়া হচ্ছে..." : (isCourse ? "নিবন্ধন করুন" : "অর্ডার দিন")}
+                {loading ? "প্রক্রিয়া হচ্ছে..." : (isCourse ? "নিবন্ধন সম্পন্ন করুন" : "অর্ডার দিন")}
               </Button>
+
+              {isCourse && (
+                <p className="text-center text-xs text-muted-foreground">
+                  পেমেন্ট যাচাইয়ের পর সাধারণত ২৪ ঘণ্টার মধ্যে কোর্সের অ্যাকসেস পাবেন।
+                </p>
+              )}
             </form>
           </div>
 
@@ -243,7 +355,7 @@ export default function Checkout() {
                   <span className="shrink-0 font-medium text-foreground">৳{itemPrice.toLocaleString("bn-BD")}</span>
                 </div>
                 {couponCode && (
-                  <div className="flex items-center justify-between text-success">
+                  <div className="flex items-center justify-between text-green-600 dark:text-green-400">
                     <span className="flex items-center gap-1">🏷 কুপন: <span className="font-mono font-semibold">{couponCode}</span></span>
                     <span className="font-medium">প্রয়োগ হয়েছে</span>
                   </div>
@@ -259,6 +371,13 @@ export default function Checkout() {
                   <span className="font-heading text-xl font-bold text-accent">৳{total.toLocaleString("bn-BD")}</span>
                 </div>
               </div>
+
+              {isCourse && (
+                <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                  <p className="font-semibold">⚠️ গুরুত্বপূর্ণ</p>
+                  <p>Transaction ID ছাড়া নিবন্ধন গ্রহণযোগ্য হবে না। সঠিক তথ্য দিন।</p>
+                </div>
+              )}
             </div>
           </aside>
         </div>

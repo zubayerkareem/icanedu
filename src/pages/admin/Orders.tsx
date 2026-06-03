@@ -166,6 +166,18 @@ export default function AdminOrders() {
                         {order.address}
                       </div>
                     )}
+                    {order.order_type === "course" && order.bkash_txn_id && (
+                      <div className="mt-1.5 space-y-0.5">
+                        <div className="flex items-center gap-1 text-[11px]">
+                          <span className="text-muted-foreground">TxnID:</span>
+                          <span className="font-mono font-semibold text-foreground">{order.bkash_txn_id}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px]">
+                          <span className="text-muted-foreground">bKash:</span>
+                          <span className="font-mono text-foreground">{order.bkash_number}</span>
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">

@@ -173,6 +173,19 @@ function IQQuestionCard({ question, index, upsertQ, onDelete }: {
     setDirty(true);
   }
 
+  function addOption() {
+    const newOpt: IQOption = { id: uid(), text: `অপশন ${options.length + 1}` };
+    setOptions((o) => [...o, newOpt]);
+    setDirty(true);
+  }
+
+  function removeOption(id: string) {
+    if (options.length <= 2) return;
+    setOptions((o) => o.filter((x) => x.id !== id));
+    if (correct === id) setCorrect(options.find((x) => x.id !== id)?.id ?? "");
+    setDirty(true);
+  }
+
   async function save() {
     await upsertQ.mutateAsync({ id: question.id, set_id: question.set_id, text, options, correct, order_index: index });
     setDirty(false);
@@ -192,11 +205,21 @@ function IQQuestionCard({ question, index, upsertQ, onDelete }: {
             <input type="radio" name={`correct-${question.id}`} checked={correct === o.id}
               onChange={() => { setCorrect(o.id); setDirty(true); }} className="accent-success shrink-0" />
             <Input value={o.text} onChange={(e) => setOpt(i, e.target.value)}
-              className="h-6 border-0 bg-transparent px-1 text-xs focus-visible:ring-0" placeholder={`অপশন ${i + 1}`} />
+              className="h-6 border-0 bg-transparent px-1 text-xs focus-visible:ring-0 flex-1" placeholder={`অপশন ${i + 1}`} />
+            {options.length > 2 && (
+              <button onClick={() => removeOption(o.id)} className="shrink-0 text-muted-foreground hover:text-destructive transition-colors">
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
         ))}
       </div>
-      {dirty && <Button size="sm" className="ml-7 h-7 text-xs" onClick={save}><Save className="mr-1 h-3 w-3" /> সংরক্ষণ</Button>}
+      <div className="pl-7 flex items-center gap-2">
+        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addOption}>
+          <Plus className="mr-1 h-3 w-3" /> অপশন যোগ
+        </Button>
+        {dirty && <Button size="sm" className="h-7 text-xs" onClick={save}><Save className="mr-1 h-3 w-3" /> সংরক্ষণ</Button>}
+      </div>
     </div>
   );
 }

@@ -47,7 +47,7 @@ function Instructions({ topicCount, onStart }: { topicCount: number; onStart: ()
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background font-heading font-bold text-sm">EE</div>
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">Extempore Essay Test</h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">Essay Writing Test</h1>
           <p className="mt-1 text-sm text-accent font-medium">{topicCount}টি বিষয়ে পরীক্ষা</p>
         </div>
         <div className="rounded-xl bg-muted/50 border p-5 text-left space-y-3">

@@ -29,7 +29,7 @@ export default function ExtemporeHome() {
           EE
         </div>
         <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-          Extempore Essay
+          Essay Writing
         </h1>
         <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
           বিষয় দেওয়া হবে, প্রস্তুতি ছাড়াই {Math.floor(timerSeconds / 60)} মিনিটে একটি সুগঠিত প্রবন্ধ লিখুন।
@@ -80,7 +80,7 @@ export default function ExtemporeHome() {
       </div>
 
       <div className="mt-6 rounded-xl border bg-muted/40 p-5">
-        <h3 className="font-heading font-semibold text-foreground mb-3">Extempore Essay কী?</h3>
+        <h3 className="font-heading font-semibold text-foreground mb-3">Essay Writing কী?</h3>
         <ul className="space-y-2 text-sm text-muted-foreground">
           {[
             "বিষয় দেওয়ার সাথে সাথে লেখা শুরু করতে হবে — প্রস্তুতির সময় নেই",

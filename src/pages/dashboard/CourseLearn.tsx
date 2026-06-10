@@ -325,21 +325,22 @@ function LearnContent({
         </div>
 
         {issbElements.length > 0 && (
-          <div className="w-full max-w-sm space-y-3">
+          <div className="w-full max-w-2xl space-y-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               ISSB প্র্যাকটিস — এখনই শুরু করুন
             </p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {issbElements.map((el) => (
                 <Link
                   key={el.path}
                   to={`/courses/${course.id}/${el.path}`}
-                  className="flex items-center gap-2 rounded-lg border border-border bg-muted/40
-                             px-3 py-2.5 text-xs font-medium text-foreground
-                             hover:bg-accent/10 hover:border-accent/40 transition-colors"
+                  className="aspect-square flex flex-col items-center justify-center gap-3 rounded-2xl
+                             border-2 border-border bg-muted/40 text-foreground
+                             hover:bg-accent/10 hover:border-accent/50 hover:shadow-md
+                             transition-all duration-200"
                 >
-                  <Brain className="h-3.5 w-3.5 shrink-0 text-accent" />
-                  {el.labelBn}
+                  <Brain className="h-10 w-10 text-accent" />
+                  <span className="text-sm font-semibold text-center px-2 leading-snug">{el.labelBn}</span>
                 </Link>
               ))}
             </div>

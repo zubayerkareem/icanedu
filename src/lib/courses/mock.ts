@@ -124,7 +124,7 @@ const issbWrittenTeachers = [
   {
     name: "ক্যাপ্টেন (অব.) রাফি আহমেদ",
     short_bio: "বাংলা ও ইংরেজি রচনা বিশেষজ্ঞ",
-    long_bio: "ক্যাপ্টেন (অব.) রাফি আহমেদ সশস্ত্র বাহিনীর লিখিত পরীক্ষার বিশেষজ্ঞ, বিশেষত বাংলা ও ইংরেজি রচনা এবং Extempore Essay মডিউলে অভিজ্ঞ।",
+    long_bio: "ক্যাপ্টেন (অব.) রাফি আহমেদ সশস্ত্র বাহিনীর লিখিত পরীক্ষার বিশেষজ্ঞ, বিশেষত বাংলা ও ইংরেজি রচনা এবং Essay Writing মডিউলে অভিজ্ঞ।",
   },
   {
     name: "সার্জেন্ট (অব.) মামুন রশীদ",
@@ -437,7 +437,7 @@ ISSB_COURSES.push({
 কোর্সের বিশেষত্ব:
 • ১৬ দিনের নিবিড় অনলাইন প্রশিক্ষণ
 • বাংলা, ইংরেজি, গণিত, সাধারণ জ্ঞান — সব বিষয় একসাথে
-• IQ Practice, WAT, IST, Extempore Essay সহ সব ISSB মডিউল
+• IQ Practice, WAT, IST, Essay Writing সহ সব ISSB মডিউল
 • ৪ জন বিশেষজ্ঞ শিক্ষকের সমন্বিত প্যানেল
 • Preliminary Viva কৌশল ও মক সেশন
 • প্রতিটি বিষয়ে মক টেস্ট ও মডেল উত্তর`,
@@ -473,7 +473,7 @@ ISSB_COURSES.push({
   long_description: `Army · Navy · Airforce — Future Officer Cadet-দের জন্য iCAN Academy-র সম্পূর্ণ ISSB অনলাইন কোর্স।
 
 কোর্সের বিশেষত্ব:
-• সব ISSB মডিউল: IQ Practice, WAT, IST, Extempore Essay, Picture Story, Incomplete Story, PPDT
+• সব ISSB মডিউল: IQ Practice, WAT, IST, Essay Writing, Picture Story, Incomplete Story, PPDT
 • ৪ জন বিশেষজ্ঞ শিক্ষকের সমন্বিত প্যানেল
 • ৮ সপ্তাহ / ৪৮ দিনের নিবিড় অনলাইন প্রশিক্ষণ
 • লাইভ মক সেশন ও ব্যক্তিগত ফিডব্যাক

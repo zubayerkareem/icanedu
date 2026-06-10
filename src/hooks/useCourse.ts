@@ -20,11 +20,15 @@ export function useCourse(idOrSlug: string | undefined) {
       const { data, error } = await query.maybeSingle();
 
       if (!error && data) {
+        const teachers = Array.isArray(data.teachers) && data.teachers.length > 0
+          ? data.teachers
+          : data.teacher_name
+          ? [{ name: data.teacher_name, avatar: data.teacher_avatar, short_bio: data.teacher_short_bio, long_bio: data.teacher_long_bio }]
+          : [];
         return {
           ...data,
-          teacher: data.teacher_name
-            ? { name: data.teacher_name, avatar: data.teacher_avatar, short_bio: data.teacher_short_bio, long_bio: data.teacher_long_bio }
-            : undefined,
+          teachers,
+          teacher: teachers[0] ?? undefined,
         };
       }
 

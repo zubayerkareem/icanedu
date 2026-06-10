@@ -68,10 +68,11 @@ function QuestionCard({
       )}
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-        {question.options.map((opt) => {
+        {question.options.map((opt, i) => {
           const isSelected = selected === opt.id;
           const isCorrect = showResult && opt.id === question.correct;
           const isWrong = showResult && isSelected && opt.id !== question.correct;
+          const label = String.fromCharCode(65 + i);
 
           return (
             <li key={opt.id}>
@@ -89,7 +90,7 @@ function QuestionCard({
                     : "border-border bg-background text-foreground hover:border-accent/50 hover:bg-muted/50",
                 ].join(" ")}
               >
-                <span className="font-semibold">{opt.id.toUpperCase()}.</span> {opt.text}
+                <span className="font-semibold">{label}.</span> {opt.text}
               </button>
             </li>
           );
@@ -231,10 +232,11 @@ function ResultScreen({
 
               {/* Options */}
               <ul className="grid gap-2 sm:grid-cols-2 ml-8">
-                {q.options.map((opt) => {
+                {q.options.map((opt, oi) => {
                   const isChosen = chosen === opt.id;
                   const isCorrectOpt = opt.id === q.correct;
                   const isWrongChosen = isChosen && !isCorrectOpt;
+                  const label = String.fromCharCode(65 + oi);
 
                   return (
                     <li key={opt.id}>
@@ -254,7 +256,7 @@ function ResultScreen({
                             ? "bg-destructive text-white"
                             : "bg-muted text-muted-foreground",
                         ].join(" ")}>
-                          {opt.id.toUpperCase()}
+                          {label}
                         </span>
                         {opt.text}
                         {isCorrectOpt && (
@@ -270,7 +272,9 @@ function ResultScreen({
               {skipped && (
                 <p className="ml-8 mt-2 text-xs text-muted-foreground">
                   উত্তর দেওয়া হয়নি · সঠিক উত্তর:{" "}
-                  <span className="font-semibold text-green-600">{q.correct.toUpperCase()}</span>
+                  <span className="font-semibold text-green-600">
+                    {String.fromCharCode(65 + q.options.findIndex((o) => o.id === q.correct))}
+                  </span>
                 </p>
               )}
             </div>

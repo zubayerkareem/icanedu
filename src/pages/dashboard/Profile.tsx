@@ -109,7 +109,7 @@ export default function Profile() {
   const metaSet = !!meta;
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="max-w-xl space-y-6 mx-auto">
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">আমার প্রোফাইল</h1>
         <p className="mt-1 text-sm text-muted-foreground">আপনার অ্যাকাউন্টের তথ্য</p>

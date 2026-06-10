@@ -19,7 +19,7 @@ import { useCourse } from "@/hooks/useCourse";
 import { useUpsertCourse } from "@/hooks/useAdminCourses";
 import type {
   Course, Module, Lesson, LessonType, IconListItem, Coupon, CourseVideo, CourseResource,
-  ISSBModuleConfig,
+  ISSBModuleConfig, Teacher,
 } from "@/lib/courses/types";
 import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
 import { ISSBCourseEditor } from "@/components/admin/ISSBCourseEditor";
@@ -44,10 +44,7 @@ type Form = {
   thumbnail_url: string;
   short_description: string;
   long_description: string;
-  teacher_name: string;
-  teacher_avatar: string;
-  teacher_short_bio: string;
-  teacher_long_bio: string;
+  teachers: Teacher[];
   price: string;
   discount_price: string;
   discount_ends_at: string;
@@ -63,12 +60,20 @@ type Form = {
 const emptyForm: Form = {
   title: "", slug: "", category: "", duration: "", total_lessons: "",
   thumbnail_url: "", short_description: "", long_description: "",
-  teacher_name: "", teacher_avatar: "", teacher_short_bio: "", teacher_long_bio: "",
+  teachers: [],
   price: "", discount_price: "", discount_ends_at: "", is_published: true,
   highlight_items: [], feature_items: [], coupons: [], modules: [], videos: [], resources: [],
 };
 
 function fromCourse(c: Course): Form {
+  let teachers: Teacher[] = [];
+  if (c.teachers && c.teachers.length > 0) {
+    teachers = c.teachers;
+  } else if (c.teacher_name) {
+    teachers = [{ name: c.teacher_name, avatar: c.teacher_avatar, short_bio: c.teacher_short_bio, long_bio: c.teacher_long_bio }];
+  } else if (c.teacher) {
+    teachers = [c.teacher];
+  }
   return {
     id: c.id,
     title: c.title ?? "",
@@ -79,10 +84,7 @@ function fromCourse(c: Course): Form {
     thumbnail_url: c.thumbnail_url ?? "",
     short_description: c.short_description ?? "",
     long_description: c.long_description ?? "",
-    teacher_name: c.teacher_name ?? c.teacher?.name ?? "",
-    teacher_avatar: c.teacher_avatar ?? c.teacher?.avatar ?? "",
-    teacher_short_bio: c.teacher_short_bio ?? c.teacher?.short_bio ?? "",
-    teacher_long_bio: c.teacher_long_bio ?? c.teacher?.long_bio ?? "",
+    teachers,
     price: c.price != null ? String(c.price) : "",
     discount_price: c.discount_price != null ? String(c.discount_price) : "",
     discount_ends_at: c.discount_ends_at ? c.discount_ends_at.slice(0, 10) : "",
@@ -111,6 +113,17 @@ export default function CourseEditor() {
 
   function set<K extends keyof Form>(key: K, value: Form[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // ── Teachers ────────────────────────────────────────────────
+  function addTeacher() {
+    setForm((f) => ({ ...f, teachers: [...f.teachers, { name: "", avatar: "", short_bio: "", long_bio: "" }] }));
+  }
+  function updateTeacher(idx: number, patch: Partial<Teacher>) {
+    setForm((f) => ({ ...f, teachers: f.teachers.map((t, i) => (i === idx ? { ...t, ...patch } : t)) }));
+  }
+  function removeTeacher(idx: number) {
+    setForm((f) => ({ ...f, teachers: f.teachers.filter((_, i) => i !== idx) }));
   }
 
   // ── Icon lists ──────────────────────────────────────────────
@@ -199,10 +212,11 @@ export default function CourseEditor() {
         short_description: form.short_description.trim() || undefined,
         long_description: form.long_description || undefined,
         total_lessons: form.total_lessons ? Number(form.total_lessons) : lessonCount,
-        teacher_name: form.teacher_name.trim() || undefined,
-        teacher_avatar: form.teacher_avatar || undefined,
-        teacher_short_bio: form.teacher_short_bio.trim() || undefined,
-        teacher_long_bio: form.teacher_long_bio.trim() || undefined,
+        teachers: form.teachers.filter((t) => t.name.trim()),
+        teacher_name: form.teachers[0]?.name?.trim() || undefined,
+        teacher_avatar: form.teachers[0]?.avatar || undefined,
+        teacher_short_bio: form.teachers[0]?.short_bio?.trim() || undefined,
+        teacher_long_bio: form.teachers[0]?.long_bio?.trim() || undefined,
         highlight_items: form.highlight_items.filter((h) => h.text.trim()),
         feature_items: form.feature_items.filter((h) => h.text.trim()),
         coupons: form.coupons.filter((c) => c.code.trim()).map((c) => ({ ...c, code: c.code.trim().toUpperCase() })),
@@ -287,31 +301,45 @@ export default function CourseEditor() {
             />
           </Field>
 
-          <div className="rounded-lg border border-border p-4">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">শিক্ষক</p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="নাম">
-                <Input value={form.teacher_name} onChange={(e) => set("teacher_name", e.target.value)} placeholder="মেজর (অব.) আরিফ হোসেন" />
-              </Field>
-              <Field label="সংক্ষিপ্ত পরিচয়">
-                <Input value={form.teacher_short_bio} onChange={(e) => set("teacher_short_bio", e.target.value)} placeholder="ISSB পরামর্শদাতা" />
-              </Field>
+          <div className="rounded-lg border border-border p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">শিক্ষকবৃন্দ</p>
+              <Button variant="outline" size="sm" onClick={addTeacher}>
+                <Plus className="mr-2 h-4 w-4" /> শিক্ষক যোগ
+              </Button>
             </div>
-            <div className="mt-4">
-              <Field label="ছবি (আপলোড)">
-                <ImageUpload value={form.teacher_avatar} onChange={(url) => set("teacher_avatar", url)} folder="thumbnails" />
-              </Field>
-            </div>
-            <div className="mt-4">
-              <Field label="বিস্তারিত পরিচয়">
-                <textarea
-                  value={form.teacher_long_bio}
-                  onChange={(e) => set("teacher_long_bio", e.target.value)}
-                  rows={3}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </Field>
-            </div>
+            {form.teachers.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-2">কোনো শিক্ষক যোগ করা হয়নি।</p>
+            )}
+            {form.teachers.map((t, i) => (
+              <div key={i} className="rounded-md border border-border bg-muted/20 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground">শিক্ষক {i + 1}</span>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeTeacher(i)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="নাম">
+                    <Input value={t.name} onChange={(e) => updateTeacher(i, { name: e.target.value })} placeholder="মেজর (অব.) আরিফ হোসেন" />
+                  </Field>
+                  <Field label="সংক্ষিপ্ত পরিচয়">
+                    <Input value={t.short_bio ?? ""} onChange={(e) => updateTeacher(i, { short_bio: e.target.value })} placeholder="ISSB পরামর্শদাতা" />
+                  </Field>
+                </div>
+                <Field label="ছবি (আপলোড)">
+                  <ImageUpload value={t.avatar ?? ""} onChange={(url) => updateTeacher(i, { avatar: url })} folder="thumbnails" />
+                </Field>
+                <Field label="বিস্তারিত পরিচয়">
+                  <textarea
+                    value={t.long_bio ?? ""}
+                    onChange={(e) => updateTeacher(i, { long_bio: e.target.value })}
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </Field>
+              </div>
+            ))}
           </div>
         </TabsContent>
 

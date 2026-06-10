@@ -35,6 +35,7 @@ export function useUpsertCourse() {
         long_description: course.long_description,
         total_lessons: course.total_lessons ?? 0,
         enrollment_count: course.enrollment_count ?? 0,
+        teachers: course.teachers ?? [],
         teacher_name: course.teacher_name,
         teacher_avatar: course.teacher_avatar,
         teacher_short_bio: course.teacher_short_bio,

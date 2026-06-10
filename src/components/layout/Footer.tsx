@@ -90,7 +90,7 @@ export function Footer() {
           <h4 className="mb-5 font-heading text-base font-semibold text-foreground">
             {tr.home.branches.title}
           </h4>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {BRANCHES.map((branch) => (
               <div key={branch.name.en} className="rounded-lg border border-border bg-background p-4 text-sm">
                 <p className="font-heading font-semibold text-foreground">{branch.name[lang]}</p>

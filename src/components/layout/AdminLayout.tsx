@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   Brain,
+  Trophy,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,6 +38,7 @@ const items = [
   { title: t.admin.students, url: "/admin/students", icon: Users },
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },
   { title: "ISSB কন্টেন্ট", url: "/admin/issb", icon: Brain },
+  { title: "সাফল্যের গল্প", url: "/admin/success", icon: Trophy },
   { title: t.admin.pageBuilder, url: "/admin/page-builder", icon: LayoutTemplate },
   { title: t.admin.settings, url: "/admin/settings", icon: Settings },
 ];

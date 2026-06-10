@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
 import { Trophy, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSuccessStories } from "@/hooks/useSuccessStories";
 import { SUCCESS_STORIES } from "@/lib/success/stories";
 
-
 export default function SuccessCadet() {
+  const { data: dbStories } = useSuccessStories("cadet");
+  const stories = dbStories && dbStories.length > 0
+    ? dbStories.map((s) => ({ id: s.id, image: s.image_url ?? "", title: s.name, description: s.description ?? "" }))
+    : SUCCESS_STORIES;
   return (
     <>
       {/* Hero */}
@@ -37,7 +41,7 @@ export default function SuccessCadet() {
             <p className="mt-2 text-sm text-muted-foreground">আমাদের শিক্ষার্থীরা যা অর্জন করেছেন</p>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {SUCCESS_STORIES.map((s) => (
+            {stories.map((s) => (
               <div
                 key={s.id}
                 className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"

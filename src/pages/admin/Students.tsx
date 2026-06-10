@@ -1,9 +1,15 @@
 import { useState } from "react";
-import { Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2, KeyRound } from "lucide-react";
+import {
+  Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
+  KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
+  CalendarDays, UserPlus, Save, Eye, EyeOff,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -11,6 +17,287 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useStudents, useDeleteStudent, useResetStudentPassword } from "@/hooks/useStudents";
+import {
+  useStudentCourseOrders,
+  useAllCoursesForSelect,
+  useAdminEnrollStudent,
+  useAdminRevokeEnrollment,
+  useAdminUpdateValidity,
+  useAdminCreateStudent,
+} from "@/hooks/useAdminEnrollments";
+import type { Order } from "@/hooks/useOrders";
+
+// ─── Validity helpers ──────────────────────────────────────────────────────────
+
+function validityBadge(order: Order) {
+  if (order.status === "cancelled")
+    return <Badge variant="destructive" className="text-[10px]">বাতিল</Badge>;
+  if (!order.valid_until)
+    return <Badge className="text-[10px] bg-green-100 text-green-700">আজীবন</Badge>;
+  const exp = new Date(order.valid_until);
+  const now = new Date();
+  if (exp <= now)
+    return <Badge variant="destructive" className="text-[10px]">মেয়াদ শেষ</Badge>;
+  const days = Math.ceil((exp.getTime() - now.getTime()) / 86400000);
+  return (
+    <Badge className={`text-[10px] ${days < 7 ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
+      {exp.toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" })} পর্যন্ত
+    </Badge>
+  );
+}
+
+// ─── Student enrollment panel ──────────────────────────────────────────────────
+
+function EnrollmentPanel({ userId }: { userId: string }) {
+  const { data: orders = [], isLoading } = useStudentCourseOrders(userId);
+  const { data: courses = [] } = useAllCoursesForSelect();
+  const enroll = useAdminEnrollStudent();
+  const revoke = useAdminRevokeEnrollment();
+  const updateValidity = useAdminUpdateValidity();
+
+  const [courseId, setCourseId] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const [editingValidity, setEditingValidity] = useState<string | null>(null);
+  const [newValidity, setNewValidity] = useState("");
+
+  async function handleEnroll() {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) { toast.error("কোর্স বেছে নিন"); return; }
+    try {
+      await enroll.mutateAsync({
+        email: "",
+        courseId: course.id,
+        courseName: course.title,
+        validUntil: validUntil || null,
+      });
+      toast.success("কোর্স অ্যাসাইন হয়েছে");
+      setCourseId(""); setValidUntil("");
+    } catch (e: unknown) { toast.error((e as Error)?.message); }
+  }
+
+  async function handleRevoke(orderId: string) {
+    try {
+      await revoke.mutateAsync(orderId);
+      toast.success("অ্যাক্সেস বাতিল হয়েছে");
+    } catch { toast.error("সমস্যা হয়েছে"); }
+  }
+
+  async function handleUpdateValidity(orderId: string) {
+    try {
+      await updateValidity.mutateAsync({ orderId, validUntil: newValidity || null });
+      toast.success("মেয়াদ আপডেট হয়েছে");
+      setEditingValidity(null);
+    } catch { toast.error("সমস্যা হয়েছে"); }
+  }
+
+  return (
+    <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-4">
+      {/* Enrolled courses */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">এনরোলড কোর্স</p>
+        {isLoading && <p className="text-xs text-muted-foreground">লোড হচ্ছে...</p>}
+        {!isLoading && orders.length === 0 && (
+          <p className="text-xs text-muted-foreground italic">কোনো কোর্স নেই</p>
+        )}
+        {orders.map((o) => (
+          <div key={o.id} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{o.product_name}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  {validityBadge(o)}
+                  <span className="text-[10px] text-muted-foreground">
+                    ভর্তি: {new Date(o.created_at).toLocaleDateString("bn-BD")}
+                  </span>
+                </div>
+              </div>
+              {o.status !== "cancelled" && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost" size="icon" className="h-7 w-7"
+                    title="মেয়াদ পরিবর্তন"
+                    onClick={() => {
+                      setEditingValidity(editingValidity === o.id ? null : o.id);
+                      setNewValidity(o.valid_until ? o.valid_until.slice(0, 10) : "");
+                    }}
+                  >
+                    <CalendarDays className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                    title="অ্যাক্সেস বাতিল করুন"
+                    onClick={() => handleRevoke(o.id)}
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            {editingValidity === o.id && (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={newValidity}
+                  onChange={(e) => setNewValidity(e.target.value)}
+                  className="h-7 text-xs"
+                />
+                <Button size="sm" className="h-7 text-xs px-2" onClick={() => handleUpdateValidity(o.id)}>
+                  <Save className="mr-1 h-3 w-3" /> সেভ
+                </Button>
+                <Button
+                  size="sm" variant="ghost" className="h-7 text-xs px-2"
+                  onClick={() => handleUpdateValidity(o.id.replace(/^/, ""))}
+                >
+                  আজীবন
+                </Button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add course form */}
+      <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-3">
+        <p className="text-xs font-semibold text-accent">নতুন কোর্স যোগ করুন</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label className="text-xs">কোর্স</Label>
+            <Select value={courseId} onValueChange={setCourseId}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="কোর্স বেছে নিন" /></SelectTrigger>
+              <SelectContent>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-xs">{c.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">মেয়াদ (খালি রাখলে আজীবন)</Label>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="h-8 text-xs" />
+          </div>
+        </div>
+        <Button size="sm" className="h-7 text-xs" onClick={handleEnroll} disabled={!courseId || enroll.isPending}>
+          <Plus className="mr-1 h-3 w-3" />
+          {enroll.isPending ? "যোগ হচ্ছে..." : "কোর্স অ্যাসাইন করুন"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Quick Enroll by email (top-level) ────────────────────────────────────────
+
+function QuickEnrollCard() {
+  const { data: courses = [] } = useAllCoursesForSelect();
+  const enroll = useAdminEnrollStudent();
+  const [email, setEmail] = useState("");
+  const [courseId, setCourseId] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+
+  async function handleSubmit() {
+    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) { toast.error("কোর্স বেছে নিন"); return; }
+    try {
+      await enroll.mutateAsync({ email, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
+      toast.success(`${email} — কোর্স অ্যাসাইন হয়েছে`);
+      setEmail(""); setCourseId(""); setValidUntil("");
+    } catch (e: unknown) { toast.error((e as Error)?.message); }
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <BookOpen className="h-4 w-4 text-accent" />
+        <p className="text-sm font-semibold">কোর্স অ্যাসাইন করুন (ইমেইল দিয়ে)</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        <div className="space-y-1">
+          <Label className="text-xs">শিক্ষার্থীর ইমেইল</Label>
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" className="h-8 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">কোর্স</Label>
+          <Select value={courseId} onValueChange={setCourseId}>
+            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="কোর্স বেছে নিন" /></SelectTrigger>
+            <SelectContent>
+              {courses.map((c) => (
+                <SelectItem key={c.id} value={c.id} className="text-xs">{c.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">মেয়াদ (খালি = আজীবন)</Label>
+          <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="h-8 text-xs" />
+        </div>
+      </div>
+      <Button size="sm" onClick={handleSubmit} disabled={enroll.isPending}>
+        <Plus className="mr-2 h-3.5 w-3.5" />
+        {enroll.isPending ? "অ্যাসাইন হচ্ছে..." : "অ্যাসাইন করুন"}
+      </Button>
+    </div>
+  );
+}
+
+// ─── Create student account ────────────────────────────────────────────────────
+
+function CreateStudentCard() {
+  const createStudent = useAdminCreateStudent();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  async function handleCreate() {
+    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
+    if (password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে"); return; }
+    try {
+      await createStudent.mutateAsync({ email, password });
+      toast.success(`${email} — অ্যাকাউন্ট তৈরি হয়েছে`);
+      setEmail(""); setPassword("");
+    } catch (e: unknown) { toast.error((e as Error)?.message); }
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <UserPlus className="h-4 w-4 text-accent" />
+        <p className="text-sm font-semibold">নতুন শিক্ষার্থী তৈরি করুন</p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="space-y-1">
+          <Label className="text-xs">ইমেইল</Label>
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" className="h-8 text-xs" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">পাসওয়ার্ড</Label>
+          <div className="relative">
+            <Input
+              type={showPw ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="কমপক্ষে ৬ অক্ষর"
+              className="h-8 text-xs pr-8"
+            />
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+              onClick={() => setShowPw((s) => !s)}
+            >
+              {showPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        </div>
+      </div>
+      <Button size="sm" onClick={handleCreate} disabled={createStudent.isPending}>
+        <UserPlus className="mr-2 h-3.5 w-3.5" />
+        {createStudent.isPending ? "তৈরি হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
+      </Button>
+    </div>
+  );
+}
+
+// ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminStudents() {
   const { data: students = [], isLoading, error, refetch } = useStudents();
@@ -20,6 +307,7 @@ export default function AdminStudents() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const filtered = students.filter((s) => {
     const q = search.trim().toLowerCase();
@@ -61,21 +349,26 @@ export default function AdminStudents() {
   }
 
   return (
-    <div>
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">শিক্ষার্থী ও ব্যবহারকারী</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            মোট {students.length} জন নিবন্ধিত ব্যবহারকারী
-          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">মোট {students.length} জন নিবন্ধিত ব্যবহারকারী</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
         </Button>
       </div>
 
+      {/* Action cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <CreateStudentCard />
+        <QuickEnrollCard />
+      </div>
+
       {/* Role filter */}
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {(["all", "student", "admin"] as const).map((r) => (
           <button
             key={r}
@@ -93,7 +386,7 @@ export default function AdminStudents() {
       </div>
 
       {/* Search */}
-      <div className="relative mt-4 max-w-sm">
+      <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="নাম, ফোন, ইমেইল বা ID দিয়ে খুঁজুন..."
@@ -103,8 +396,8 @@ export default function AdminStudents() {
         />
       </div>
 
-      {/* Table */}
-      <div className="mt-5 overflow-x-auto rounded-lg border border-border">
+      {/* Students list */}
+      <div className="rounded-lg border border-border overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center py-16 text-muted-foreground">লোড হচ্ছে...</div>
         ) : error ? (
@@ -112,8 +405,7 @@ export default function AdminStudents() {
             <p className="text-sm font-medium text-destructive">ডেটা লোড হয়নি</p>
             <p className="text-xs">
               Supabase-এ profiles টেবিলের RLS policy চেক করুন।{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">supabase_students_policy.sql</code>{" "}
-              ফাইলটি রান করুন।
+              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">supabase_students_policy.sql</code> ফাইলটি রান করুন।
             </p>
             <Button size="sm" variant="outline" onClick={() => refetch()} className="mt-2">আবার চেষ্টা করুন</Button>
           </div>
@@ -123,77 +415,80 @@ export default function AdminStudents() {
             <p>কোনো ব্যবহারকারী পাওয়া যায়নি</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-muted/50">
-              <tr>
-                {["ব্যবহারকারী", "ইমেইল", "ফোন", "রোল", "অ্যাকশন"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border bg-card">
-              {filtered.map((s) => (
-                <tr key={s.id} className="transition-colors hover:bg-muted/30">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9 shrink-0">
-                        <AvatarImage src={s.avatar_url ?? undefined} />
-                        <AvatarFallback className="bg-accent/10 text-sm font-semibold text-accent">
-                          {(s.full_name ?? "?").slice(0, 1).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {s.full_name ?? <span className="italic text-muted-foreground">নাম নেই</span>}
-                        </p>
-                        <code className="text-[11px] text-muted-foreground">{s.id.slice(0, 8)}…</code>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {s.email ?? <span className="italic">—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">
-                    {s.phone ?? <span className="italic">—</span>}
-                  </td>
-                  <td className="px-4 py-3">
+          <div className="divide-y divide-border bg-card">
+            {filtered.map((s) => (
+              <div key={s.id}>
+                {/* Row */}
+                <div className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/20">
+                  {/* Expand toggle */}
+                  <button
+                    onClick={() => setExpanded((prev) => (prev === s.id ? null : s.id))}
+                    className="shrink-0 text-muted-foreground"
+                  >
+                    {expanded === s.id
+                      ? <ChevronDown className="h-4 w-4" />
+                      : <ChevronRight className="h-4 w-4" />}
+                  </button>
+
+                  <Avatar className="h-9 w-9 shrink-0">
+                    <AvatarImage src={s.avatar_url ?? undefined} />
+                    <AvatarFallback className="bg-accent/10 text-sm font-semibold text-accent">
+                      {(s.full_name ?? "?").slice(0, 1).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {s.full_name ?? <span className="italic text-muted-foreground">নাম নেই</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{s.email ?? "—"}</p>
+                  </div>
+
+                  <div className="hidden sm:block text-xs text-muted-foreground shrink-0">{s.phone ?? "—"}</div>
+
+                  <div className="shrink-0">
                     {s.role === "admin" ? (
-                      <Badge className="gap-1 bg-accent/10 text-accent">
+                      <Badge className="gap-1 bg-accent/10 text-accent text-[10px]">
                         <ShieldCheck className="h-3 w-3" /> অ্যাডমিন
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="gap-1">
+                      <Badge variant="secondary" className="gap-1 text-[10px]">
                         <GraduationCap className="h-3 w-3" /> শিক্ষার্থী
                       </Badge>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        title="পাসওয়ার্ড রিসেট ইমেইল পাঠান"
-                        disabled={resetPassword.isPending}
-                        onClick={() => handleResetPassword(s.id, s.full_name)}
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        title="ব্যবহারকারী মুছুন"
-                        onClick={() => setDeleteId(s.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8"
+                      title="কোর্স ম্যানেজ"
+                      onClick={() => setExpanded((prev) => (prev === s.id ? null : s.id))}
+                    >
+                      <BookOpen className="h-4 w-4 text-accent" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8"
+                      title="পাসওয়ার্ড রিসেট"
+                      disabled={resetPassword.isPending}
+                      onClick={() => handleResetPassword(s.id, s.full_name)}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                      title="মুছুন"
+                      onClick={() => setDeleteId(s.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Enrollment panel */}
+                {expanded === s.id && <EnrollmentPanel userId={s.id} />}
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -203,7 +498,7 @@ export default function AdminStudents() {
           <AlertDialogHeader>
             <AlertDialogTitle>ব্যবহারকারী মুছে ফেলবেন?</AlertDialogTitle>
             <AlertDialogDescription>
-              এই ব্যবহারকারীর অ্যাকাউন্ট এবং সমস্ত ডেটা স্থায়ীভাবে মুছে যাবে। এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।
+              এই ব্যবহারকারীর অ্যাকাউন্ট এবং সমস্ত ডেটা স্থায়ীভাবে মুছে যাবে।
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

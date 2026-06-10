@@ -65,6 +65,7 @@ import AdminStudents from "./pages/admin/Students";
 import AdminNotices from "./pages/admin/Notices";
 import PageBuilder from "./pages/admin/PageBuilder";
 import ISSBAdmin from "./pages/admin/ISSBAdmin";
+import SuccessAdmin from "./pages/admin/SuccessAdmin";
 
 const queryClient = new QueryClient();
 
@@ -153,6 +154,7 @@ const App = () => (
                 <Route path="/admin/pages" element={<ComingSoon />} />
                 <Route path="/admin/page-builder" element={<PageBuilder />} />
                 <Route path="/admin/issb" element={<ISSBAdmin />} />
+                <Route path="/admin/success" element={<SuccessAdmin />} />
                 <Route path="/admin/settings" element={<ComingSoon />} />
               </Route>
 

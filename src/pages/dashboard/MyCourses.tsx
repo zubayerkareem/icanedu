@@ -74,17 +74,32 @@ function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Cou
 
       {/* Body */}
       <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
             {new Date(order.created_at).toLocaleDateString("bn-BD", {
               day: "numeric", month: "long", year: "numeric",
             })}
           </span>
-          <span className="font-bold text-accent">
-            ৳{order.total_price.toLocaleString("bn-BD")}
-          </span>
+          {order.total_price > 0 && (
+            <span className="font-bold text-accent">
+              ৳{order.total_price.toLocaleString("bn-BD")}
+            </span>
+          )}
         </div>
+        {/* Validity badge */}
+        {(() => {
+          if (!order.valid_until) return null;
+          const exp = new Date(order.valid_until);
+          const expired = exp <= new Date();
+          return (
+            <div className={`rounded-md px-2 py-1 text-xs font-medium ${expired ? "bg-red-100 text-red-700" : "bg-blue-50 text-blue-700"}`}>
+              {expired
+                ? "মেয়াদ শেষ হয়েছে"
+                : `মেয়াদ: ${exp.toLocaleDateString("bn-BD", { day: "numeric", month: "long", year: "numeric" })} পর্যন্ত`}
+            </div>
+          );
+        })()}
 
         {isActive && courseId && (
           <Button asChild className="w-full" size="sm">

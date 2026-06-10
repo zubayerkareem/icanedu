@@ -21,6 +21,16 @@ export const BRANCHES = [
     mapUrl: "https://www.google.com/maps/search/iCAN+Academy+Mirpur+Dhaka",
   },
   {
+    name: { en: "Dhanmondi Branch (Ground Session)", bn: "ধানমন্ডি শাখা (গ্রাউন্ড সেশন)" },
+    address: {
+      en: "Dhanmondi 32, Beside Taqwa Mosjid, Dhaka",
+      bn: "ধানমন্ডি ৩২, তাকওয়া মসজিদের পাশে, ঢাকা",
+    },
+    phone: "01894734002",
+    email: "icanedu23@gmail.com",
+    mapUrl: "https://www.google.com/maps/search/Taqwa+Mosque+Dhanmondi+32+Dhaka",
+  },
+  {
     name: { en: "Rangpur Branch", bn: "রংপুর শাখা" },
     address: {
       en: "iCAN Building, Lalkuthi More, Rangpur",

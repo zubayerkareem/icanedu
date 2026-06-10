@@ -17,7 +17,7 @@ function formatBnNumber(n: number): string {
 export function ProductCard({ product }: { product: Product }) {
   const tr = useTranslation();
   const href = `/products/${product.slug ?? product.id}`;
-  const cover = product.image_url ?? product.images?.[0];
+  const cover = product.image_url || (Array.isArray(product.images) ? product.images[0] : undefined);
   const hasDiscount =
     typeof product.discount_price === "number" &&
     typeof product.price === "number" &&

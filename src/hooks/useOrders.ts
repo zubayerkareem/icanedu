@@ -20,6 +20,7 @@ export interface Order {
   bkash_txn_id: string | null;
   bkash_number: string | null;
   coupon_code: string | null;
+  valid_until: string | null;
   created_at: string;
 }
 

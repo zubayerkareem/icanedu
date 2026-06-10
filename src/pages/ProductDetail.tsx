@@ -21,12 +21,13 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useProduct(id);
   const { user } = useAuth();
 
-  const gallery =
-    product?.images && product.images.length > 0
-      ? product.images
-      : product?.image_url
-      ? [product.image_url]
+  const gallery = (() => {
+    const primary = product?.image_url ? [product.image_url] : [];
+    const extra = Array.isArray(product?.images)
+      ? (product!.images as string[]).filter((u) => u && u !== product?.image_url)
       : [];
+    return [...primary, ...extra];
+  })();
   const [activeIdx, setActiveIdx] = useState(0);
   const activeImage = gallery[activeIdx];
 

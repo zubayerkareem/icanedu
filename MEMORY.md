@@ -3,7 +3,7 @@
 ## Links
 | | |
 |---|---|
-| **GitHub** | https://github.com/zubayerkareem/icanacademy |
+| **GitHub** | https://github.com/zubayerkareem/iCANBD |
 | **Vercel (Production)** | https://icanbd.com |
 | **Vercel (Alias)** | https://icanbd.vercel.app |
 | **Supabase Project** | Dashboard → supabase.com |

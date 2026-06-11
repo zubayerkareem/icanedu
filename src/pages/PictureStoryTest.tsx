@@ -7,6 +7,7 @@ import { saveSession, loadSession, type PictureStorySubmission, type PictureStor
 import { useCountdown } from "@/hooks/useCountdown";
 import { usePictureStorySets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -440,8 +441,9 @@ function PictureCard({
 
 export default function PictureStoryTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = usePictureStorySets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = usePictureStorySets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const isFreeSet = usingDb ? (dbSets[0].is_free ?? false) : true;

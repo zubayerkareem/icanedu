@@ -4,6 +4,7 @@ import { CheckCircle2, Clock, SkipForward, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IST_SETS, type ISTSentence } from "@/lib/ist/mock";
 import { useISTSets } from "@/hooks/useISSBContent";
+import { useCourse } from "@/hooks/useCourse";
 
 // ─── Audio ─────────────────────────────────────────────────────────────────────
 
@@ -429,7 +430,8 @@ export default function ISTTest() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const [phase, setPhase] = useState<Phase>("instructions");
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const { data: dbSets = [], isLoading } = useISTSets(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [], isLoading } = useISTSets(course?.id);
 
   // Normalize DB set to the shape the test components expect
   const dbSet = dbSets.find((s) => s.id === setId);

@@ -6,6 +6,7 @@ import { IQ_SETS } from "@/lib/iq-practice/mock";
 import { loadProgress } from "@/hooks/useIQProgress";
 import { useIQSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -15,8 +16,9 @@ function formatTime(seconds: number) {
 
 export default function IQPracticeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = useIQSets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = useIQSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const sets = usingDb

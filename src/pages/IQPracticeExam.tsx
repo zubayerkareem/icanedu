@@ -7,6 +7,7 @@ import type { IQQuestion, IQSet } from "@/lib/iq-practice/mock";
 import { loadProgress, saveProgress } from "@/hooks/useIQProgress";
 import { useIQSets } from "@/hooks/useISSBContent";
 import { useSaveIQResult } from "@/hooks/useIQResult";
+import { useCourse } from "@/hooks/useCourse";
 
 // ─── Timer display ────────────────────────────────────────────────────────────
 
@@ -295,8 +296,9 @@ export default function IQPracticeExam() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const navigate = useNavigate();
   const saveResult = useSaveIQResult();
+  const { data: course } = useCourse(courseId);
 
-  const { data: dbSets = [] } = useIQSets(courseId);
+  const { data: dbSets = [] } = useIQSets(course?.id);
   const dbSet = dbSets.find((s) => s.id === setId);
   const set: IQSet | undefined = dbSet
     ? {

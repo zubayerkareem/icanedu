@@ -76,7 +76,7 @@ export function CourseCard({ course }: { course: Course }) {
               <span>{course.duration}</span>
             </div>
           )}
-          {typeof course.enrollment_count === "number" && (
+          {typeof course.enrollment_count === "number" && course.enrollment_count > 0 && (
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
               <span>

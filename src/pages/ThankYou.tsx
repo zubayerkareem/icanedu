@@ -71,7 +71,7 @@ export default function ThankYou() {
 
       <div className="mt-4 rounded-lg border border-border bg-muted/40 px-6 py-4 text-sm text-muted-foreground max-w-sm w-full">
         <p>যেকোনো প্রশ্নের জন্য আমাদের সাথে যোগাযোগ করুন:</p>
-        <p className="mt-1 font-medium text-foreground">01894734005</p>
+        <p className="mt-1 font-medium text-foreground">01894734002</p>
       </div>
 
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">

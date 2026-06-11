@@ -56,7 +56,7 @@ export default function About() {
             <div className="flex flex-col items-center gap-4">
               <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-border shadow-md">
                 <img
-                  src="https://api.icanbd.com/public/uploads/586aea3d-5b42-4a4d-81d0-de9ca94fff6f.png"
+                  src="/chairman.png"
                   alt="Lt Col M A Yousuf"
                   className="h-full w-full object-cover"
                 />

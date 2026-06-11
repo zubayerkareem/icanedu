@@ -27,45 +27,35 @@ export default function Refund() {
 
         <div className="mt-8 space-y-8 text-sm leading-7 text-muted-foreground">
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">১. ৩০ দিনের মানি-ব্যাক গ্যারান্টি</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground">১. কোর্স রিফান্ড নীতি</h2>
             <p className="mt-2">
-              iCANBD-এর সকল কোর্সে ক্রয়ের ৩০ দিনের মধ্যে সম্পূর্ণ অর্থ ফেরতের গ্যারান্টি দেওয়া হয়। আপনি যদি কোর্সের মানে সন্তুষ্ট না হন, তাহলে বিনা প্রশ্নে সম্পূর্ণ অর্থ ফেরত পাবেন।
+              iCANBD-এর কোর্সগুলো ডিজিটাল শিক্ষামূলক পণ্য। কোর্স কেনার পর সাধারণত রিফান্ড প্রযোজ্য নয়। তবে কোর্সে কোনো প্রযুক্তিগত ত্রুটির কারণে কন্টেন্ট অ্যাক্সেস সম্পূর্ণ অসম্ভব হলে আমাদের সাথে যোগাযোগ করুন — আমরা যথাযথ ব্যবস্থা নেব।
             </p>
           </div>
 
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">২. রিফান্ড যোগ্যতার শর্ত</h2>
-            <p className="mt-2">রিফান্ড পেতে নিম্নলিখিত শর্তগুলো পূরণ করতে হবে:</p>
-            <ul className="mt-2 list-inside list-disc space-y-1">
-              <li>ক্রয়ের ৩০ দিনের মধ্যে আবেদন করতে হবে</li>
-              <li>কোর্সের ২০%-এর বেশি কন্টেন্ট সম্পন্ন করা হয়নি</li>
-              <li>একই কোর্সে আগে রিফান্ড নেওয়া হয়নি</li>
-              <li>বৈধ ক্রয়ের প্রমাণ থাকতে হবে</li>
-            </ul>
-          </div>
-
-          <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">৩. প্রোডাক্ট রিফান্ড</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground">২. প্রোডাক্ট রিফান্ড</h2>
             <p className="mt-2">
               ফিজিক্যাল প্রোডাক্ট (বই, নোট, গাইড) এর ক্ষেত্রে ডেলিভারির ৭ দিনের মধ্যে পণ্যে কোনো ত্রুটি থাকলে বিনামূল্যে প্রতিস্থাপন বা অর্থ ফেরত দেওয়া হবে। পণ্যটি অব্যবহৃত ও মূল প্যাকেজিংসহ ফেরত দিতে হবে।
             </p>
           </div>
 
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">৪. রিফান্ড প্রক্রিয়া</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground">৩. রিফান্ড প্রক্রিয়া</h2>
             <p className="mt-2">রিফান্ডের জন্য নিচের পদক্ষেপগুলো অনুসরণ করুন:</p>
             <ol className="mt-2 list-inside list-decimal space-y-1">
               <li>icanedu23@gmail.com-এ ইমেইল করুন</li>
-              <li>অর্ডার নম্বর ও রিফান্ডের কারণ উল্লেখ করুন</li>
+              <li>অর্ডার নম্বর ও সমস্যার বিবরণ উল্লেখ করুন</li>
               <li>আমাদের টিম ৪৮ ঘণ্টার মধ্যে যোগাযোগ করবে</li>
               <li>যাচাই সম্পন্ন হলে ৫-৭ কার্যদিবসের মধ্যে অর্থ ফেরত দেওয়া হবে</li>
             </ol>
           </div>
 
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">৫. রিফান্ডযোগ্য নয়</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground">৪. রিফান্ডযোগ্য নয়</h2>
             <p className="mt-2">নিম্নলিখিত ক্ষেত্রে রিফান্ড প্রযোজ্য নয়:</p>
             <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>ডিজিটাল কোর্স (একবার অ্যাক্সেস প্রদানের পর)</li>
               <li>ডাউনলোডযোগ্য ডিজিটাল কন্টেন্ট (ডাউনলোডের পর)</li>
               <li>মেয়াদোত্তীর্ণ অফার বা বিশেষ ছাড়ের কোর্স</li>
               <li>গিফট কার্ড বা ভাউচার</li>
@@ -74,13 +64,13 @@ export default function Refund() {
           </div>
 
           <div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">৬. যোগাযোগ</h2>
+            <h2 className="font-heading text-lg font-semibold text-foreground">৫. যোগাযোগ</h2>
             <p className="mt-2">
               রিফান্ড সংক্রান্ত যেকোনো জিজ্ঞাসায় আমাদের সাথে যোগাযোগ করুন:{" "}
               <a href="mailto:icanedu23@gmail.com" className="text-accent hover:underline">
                 icanedu23@gmail.com
               </a>{" "}
-              অথবা কল করুন <span className="text-foreground font-medium">01894734005</span>।
+              অথবা কল করুন <span className="text-foreground font-medium">01894734002</span>।
             </p>
           </div>
         </div>

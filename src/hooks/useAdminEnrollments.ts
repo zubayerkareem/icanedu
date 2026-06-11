@@ -87,7 +87,10 @@ export function useAdminUpdateValidity() {
         .eq("id", orderId);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["student_orders"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student_orders"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 }
 

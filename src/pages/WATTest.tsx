@@ -4,6 +4,7 @@ import { Maximize2, Minimize2, Pause, Play, SkipForward } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WAT_SETS } from "@/lib/wat/mock";
 import { useWATSets } from "@/hooks/useISSBContent";
+import { useCourse } from "@/hooks/useCourse";
 
 const WORD_SECONDS = 10;
 
@@ -288,7 +289,8 @@ type Phase = "instructions" | "test" | "complete";
 export default function WATTest() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
   const [phase, setPhase] = useState<Phase>("instructions");
-  const { data: dbSets = [], isLoading } = useWATSets(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [], isLoading } = useWATSets(course?.id);
 
   const dbSet = dbSets.find((s) => s.id === setId);
   const mockSet = !dbSet ? WAT_SETS.find((s) => s.id === setId) : undefined;

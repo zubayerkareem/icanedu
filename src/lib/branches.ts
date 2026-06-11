@@ -28,7 +28,7 @@ export const BRANCHES = [
     },
     phone: "01894734002",
     email: "icanedu23@gmail.com",
-    mapUrl: "https://www.google.com/maps/search/Taqwa+Mosque+Dhanmondi+32+Dhaka",
+    mapUrl: "https://maps.app.goo.gl/KDESbsee8M5Kc6mZA",
   },
   {
     name: { en: "Rangpur Branch", bn: "রংপুর শাখা" },

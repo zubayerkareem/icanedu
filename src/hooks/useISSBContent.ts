@@ -9,6 +9,7 @@ import type {
 export function useIQSets(courseId?: string) {
   return useQuery<IQSet[]>({
     queryKey: ["iq_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase
@@ -33,6 +34,7 @@ export function useIQSets(courseId?: string) {
 export function useWATSets(courseId?: string) {
   return useQuery<WATSet[]>({
     queryKey: ["wat_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase.from("wat_sets").select("*").eq("is_published", true).order("order_index");
@@ -48,6 +50,7 @@ export function useWATSets(courseId?: string) {
 export function useISTSets(courseId?: string) {
   return useQuery<ISTSet[]>({
     queryKey: ["ist_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase
@@ -72,6 +75,7 @@ export function useISTSets(courseId?: string) {
 export function useExtemporeSets(courseId?: string) {
   return useQuery<ExtemporeSet[]>({
     queryKey: ["extempore_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase
@@ -96,6 +100,7 @@ export function useExtemporeSets(courseId?: string) {
 export function usePPDTSets(courseId?: string) {
   return useQuery<PPDTSet[]>({
     queryKey: ["ppdt_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase
@@ -120,6 +125,7 @@ export function usePPDTSets(courseId?: string) {
 export function usePictureStorySets(courseId?: string) {
   return useQuery<PictureStorySet[]>({
     queryKey: ["picture_story_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase
@@ -144,6 +150,7 @@ export function usePictureStorySets(courseId?: string) {
 export function useIncompleteStorySets(courseId?: string) {
   return useQuery<IncompleteStorySet[]>({
     queryKey: ["incomplete_story_sets", courseId],
+    enabled: !!courseId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase

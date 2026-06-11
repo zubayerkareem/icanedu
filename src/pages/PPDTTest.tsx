@@ -7,6 +7,7 @@ import { saveSession, loadSession, type PPDTSubmission, type PPDTSessionData } f
 import { useCountdown } from "@/hooks/useCountdown";
 import { usePPDTSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 // ─── Timer ────────────────────────────────────────────────────────────────────
 
@@ -399,8 +400,9 @@ function PPDTCard({
 
 export default function PPDTTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = usePPDTSets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = usePPDTSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const isFreeSet = usingDb ? (dbSets[0].is_free ?? false) : true;

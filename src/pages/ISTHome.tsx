@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { IST_SETS } from "@/lib/ist/mock";
 import { useISTSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 export default function ISTHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = useISTSets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = useISTSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const sets = usingDb

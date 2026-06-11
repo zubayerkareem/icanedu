@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { EXTEMPORE_SETS, EXTEMPORE_TIMER_SECONDS } from "@/lib/extempore/mock";
 import { useExtemporeSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 export default function ExtemporeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = useExtemporeSets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = useExtemporeSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const sets = usingDb

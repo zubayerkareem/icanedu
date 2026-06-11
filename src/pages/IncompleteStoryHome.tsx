@@ -7,6 +7,7 @@ import { loadSubmission, saveSubmission } from "@/hooks/useStorySubmission";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useIncompleteStorySets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 // ─── Labels ───────────────────────────────────────────────────────────────────
 
@@ -513,8 +514,9 @@ export default function IncompleteStoryHome() {
 
   const L = lang === "bn" ? BN : EN;
 
-  const { data: dbSets = [] } = useIncompleteStorySets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = useIncompleteStorySets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   type StoryWithAccess = IncompleteStory & { is_free: boolean };

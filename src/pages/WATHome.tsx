@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { WAT_SETS } from "@/lib/wat/mock";
 import { useWATSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
+import { useCourse } from "@/hooks/useCourse";
 
 export default function WATHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: dbSets = [] } = useWATSets(courseId);
-  const { enrolled } = useIsEnrolled(courseId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = useWATSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const usingDb = dbSets.length > 0;
   const sets = usingDb

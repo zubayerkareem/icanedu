@@ -36,10 +36,10 @@ export function useUpsertCourse() {
         total_lessons: course.total_lessons ?? 0,
         enrollment_count: course.enrollment_count ?? 0,
         teachers: course.teachers ?? [],
-        teacher_name: course.teacher_name,
-        teacher_avatar: course.teacher_avatar,
-        teacher_short_bio: course.teacher_short_bio,
-        teacher_long_bio: course.teacher_long_bio,
+        teacher_name: course.teacher_name ?? null,
+        teacher_avatar: course.teacher_avatar ?? null,
+        teacher_short_bio: course.teacher_short_bio ?? null,
+        teacher_long_bio: course.teacher_long_bio ?? null,
         includes: course.includes ?? {},
         modules: course.modules ?? [],
         reviews: course.reviews ?? [],
@@ -65,6 +65,7 @@ export function useUpsertCourse() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin_courses"] });
       qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["course"] });
     },
   });
 }

@@ -78,9 +78,7 @@ export default function DashboardHome() {
         <div className="relative z-10">
           <p className="text-sm font-medium opacity-80">{greeting()},</p>
           <h1 className="mt-0.5 font-heading text-2xl font-bold sm:text-3xl">{name}</h1>
-          <p className="mt-2 max-w-md text-sm opacity-75">
-            আজকের লক্ষ্য নির্ধারণ করুন এবং প্রস্তুতি অব্যাহত রাখুন। সাফল্য কাছেই।
-          </p>
+
           <Link
             to="/courses"
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium hover:bg-white/30 transition-colors"

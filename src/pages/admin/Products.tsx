@@ -124,7 +124,6 @@ export default function AdminProducts() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">পণ্য ম্যানেজমেন্ট</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">মোট {products.length}টি পণ্য</p>
         </div>
         <div className="flex gap-2">

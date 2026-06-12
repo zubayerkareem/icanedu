@@ -28,8 +28,8 @@ const STATUS_VARIANTS: Record<OrderStatus, "default" | "secondary" | "destructiv
 
 const COURSE_STATUS_NEXT: Record<OrderStatus, OrderStatus | null> = {
   pending:   "confirmed",
-  confirmed: "delivered",
-  shipped:   "delivered",
+  confirmed: null,
+  shipped:   null,
   delivered: null,
   cancelled: null,
 };
@@ -37,7 +37,7 @@ const COURSE_STATUS_NEXT: Record<OrderStatus, OrderStatus | null> = {
 const PRODUCT_STATUS_NEXT: Record<OrderStatus, OrderStatus | null> = {
   pending:   "confirmed",
   confirmed: "shipped",
-  shipped:   "delivered",
+  shipped:   null,
   delivered: null,
   cancelled: null,
 };

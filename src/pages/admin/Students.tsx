@@ -448,7 +448,7 @@ export default function AdminStudents() {
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarImage src={s.avatar_url ?? undefined} />
                     <AvatarFallback className="bg-accent/10 text-sm font-semibold text-accent">
-                      {(s.full_name ?? "?")[0].toUpperCase()}
+                      {(s.full_name?.trim() || "?")[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
 

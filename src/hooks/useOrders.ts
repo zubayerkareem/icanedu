@@ -68,3 +68,17 @@ export function useUpdateOrderStatus() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
 }
+
+export function useBulkUpdateOrderStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: OrderStatus }) => {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
+  });
+}

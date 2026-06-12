@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ShoppingBag, Search, RefreshCw, BookOpen, Package, Calendar, X } from "lucide-react";
+import { ShoppingBag, Search, RefreshCw, BookOpen, Package, Calendar, X, CheckSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useOrders, useUpdateOrderStatus } from "@/hooks/useOrders";
+import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "@/hooks/useOrders";
 import { useAdminUpdateValidity } from "@/hooks/useAdminEnrollments";
 import type { Order, OrderStatus } from "@/hooks/useOrders";
 import { toast } from "sonner";
@@ -25,7 +26,6 @@ const STATUS_VARIANTS: Record<OrderStatus, "default" | "secondary" | "destructiv
   cancelled: "destructive",
 };
 
-// Course orders skip "shipped" — digital delivery
 const COURSE_STATUS_NEXT: Record<OrderStatus, OrderStatus | null> = {
   pending:   "confirmed",
   confirmed: "delivered",
@@ -58,17 +58,15 @@ function formatDate(iso: string) {
 }
 
 function ValidityBadge({ validUntil }: { validUntil: string | null }) {
-  if (!validUntil) {
-    return <span className="text-xs text-muted-foreground">আজীবন</span>;
-  }
+  if (!validUntil) return <span className="text-xs text-muted-foreground">আজীবন</span>;
   const d = new Date(validUntil);
   const daysLeft = Math.ceil((d.getTime() - Date.now()) / 86_400_000);
   const label = d.toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" });
   if (daysLeft < 0)
-    return <span className="rounded-full bg-red-100 dark:bg-red-950/40 px-2 py-0.5 text-[10px] font-semibold text-red-600">মেয়াদ শেষ</span>;
+    return <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-600">মেয়াদ শেষ</span>;
   if (daysLeft <= 7)
-    return <span className="rounded-full bg-orange-100 dark:bg-orange-950/40 px-2 py-0.5 text-[10px] font-semibold text-orange-600">{label}</span>;
-  return <span className="rounded-full bg-blue-100 dark:bg-blue-950/40 px-2 py-0.5 text-[10px] font-semibold text-blue-600">{label}</span>;
+    return <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-600">{label}</span>;
+  return <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-600">{label}</span>;
 }
 
 function ValidityCell({ order }: { order: Order }) {
@@ -90,7 +88,7 @@ function ValidityCell({ order }: { order: Order }) {
     updateValidity(
       { orderId: order.id, validUntil: null },
       {
-        onSuccess: () => { toast.success("মেয়াদ সরানো হয়েছে (আজীবন)"); setDate(""); setEditing(false); },
+        onSuccess: () => { toast.success("আজীবন করা হয়েছে"); setDate(""); setEditing(false); },
         onError:   () => toast.error("মেয়াদ আপডেট ব্যর্থ"),
       }
     );
@@ -99,33 +97,11 @@ function ValidityCell({ order }: { order: Order }) {
   if (editing) {
     return (
       <div className="flex flex-col gap-1.5 min-w-[160px]">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="h-7 text-xs"
-        />
+        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-7 text-xs" />
         <div className="flex items-center gap-1">
-          <Button size="sm" className="h-6 text-[11px] px-2" onClick={save} disabled={isPending}>
-            সেভ
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-6 text-[11px] px-2"
-            onClick={clearValidity}
-            disabled={isPending}
-          >
-            আজীবন
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0"
-            onClick={() => setEditing(false)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
+          <Button size="sm" className="h-6 text-[11px] px-2" onClick={save} disabled={isPending}>সেভ</Button>
+          <Button size="sm" variant="outline" className="h-6 text-[11px] px-2" onClick={clearValidity} disabled={isPending}>আজীবন</Button>
+          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => setEditing(false)}><X className="h-3 w-3" /></Button>
         </div>
       </div>
     );
@@ -134,11 +110,7 @@ function ValidityCell({ order }: { order: Order }) {
   return (
     <div className="flex items-center gap-1.5">
       <ValidityBadge validUntil={order.valid_until} />
-      <button
-        onClick={() => setEditing(true)}
-        title="মেয়াদ পরিবর্তন করুন"
-        className="text-muted-foreground hover:text-foreground transition-colors"
-      >
+      <button onClick={() => setEditing(true)} title="মেয়াদ পরিবর্তন" className="text-muted-foreground hover:text-foreground transition-colors">
         <Calendar className="h-3.5 w-3.5" />
       </button>
     </div>
@@ -146,20 +118,14 @@ function ValidityCell({ order }: { order: Order }) {
 }
 
 function StatusFilters({
-  counts,
-  value,
-  onChange,
-  hideShipped = false,
+  counts, value, onChange, hideShipped = false,
 }: {
   counts: Record<FilterStatus, number>;
   value: FilterStatus;
   onChange: (s: FilterStatus) => void;
   hideShipped?: boolean;
 }) {
-  const statuses = hideShipped
-    ? ALL_STATUSES.filter((s) => s !== "shipped")
-    : ALL_STATUSES;
-
+  const statuses = hideShipped ? ALL_STATUSES.filter((s) => s !== "shipped") : ALL_STATUSES;
   return (
     <div className="flex flex-wrap gap-2">
       {statuses.map((s) => (
@@ -168,9 +134,7 @@ function StatusFilters({
           onClick={() => onChange(s)}
           className={[
             "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-            value === s
-              ? "bg-accent text-accent-foreground"
-              : "bg-muted text-muted-foreground hover:bg-accent/20",
+            value === s ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20",
           ].join(" ")}
         >
           {s === "all" ? "সব" : STATUS_LABELS[s]} ({counts[s]})
@@ -180,10 +144,55 @@ function StatusFilters({
   );
 }
 
+// ─── Bulk action bar ───────────────────────────────────────────────────────────
+
+function BulkActionBar({
+  count,
+  statuses,
+  onApply,
+  onClear,
+  isPending,
+}: {
+  count: number;
+  statuses: OrderStatus[];
+  onApply: (status: OrderStatus) => void;
+  onClear: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-4 py-2.5">
+      <CheckSquare className="h-4 w-4 text-accent shrink-0" />
+      <span className="text-sm font-medium text-foreground shrink-0">{count}টি নির্বাচিত</span>
+      <span className="text-muted-foreground text-xs shrink-0">— স্ট্যাটাস পরিবর্তন করুন:</span>
+      <div className="flex flex-wrap gap-1.5">
+        {statuses.map((s) => (
+          <Button
+            key={s}
+            size="sm"
+            variant={s === "cancelled" ? "destructive" : "outline"}
+            className="h-7 text-xs"
+            onClick={() => onApply(s)}
+            disabled={isPending}
+          >
+            {STATUS_LABELS[s]}
+          </Button>
+        ))}
+      </div>
+      <button
+        onClick={onClear}
+        className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
+        title="নির্বাচন বাতিল"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+// ─── Course orders tab ─────────────────────────────────────────────────────────
+
 function CourseOrdersTab({
-  orders,
-  onAdvance,
-  onCancel,
+  orders, onAdvance, onCancel,
 }: {
   orders: Order[];
   onAdvance: (o: Order) => void;
@@ -191,6 +200,8 @@ function CourseOrdersTab({
 }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
@@ -204,15 +215,40 @@ function CourseOrdersTab({
   });
 
   const counts = Object.fromEntries(
-    ALL_STATUSES.map((s) => [
-      s,
-      s === "all" ? orders.length : orders.filter((o) => o.status === s).length,
-    ])
+    ALL_STATUSES.map((s) => [s, s === "all" ? orders.length : orders.filter((o) => o.status === s).length])
   ) as Record<FilterStatus, number>;
+
+  const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
+  const someChecked = filtered.some((o) => selected.has(o.id));
+
+  function toggleAll() {
+    if (allChecked) {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.delete(o.id)); return n; });
+    } else {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.add(o.id)); return n; });
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  async function handleBulkApply(status: OrderStatus) {
+    const ids = Array.from(selected);
+    bulkUpdate.mutate(
+      { ids, status },
+      {
+        onSuccess: () => { toast.success(`${ids.length}টি অর্ডার → ${STATUS_LABELS[status]}`); setSelected(new Set()); },
+        onError:   () => toast.error("বাল্ক আপডেট ব্যর্থ"),
+      }
+    );
+  }
+
+  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "delivered", "cancelled"];
 
   return (
     <div className="space-y-4">
-      <StatusFilters counts={counts} value={filterStatus} onChange={setFilterStatus} hideShipped />
+      <StatusFilters counts={counts} value={filterStatus} onChange={(s) => { setFilterStatus(s); setSelected(new Set()); }} hideShipped />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -224,6 +260,16 @@ function CourseOrdersTab({
         />
       </div>
 
+      {selected.size > 0 && (
+        <BulkActionBar
+          count={selected.size}
+          statuses={BULK_STATUSES}
+          onApply={handleBulkApply}
+          onClear={() => setSelected(new Set())}
+          isPending={bulkUpdate.isPending}
+        />
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-border">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -234,21 +280,33 @@ function CourseOrdersTab({
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={allChecked}
+                    data-state={someChecked && !allChecked ? "indeterminate" : undefined}
+                    onCheckedChange={toggleAll}
+                    aria-label="সব নির্বাচন"
+                  />
+                </th>
                 {["তারিখ", "ছাত্র", "কোর্স", "bKash তথ্য", "মোট", "স্ট্যাটাস", "মেয়াদ", "অ্যাকশন"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
-                    {h}
-                  </th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
               {filtered.map((order) => {
                 const nextStatus = COURSE_STATUS_NEXT[order.status];
+                const isSelected = selected.has(order.id);
                 return (
-                  <tr key={order.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
-                      {formatDate(order.created_at)}
+                  <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(order.id)}
+                        aria-label="নির্বাচন করুন"
+                      />
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{order.customer_name}</div>
                       <div className="text-xs text-muted-foreground">{order.phone}</div>
@@ -275,36 +333,20 @@ function CourseOrdersTab({
                         <span className="text-xs italic text-muted-foreground">নেই</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-heading font-bold text-accent">
-                      ৳{order.total_price.toLocaleString()}
-                    </td>
+                    <td className="px-4 py-3 font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANTS[order.status]}>
-                        {STATUS_LABELS[order.status]}
-                      </Badge>
+                      <Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge>
                     </td>
-                    <td className="px-4 py-3">
-                      <ValidityCell order={order} />
-                    </td>
+                    <td className="px-4 py-3"><ValidityCell order={order} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {nextStatus && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => onAdvance(order)}
-                          >
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAdvance(order)}>
                             {STATUS_LABELS[nextStatus]}
                           </Button>
                         )}
                         {order.status !== "cancelled" && order.status !== "delivered" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() => onCancel(order)}
-                          >
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onCancel(order)}>
                             বাতিল
                           </Button>
                         )}
@@ -321,10 +363,10 @@ function CourseOrdersTab({
   );
 }
 
+// ─── Product orders tab ────────────────────────────────────────────────────────
+
 function ProductOrdersTab({
-  orders,
-  onAdvance,
-  onCancel,
+  orders, onAdvance, onCancel,
 }: {
   orders: Order[];
   onAdvance: (o: Order) => void;
@@ -332,6 +374,8 @@ function ProductOrdersTab({
 }) {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
@@ -345,15 +389,40 @@ function ProductOrdersTab({
   });
 
   const counts = Object.fromEntries(
-    ALL_STATUSES.map((s) => [
-      s,
-      s === "all" ? orders.length : orders.filter((o) => o.status === s).length,
-    ])
+    ALL_STATUSES.map((s) => [s, s === "all" ? orders.length : orders.filter((o) => o.status === s).length])
   ) as Record<FilterStatus, number>;
+
+  const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
+  const someChecked = filtered.some((o) => selected.has(o.id));
+
+  function toggleAll() {
+    if (allChecked) {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.delete(o.id)); return n; });
+    } else {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.add(o.id)); return n; });
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  async function handleBulkApply(status: OrderStatus) {
+    const ids = Array.from(selected);
+    bulkUpdate.mutate(
+      { ids, status },
+      {
+        onSuccess: () => { toast.success(`${ids.length}টি অর্ডার → ${STATUS_LABELS[status]}`); setSelected(new Set()); },
+        onError:   () => toast.error("বাল্ক আপডেট ব্যর্থ"),
+      }
+    );
+  }
+
+  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
 
   return (
     <div className="space-y-4">
-      <StatusFilters counts={counts} value={filterStatus} onChange={setFilterStatus} />
+      <StatusFilters counts={counts} value={filterStatus} onChange={(s) => { setFilterStatus(s); setSelected(new Set()); }} />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -365,6 +434,16 @@ function ProductOrdersTab({
         />
       </div>
 
+      {selected.size > 0 && (
+        <BulkActionBar
+          count={selected.size}
+          statuses={BULK_STATUSES}
+          onApply={handleBulkApply}
+          onClear={() => setSelected(new Set())}
+          isPending={bulkUpdate.isPending}
+        />
+      )}
+
       <div className="overflow-x-auto rounded-lg border border-border">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -375,21 +454,33 @@ function ProductOrdersTab({
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={allChecked}
+                    data-state={someChecked && !allChecked ? "indeterminate" : undefined}
+                    onCheckedChange={toggleAll}
+                    aria-label="সব নির্বাচন"
+                  />
+                </th>
                 {["তারিখ", "গ্রাহক", "পণ্য", "ঠিকানা", "ডেলিভারি", "মোট", "স্ট্যাটাস", "অ্যাকশন"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">
-                    {h}
-                  </th>
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
               {filtered.map((order) => {
                 const nextStatus = PRODUCT_STATUS_NEXT[order.status];
+                const isSelected = selected.has(order.id);
                 return (
-                  <tr key={order.id} className="hover:bg-muted/30 transition-colors">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">
-                      {formatDate(order.created_at)}
+                  <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
+                    <td className="px-4 py-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => toggleOne(order.id)}
+                        aria-label="নির্বাচন করুন"
+                      />
                     </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{order.customer_name}</div>
                       <div className="text-xs text-muted-foreground">{order.phone}</div>
@@ -399,51 +490,30 @@ function ProductOrdersTab({
                       <span className="text-xs text-muted-foreground">৳{order.product_price.toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3">
-                      {order.address ? (
-                        <span className="max-w-[160px] truncate block text-xs text-muted-foreground">
-                          {order.address}
-                        </span>
-                      ) : (
-                        <span className="text-xs italic text-muted-foreground">নেই</span>
-                      )}
+                      {order.address
+                        ? <span className="max-w-[160px] truncate block text-xs text-muted-foreground">{order.address}</span>
+                        : <span className="text-xs italic text-muted-foreground">নেই</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {order.shipping_type ? (
-                        <>
-                          {SHIPPING_LABELS[order.shipping_type]}
-                          <div className="text-foreground">+৳{order.shipping_cost}</div>
-                        </>
+                        <>{SHIPPING_LABELS[order.shipping_type]}<div className="text-foreground">+৳{order.shipping_cost}</div></>
                       ) : (
                         <span className="italic">ফ্রি</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-heading font-bold text-accent">
-                      ৳{order.total_price.toLocaleString()}
-                    </td>
+                    <td className="px-4 py-3 font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANTS[order.status]}>
-                        {STATUS_LABELS[order.status]}
-                      </Badge>
+                      <Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {nextStatus && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => onAdvance(order)}
-                          >
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAdvance(order)}>
                             {STATUS_LABELS[nextStatus]}
                           </Button>
                         )}
                         {order.status !== "cancelled" && order.status !== "delivered" && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs text-destructive hover:text-destructive"
-                            onClick={() => onCancel(order)}
-                          >
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onCancel(order)}>
                             বাতিল
                           </Button>
                         )}
@@ -459,6 +529,8 @@ function ProductOrdersTab({
     </div>
   );
 }
+
+// ─── Main ──────────────────────────────────────────────────────────────────────
 
 export default function AdminOrders() {
   const { data: orders = [], isLoading, refetch } = useOrders();
@@ -491,11 +563,7 @@ export default function AdminOrders() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        লোড হচ্ছে...
-      </div>
-    );
+    return <div className="flex items-center justify-center py-20 text-muted-foreground">লোড হচ্ছে...</div>;
   }
 
   const pendingCourse  = courseOrders.filter((o) => o.status === "pending").length;
@@ -538,19 +606,10 @@ export default function AdminOrders() {
         </TabsList>
 
         <TabsContent value="course">
-          <CourseOrdersTab
-            orders={courseOrders}
-            onAdvance={handleAdvance}
-            onCancel={handleCancel}
-          />
+          <CourseOrdersTab orders={courseOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
         </TabsContent>
-
         <TabsContent value="product">
-          <ProductOrdersTab
-            orders={productOrders}
-            onAdvance={handleAdvance}
-            onCancel={handleCancel}
-          />
+          <ProductOrdersTab orders={productOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
         </TabsContent>
       </Tabs>
     </div>

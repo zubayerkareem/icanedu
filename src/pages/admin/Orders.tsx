@@ -244,7 +244,7 @@ function CourseOrdersTab({
     );
   }
 
-  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "delivered", "cancelled"];
+  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "cancelled"];
 
   return (
     <div className="space-y-4">
@@ -418,7 +418,7 @@ function ProductOrdersTab({
     );
   }
 
-  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "cancelled"];
 
   return (
     <div className="space-y-4">

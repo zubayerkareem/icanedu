@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
-  CalendarDays, UserPlus, Save, Eye, EyeOff,
+  CalendarDays, UserPlus, Save, Eye, EyeOff, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -27,26 +30,26 @@ import {
 } from "@/hooks/useAdminEnrollments";
 import type { Order } from "@/hooks/useOrders";
 
-// ─── Validity helpers ──────────────────────────────────────────────────────────
+// ─── Validity badge ────────────────────────────────────────────────────────────
 
-function validityBadge(order: Order) {
+function ValidityBadge({ order }: { order: Order }) {
   if (order.status === "cancelled")
     return <Badge variant="destructive" className="text-[10px]">বাতিল</Badge>;
   if (!order.valid_until)
-    return <Badge className="text-[10px] bg-green-100 text-green-700">আজীবন</Badge>;
+    return <Badge className="text-[10px] bg-green-100 text-green-700 border-0">আজীবন</Badge>;
   const exp = new Date(order.valid_until);
   const now = new Date();
   if (exp <= now)
     return <Badge variant="destructive" className="text-[10px]">মেয়াদ শেষ</Badge>;
   const days = Math.ceil((exp.getTime() - now.getTime()) / 86400000);
   return (
-    <Badge className={`text-[10px] ${days < 7 ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
+    <Badge className={`text-[10px] border-0 ${days < 7 ? "bg-orange-100 text-orange-700" : "bg-blue-100 text-blue-700"}`}>
       {exp.toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" })} পর্যন্ত
     </Badge>
   );
 }
 
-// ─── Student enrollment panel ──────────────────────────────────────────────────
+// ─── Enrollment panel ──────────────────────────────────────────────────────────
 
 function EnrollmentPanel({ userId }: { userId: string }) {
   const { data: orders = [], isLoading } = useStudentCourseOrders(userId);
@@ -57,19 +60,14 @@ function EnrollmentPanel({ userId }: { userId: string }) {
 
   const [courseId, setCourseId] = useState("");
   const [validUntil, setValidUntil] = useState("");
-  const [editingValidity, setEditingValidity] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newValidity, setNewValidity] = useState("");
 
   async function handleEnroll() {
     const course = courses.find((c) => c.id === courseId);
     if (!course) { toast.error("কোর্স বেছে নিন"); return; }
     try {
-      await enroll.mutateAsync({
-        email: "",
-        courseId: course.id,
-        courseName: course.title,
-        validUntil: validUntil || null,
-      });
+      await enroll.mutateAsync({ email: "", courseId: course.id, courseName: course.title, validUntil: validUntil || null });
       toast.success("কোর্স অ্যাসাইন হয়েছে");
       setCourseId(""); setValidUntil("");
     } catch (e: unknown) { toast.error((e as Error)?.message); }
@@ -82,16 +80,16 @@ function EnrollmentPanel({ userId }: { userId: string }) {
     } catch { toast.error("সমস্যা হয়েছে"); }
   }
 
-  async function handleUpdateValidity(orderId: string) {
+  async function handleSaveValidity(orderId: string, validity: string | null) {
     try {
-      await updateValidity.mutateAsync({ orderId, validUntil: newValidity || null });
+      await updateValidity.mutateAsync({ orderId, validUntil: validity });
       toast.success("মেয়াদ আপডেট হয়েছে");
-      setEditingValidity(null);
+      setEditingId(null);
     } catch { toast.error("সমস্যা হয়েছে"); }
   }
 
   return (
-    <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-4">
+    <div className="border-t border-border bg-muted/30 px-4 py-4 space-y-4">
       {/* Enrolled courses */}
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">এনরোলড কোর্স</p>
@@ -99,66 +97,68 @@ function EnrollmentPanel({ userId }: { userId: string }) {
         {!isLoading && orders.length === 0 && (
           <p className="text-xs text-muted-foreground italic">কোনো কোর্স নেই</p>
         )}
-        {orders.map((o) => (
-          <div key={o.id} className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{o.product_name}</p>
-                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                  {validityBadge(o)}
-                  <span className="text-[10px] text-muted-foreground">
-                    ভর্তি: {new Date(o.created_at).toLocaleDateString("bn-BD")}
-                  </span>
+        <div className="space-y-2">
+          {orders.map((o) => (
+            <div key={o.id} className="rounded-lg border border-border bg-card p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{o.product_name}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <ValidityBadge order={o} />
+                    <span className="text-[10px] text-muted-foreground">
+                      ভর্তি: {new Date(o.created_at).toLocaleDateString("bn-BD")}
+                    </span>
+                  </div>
                 </div>
+                {o.status !== "cancelled" && (
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7"
+                      title="মেয়াদ পরিবর্তন"
+                      onClick={() => {
+                        setEditingId(editingId === o.id ? null : o.id);
+                        setNewValidity(o.valid_until ? o.valid_until.slice(0, 10) : "");
+                      }}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                      title="অ্যাক্সেস বাতিল"
+                      onClick={() => handleRevoke(o.id)}
+                    >
+                      <Ban className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
-              {o.status !== "cancelled" && (
-                <div className="flex gap-1 shrink-0">
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7"
-                    title="মেয়াদ পরিবর্তন"
-                    onClick={() => {
-                      setEditingValidity(editingValidity === o.id ? null : o.id);
-                      setNewValidity(o.valid_until ? o.valid_until.slice(0, 10) : "");
-                    }}
-                  >
-                    <CalendarDays className="h-3.5 w-3.5" />
+              {editingId === o.id && (
+                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-border">
+                  <Input
+                    type="date"
+                    value={newValidity}
+                    onChange={(e) => setNewValidity(e.target.value)}
+                    className="h-7 text-xs w-36"
+                  />
+                  <Button size="sm" className="h-7 text-xs px-2" onClick={() => handleSaveValidity(o.id, newValidity || null)}>
+                    <Save className="mr-1 h-3 w-3" /> সেভ
                   </Button>
-                  <Button
-                    variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                    title="অ্যাক্সেস বাতিল করুন"
-                    onClick={() => handleRevoke(o.id)}
-                  >
-                    <Ban className="h-3.5 w-3.5" />
+                  <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleSaveValidity(o.id, null)}>
+                    আজীবন করুন
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}>
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
               )}
             </div>
-            {editingValidity === o.id && (
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={newValidity}
-                  onChange={(e) => setNewValidity(e.target.value)}
-                  className="h-7 text-xs"
-                />
-                <Button size="sm" className="h-7 text-xs px-2" onClick={() => handleUpdateValidity(o.id)}>
-                  <Save className="mr-1 h-3 w-3" /> সেভ
-                </Button>
-                <Button
-                  size="sm" variant="ghost" className="h-7 text-xs px-2"
-                  onClick={() => handleUpdateValidity(o.id.replace(/^/, ""))}
-                >
-                  আজীবন
-                </Button>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-      {/* Add course form */}
-      <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-3">
-        <p className="text-xs font-semibold text-accent">নতুন কোর্স যোগ করুন</p>
+      {/* Add course */}
+      <div className="rounded-lg border border-dashed border-border p-3 space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground">নতুন কোর্স যোগ করুন</p>
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="space-y-1">
             <Label className="text-xs">কোর্স</Label>
@@ -172,7 +172,7 @@ function EnrollmentPanel({ userId }: { userId: string }) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">মেয়াদ (খালি রাখলে আজীবন)</Label>
+            <Label className="text-xs">মেয়াদ (খালি = আজীবন)</Label>
             <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="h-8 text-xs" />
           </div>
         </div>
@@ -185,11 +185,76 @@ function EnrollmentPanel({ userId }: { userId: string }) {
   );
 }
 
-// ─── Quick Enroll by email (top-level) ────────────────────────────────────────
+// ─── Create student dialog ─────────────────────────────────────────────────────
 
-function QuickEnrollCard() {
+function CreateStudentDialog() {
+  const createStudent = useAdminCreateStudent();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  async function handleCreate() {
+    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
+    if (password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"); return; }
+    try {
+      await createStudent.mutateAsync({ email, password });
+      toast.success(`${email} — অ্যাকাউন্ট তৈরি হয়েছে`);
+      setEmail(""); setPassword(""); setOpen(false);
+    } catch (e: unknown) { toast.error((e as Error)?.message); }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <UserPlus className="mr-2 h-4 w-4" /> নতুন শিক্ষার্থী
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>নতুন শিক্ষার্থী তৈরি করুন</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <Label>ইমেইল</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>পাসওয়ার্ড</Label>
+            <div className="relative">
+              <Input
+                type={showPw ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="কমপক্ষে ৬ অক্ষর"
+                className="pr-9"
+              />
+              <button
+                type="button"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                onClick={() => setShowPw((s) => !s)}
+              >
+                {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <Button className="w-full" onClick={handleCreate} disabled={createStudent.isPending}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            {createStudent.isPending ? "তৈরি হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Quick enroll dialog ───────────────────────────────────────────────────────
+
+function QuickEnrollDialog() {
   const { data: courses = [] } = useAllCoursesForSelect();
   const enroll = useAdminEnrollStudent();
+  const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [courseId, setCourseId] = useState("");
   const [validUntil, setValidUntil] = useState("");
@@ -201,99 +266,48 @@ function QuickEnrollCard() {
     try {
       await enroll.mutateAsync({ email, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
       toast.success(`${email} — কোর্স অ্যাসাইন হয়েছে`);
-      setEmail(""); setCourseId(""); setValidUntil("");
+      setEmail(""); setCourseId(""); setValidUntil(""); setOpen(false);
     } catch (e: unknown) { toast.error((e as Error)?.message); }
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <BookOpen className="h-4 w-4 text-accent" />
-        <p className="text-sm font-semibold">কোর্স অ্যাসাইন করুন (ইমেইল দিয়ে)</p>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-3">
-        <div className="space-y-1">
-          <Label className="text-xs">শিক্ষার্থীর ইমেইল</Label>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" className="h-8 text-xs" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">কোর্স</Label>
-          <Select value={courseId} onValueChange={setCourseId}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="কোর্স বেছে নিন" /></SelectTrigger>
-            <SelectContent>
-              {courses.map((c) => (
-                <SelectItem key={c.id} value={c.id} className="text-xs">{c.title}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">মেয়াদ (খালি = আজীবন)</Label>
-          <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="h-8 text-xs" />
-        </div>
-      </div>
-      <Button size="sm" onClick={handleSubmit} disabled={enroll.isPending}>
-        <Plus className="mr-2 h-3.5 w-3.5" />
-        {enroll.isPending ? "অ্যাসাইন হচ্ছে..." : "অ্যাসাইন করুন"}
-      </Button>
-    </div>
-  );
-}
-
-// ─── Create student account ────────────────────────────────────────────────────
-
-function CreateStudentCard() {
-  const createStudent = useAdminCreateStudent();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
-
-  async function handleCreate() {
-    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
-    if (password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে"); return; }
-    try {
-      await createStudent.mutateAsync({ email, password });
-      toast.success(`${email} — অ্যাকাউন্ট তৈরি হয়েছে`);
-      setEmail(""); setPassword("");
-    } catch (e: unknown) { toast.error((e as Error)?.message); }
-  }
-
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <UserPlus className="h-4 w-4 text-accent" />
-        <p className="text-sm font-semibold">নতুন শিক্ষার্থী তৈরি করুন</p>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <div className="space-y-1">
-          <Label className="text-xs">ইমেইল</Label>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" className="h-8 text-xs" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">পাসওয়ার্ড</Label>
-          <div className="relative">
-            <Input
-              type={showPw ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="কমপক্ষে ৬ অক্ষর"
-              className="h-8 text-xs pr-8"
-            />
-            <button
-              type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-              onClick={() => setShowPw((s) => !s)}
-            >
-              {showPw ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-            </button>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <BookOpen className="mr-2 h-4 w-4" /> কোর্স অ্যাসাইন
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>কোর্স অ্যাসাইন করুন</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <Label>শিক্ষার্থীর ইমেইল</Label>
+            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" />
           </div>
+          <div className="space-y-1.5">
+            <Label>কোর্স</Label>
+            <Select value={courseId} onValueChange={setCourseId}>
+              <SelectTrigger><SelectValue placeholder="কোর্স বেছে নিন" /></SelectTrigger>
+              <SelectContent>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>মেয়াদ <span className="text-muted-foreground text-xs">(খালি রাখলে আজীবন)</span></Label>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          </div>
+          <Button className="w-full" onClick={handleSubmit} disabled={enroll.isPending}>
+            <Plus className="mr-2 h-4 w-4" />
+            {enroll.isPending ? "অ্যাসাইন হচ্ছে..." : "অ্যাসাইন করুন"}
+          </Button>
         </div>
-      </div>
-      <Button size="sm" onClick={handleCreate} disabled={createStudent.isPending}>
-        <UserPlus className="mr-2 h-3.5 w-3.5" />
-        {createStudent.isPending ? "তৈরি হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
-      </Button>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -348,107 +362,110 @@ export default function AdminStudents() {
     }
   }
 
+  function toggleExpand(id: string) {
+    setExpanded((prev) => (prev === id ? null : id));
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-foreground">শিক্ষার্থী ও ব্যবহারকারী</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">মোট {students.length} জন নিবন্ধিত ব্যবহারকারী</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">শিক্ষার্থী</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">মোট {students.length} জন নিবন্ধিত</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()}>
-          <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
+          </Button>
+          <CreateStudentDialog />
+          <QuickEnrollDialog />
+        </div>
       </div>
 
-      {/* Action cards */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <CreateStudentCard />
-        <QuickEnrollCard />
+      {/* Search + filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative flex-1 min-w-48 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="নাম, ফোন বা ইমেইল..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex gap-1.5">
+          {(["all", "student", "admin"] as const).map((r) => (
+            <button
+              key={r}
+              onClick={() => setFilterRole(r)}
+              className={[
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                filterRole === r
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              ].join(" ")}
+            >
+              {r === "all" ? "সব" : r === "admin" ? "অ্যাডমিন" : "শিক্ষার্থী"}{" "}
+              <span className="opacity-70">({counts[r]})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Role filter */}
-      <div className="flex flex-wrap gap-2">
-        {(["all", "student", "admin"] as const).map((r) => (
-          <button
-            key={r}
-            onClick={() => setFilterRole(r)}
-            className={[
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-              filterRole === r
-                ? "bg-accent text-accent-foreground"
-                : "bg-muted text-muted-foreground hover:bg-accent/20",
-            ].join(" ")}
-          >
-            {r === "all" ? "সব" : r === "admin" ? "অ্যাডমিন" : "শিক্ষার্থী"} ({counts[r]})
-          </button>
-        ))}
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="নাম, ফোন, ইমেইল বা ID দিয়ে খুঁজুন..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {/* Students list */}
+      {/* Student list */}
       <div className="rounded-lg border border-border overflow-hidden">
         {isLoading ? (
-          <div className="flex items-center justify-center py-16 text-muted-foreground">লোড হচ্ছে...</div>
+          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">লোড হচ্ছে...</div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-muted-foreground">
+          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <p className="text-sm font-medium text-destructive">ডেটা লোড হয়নি</p>
-            <p className="text-xs">
-              Supabase-এ profiles টেবিলের RLS policy চেক করুন।{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">supabase_students_policy.sql</code> ফাইলটি রান করুন।
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Supabase profiles টেবিলের RLS policy চেক করুন।
             </p>
-            <Button size="sm" variant="outline" onClick={() => refetch()} className="mt-2">আবার চেষ্টা করুন</Button>
+            <Button size="sm" variant="outline" onClick={() => refetch()}>আবার চেষ্টা করুন</Button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Users className="mb-3 h-10 w-10 opacity-30" />
-            <p>কোনো ব্যবহারকারী পাওয়া যায়নি</p>
+            <Users className="mb-3 h-10 w-10 opacity-20" />
+            <p className="text-sm">কোনো ব্যবহারকারী পাওয়া যায়নি</p>
           </div>
         ) : (
           <div className="divide-y divide-border bg-card">
             {filtered.map((s) => (
               <div key={s.id}>
                 {/* Row */}
-                <div className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/20">
-                  {/* Expand toggle */}
-                  <button
-                    onClick={() => setExpanded((prev) => (prev === s.id ? null : s.id))}
-                    className="shrink-0 text-muted-foreground"
-                  >
+                <div
+                  className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30"
+                  onClick={() => toggleExpand(s.id)}
+                >
+                  <span className="shrink-0 text-muted-foreground">
                     {expanded === s.id
                       ? <ChevronDown className="h-4 w-4" />
                       : <ChevronRight className="h-4 w-4" />}
-                  </button>
+                  </span>
 
                   <Avatar className="h-9 w-9 shrink-0">
                     <AvatarImage src={s.avatar_url ?? undefined} />
                     <AvatarFallback className="bg-accent/10 text-sm font-semibold text-accent">
-                      {(s.full_name ?? "?").slice(0, 1).toUpperCase()}
+                      {(s.full_name ?? "?")[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-sm font-medium truncate">
                       {s.full_name ?? <span className="italic text-muted-foreground">নাম নেই</span>}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">{s.email ?? "—"}</p>
                   </div>
 
-                  <div className="hidden sm:block text-xs text-muted-foreground shrink-0">{s.phone ?? "—"}</div>
+                  <div className="hidden md:block text-xs text-muted-foreground shrink-0 w-28 truncate">
+                    {s.phone ?? "—"}
+                  </div>
 
                   <div className="shrink-0">
                     {s.role === "admin" ? (
-                      <Badge className="gap-1 bg-accent/10 text-accent text-[10px]">
+                      <Badge className="gap-1 bg-accent/10 text-accent border-0 text-[10px]">
                         <ShieldCheck className="h-3 w-3" /> অ্যাডমিন
                       </Badge>
                     ) : (
@@ -458,14 +475,8 @@ export default function AdminStudents() {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost" size="icon" className="h-8 w-8"
-                      title="কোর্স ম্যানেজ"
-                      onClick={() => setExpanded((prev) => (prev === s.id ? null : s.id))}
-                    >
-                      <BookOpen className="h-4 w-4 text-accent" />
-                    </Button>
+                  {/* Actions — stop propagation so clicks don't toggle expand */}
+                  <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="ghost" size="icon" className="h-8 w-8"
                       title="পাসওয়ার্ড রিসেট"

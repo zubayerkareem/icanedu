@@ -18,7 +18,18 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8081)",
       "Bash(npx playwright *)",
-      "Bash(node -e \"require\\('playwright'\\)\")"
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(git revert *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(vercel --version)",
+      "Bash(vercel --prod)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(gh repo *)",
+      "Bash(git remote *)",
+      "Bash(vercel --prod --force)",
+      "Bash(ls \"c:\\\\Users\\\\Zubayer\\\\Documents\\\\projects\\\\\")",
+      "Read(//c/Users/Zubayer/Documents/**)"
     ]
   }
 }

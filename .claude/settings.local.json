@@ -29,7 +29,9 @@
       "Bash(git remote *)",
       "Bash(vercel --prod --force)",
       "Bash(ls \"c:\\\\Users\\\\Zubayer\\\\Documents\\\\projects\\\\\")",
-      "Read(//c/Users/Zubayer/Documents/**)"
+      "Read(//c/Users/Zubayer/Documents/**)",
+      "Bash(vercel ls *)",
+      "Bash(vercel --prod --force --token=vcp_7k5MDeChCYHYIVsvAgIBli9IJ1LpTRTl0IPsP23qOJPUGGAQnB0iOxrW)"
     ]
   }
 }

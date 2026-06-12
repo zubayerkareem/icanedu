@@ -138,7 +138,7 @@ export function useAdminDashboard() {
       ].filter((d) => d.value > 0);
 
       // ── Recent activities ────────────────────────────────────────────
-      const recentActivity: RecentActivity[] = recentOrders.slice(0, 12).map((o) => ({
+      const recentActivity: RecentActivity[] = recentOrders.slice(0, 5).map((o) => ({
         id:         o.id,
         type:       o.order_type === "course" ? "course" : "order",
         title:      o.product_name,

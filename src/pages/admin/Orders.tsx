@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ShoppingBag, Search, RefreshCw, BookOpen, Package, Calendar, X, CheckSquare } from "lucide-react";
+import { Search, RefreshCw, BookOpen, Package, Calendar, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,8 +11,8 @@ import type { Order, OrderStatus } from "@/hooks/useOrders";
 import { toast } from "sonner";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
-  pending:   "অপেক্ষমাণ",
-  confirmed: "নিশ্চিত",
+  pending:   "পেন্ডিং",
+  confirmed: "কনফার্ম",
   shipped:   "পাঠানো হয়েছে",
   delivered: "পৌঁছেছে",
   cancelled: "বাতিল",
@@ -47,8 +47,7 @@ const SHIPPING_LABELS: Record<string, string> = {
   outside: "ঢাকার বাইরে",
 };
 
-const ALL_STATUSES = ["all", "pending", "confirmed", "shipped", "delivered", "cancelled"] as const;
-type FilterStatus = typeof ALL_STATUSES[number];
+const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed"];
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString("bn-BD", {
@@ -117,72 +116,27 @@ function ValidityCell({ order }: { order: Order }) {
   );
 }
 
-function StatusFilters({
-  counts, value, onChange, hideShipped = false,
-}: {
-  counts: Record<FilterStatus, number>;
-  value: FilterStatus;
-  onChange: (s: FilterStatus) => void;
-  hideShipped?: boolean;
-}) {
-  const statuses = hideShipped ? ALL_STATUSES.filter((s) => s !== "shipped") : ALL_STATUSES;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {statuses.map((s) => (
-        <button
-          key={s}
-          onClick={() => onChange(s)}
-          className={[
-            "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-            value === s ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20",
-          ].join(" ")}
-        >
-          {s === "all" ? "সব" : STATUS_LABELS[s]} ({counts[s]})
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ─── Bulk action bar ───────────────────────────────────────────────────────────
 
 function BulkActionBar({
-  count,
-  statuses,
-  onApply,
-  onClear,
-  isPending,
+  count, onApply, onClear, isPending,
 }: {
   count: number;
-  statuses: OrderStatus[];
   onApply: (status: OrderStatus) => void;
   onClear: () => void;
   isPending: boolean;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-4 py-2.5">
-      <CheckSquare className="h-4 w-4 text-accent shrink-0" />
+    <div className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/5 px-4 py-2.5">
       <span className="text-sm font-medium text-foreground shrink-0">{count}টি নির্বাচিত</span>
-      <span className="text-muted-foreground text-xs shrink-0">— স্ট্যাটাস পরিবর্তন করুন:</span>
-      <div className="flex flex-wrap gap-1.5">
-        {statuses.map((s) => (
-          <Button
-            key={s}
-            size="sm"
-            variant={s === "cancelled" ? "destructive" : "outline"}
-            className="h-7 text-xs"
-            onClick={() => onApply(s)}
-            disabled={isPending}
-          >
+      <div className="flex gap-2">
+        {BULK_STATUSES.map((s) => (
+          <Button key={s} size="sm" variant="outline" className="h-7 text-xs" onClick={() => onApply(s)} disabled={isPending}>
             {STATUS_LABELS[s]}
           </Button>
         ))}
       </div>
-      <button
-        onClick={onClear}
-        className="ml-auto text-muted-foreground hover:text-foreground transition-colors"
-        title="নির্বাচন বাতিল"
-      >
+      <button onClick={onClear} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
         <X className="h-4 w-4" />
       </button>
     </div>
@@ -191,32 +145,21 @@ function BulkActionBar({
 
 // ─── Course orders tab ─────────────────────────────────────────────────────────
 
-function CourseOrdersTab({
-  orders, onAdvance, onCancel,
-}: {
-  orders: Order[];
-  onAdvance: (o: Order) => void;
-  onCancel: (o: Order) => void;
-}) {
+function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
-    const matchSearch =
+    return (
       !q ||
       o.customer_name.toLowerCase().includes(q) ||
       o.phone.includes(q) ||
       o.product_name.toLowerCase().includes(q) ||
-      (o.bkash_txn_id ?? "").toLowerCase().includes(q);
-    return matchSearch && (filterStatus === "all" || o.status === filterStatus);
+      (o.bkash_txn_id ?? "").toLowerCase().includes(q)
+    );
   });
-
-  const counts = Object.fromEntries(
-    ALL_STATUSES.map((s) => [s, s === "all" ? orders.length : orders.filter((o) => o.status === s).length])
-  ) as Record<FilterStatus, number>;
 
   const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
   const someChecked = filtered.some((o) => selected.has(o.id));
@@ -233,7 +176,7 @@ function CourseOrdersTab({
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
 
-  async function handleBulkApply(status: OrderStatus) {
+  function handleBulkApply(status: OrderStatus) {
     const ids = Array.from(selected);
     bulkUpdate.mutate(
       { ids, status },
@@ -244,30 +187,15 @@ function CourseOrdersTab({
     );
   }
 
-  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "cancelled"];
-
   return (
     <div className="space-y-4">
-      <StatusFilters counts={counts} value={filterStatus} onChange={(s) => { setFilterStatus(s); setSelected(new Set()); }} hideShipped />
-
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="নাম, ফোন, কোর্স বা TxnID..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+        <Input placeholder="নাম, ফোন, কোর্স বা TxnID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       {selected.size > 0 && (
-        <BulkActionBar
-          count={selected.size}
-          statuses={BULK_STATUSES}
-          onApply={handleBulkApply}
-          onClear={() => setSelected(new Set())}
-          isPending={bulkUpdate.isPending}
-        />
+        <BulkActionBar count={selected.size} onApply={handleBulkApply} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending} />
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -281,12 +209,7 @@ function CourseOrdersTab({
             <thead className="border-b border-border bg-muted/50">
               <tr>
                 <th className="w-10 px-4 py-3">
-                  <Checkbox
-                    checked={allChecked}
-                    data-state={someChecked && !allChecked ? "indeterminate" : undefined}
-                    onCheckedChange={toggleAll}
-                    aria-label="সব নির্বাচন"
-                  />
+                  <Checkbox checked={allChecked} data-state={someChecked && !allChecked ? "indeterminate" : undefined} onCheckedChange={toggleAll} />
                 </th>
                 {["তারিখ", "ছাত্র", "কোর্স", "bKash তথ্য", "মোট", "স্ট্যাটাস", "মেয়াদ", "অ্যাকশন"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
@@ -299,44 +222,26 @@ function CourseOrdersTab({
                 const isSelected = selected.has(order.id);
                 return (
                   <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
-                    <td className="px-4 py-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOne(order.id)}
-                        aria-label="নির্বাচন করুন"
-                      />
-                    </td>
+                    <td className="px-4 py-3"><Checkbox checked={isSelected} onCheckedChange={() => toggleOne(order.id)} /></td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{order.customer_name}</div>
+                      <div className="font-medium">{order.customer_name}</div>
                       <div className="text-xs text-muted-foreground">{order.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="max-w-[180px] truncate block text-foreground">{order.product_name}</span>
+                      <span className="max-w-[180px] truncate block">{order.product_name}</span>
                       <span className="text-xs text-muted-foreground">৳{order.product_price.toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3">
                       {order.bkash_txn_id ? (
                         <div className="space-y-0.5">
-                          <div className="flex items-center gap-1 text-[11px]">
-                            <span className="text-muted-foreground">TxnID:</span>
-                            <span className="font-mono font-bold text-foreground">{order.bkash_txn_id}</span>
-                          </div>
-                          {order.bkash_number && (
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <span className="text-muted-foreground">নম্বর:</span>
-                              <span className="font-mono text-foreground">{order.bkash_number}</span>
-                            </div>
-                          )}
+                          <div className="text-[11px]"><span className="text-muted-foreground">TxnID: </span><span className="font-mono font-bold">{order.bkash_txn_id}</span></div>
+                          {order.bkash_number && <div className="text-[11px]"><span className="text-muted-foreground">নম্বর: </span><span className="font-mono">{order.bkash_number}</span></div>}
                         </div>
-                      ) : (
-                        <span className="text-xs italic text-muted-foreground">নেই</span>
-                      )}
+                      ) : <span className="text-xs italic text-muted-foreground">নেই</span>}
                     </td>
                     <td className="px-4 py-3 font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge>
-                    </td>
+                    <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge></td>
                     <td className="px-4 py-3"><ValidityCell order={order} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -365,32 +270,21 @@ function CourseOrdersTab({
 
 // ─── Product orders tab ────────────────────────────────────────────────────────
 
-function ProductOrdersTab({
-  orders, onAdvance, onCancel,
-}: {
-  orders: Order[];
-  onAdvance: (o: Order) => void;
-  onCancel: (o: Order) => void;
-}) {
+function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
-    const matchSearch =
+    return (
       !q ||
       o.customer_name.toLowerCase().includes(q) ||
       o.phone.includes(q) ||
       o.product_name.toLowerCase().includes(q) ||
-      (o.address ?? "").toLowerCase().includes(q);
-    return matchSearch && (filterStatus === "all" || o.status === filterStatus);
+      (o.address ?? "").toLowerCase().includes(q)
+    );
   });
-
-  const counts = Object.fromEntries(
-    ALL_STATUSES.map((s) => [s, s === "all" ? orders.length : orders.filter((o) => o.status === s).length])
-  ) as Record<FilterStatus, number>;
 
   const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
   const someChecked = filtered.some((o) => selected.has(o.id));
@@ -407,7 +301,7 @@ function ProductOrdersTab({
     setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   }
 
-  async function handleBulkApply(status: OrderStatus) {
+  function handleBulkApply(status: OrderStatus) {
     const ids = Array.from(selected);
     bulkUpdate.mutate(
       { ids, status },
@@ -418,30 +312,15 @@ function ProductOrdersTab({
     );
   }
 
-  const BULK_STATUSES: OrderStatus[] = ["pending", "confirmed", "shipped", "cancelled"];
-
   return (
     <div className="space-y-4">
-      <StatusFilters counts={counts} value={filterStatus} onChange={(s) => { setFilterStatus(s); setSelected(new Set()); }} />
-
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="নাম, ফোন, পণ্য বা ঠিকানা..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+        <Input placeholder="নাম, ফোন, পণ্য বা ঠিকানা..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       {selected.size > 0 && (
-        <BulkActionBar
-          count={selected.size}
-          statuses={BULK_STATUSES}
-          onApply={handleBulkApply}
-          onClear={() => setSelected(new Set())}
-          isPending={bulkUpdate.isPending}
-        />
+        <BulkActionBar count={selected.size} onApply={handleBulkApply} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending} />
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -455,12 +334,7 @@ function ProductOrdersTab({
             <thead className="border-b border-border bg-muted/50">
               <tr>
                 <th className="w-10 px-4 py-3">
-                  <Checkbox
-                    checked={allChecked}
-                    data-state={someChecked && !allChecked ? "indeterminate" : undefined}
-                    onCheckedChange={toggleAll}
-                    aria-label="সব নির্বাচন"
-                  />
+                  <Checkbox checked={allChecked} data-state={someChecked && !allChecked ? "indeterminate" : undefined} onCheckedChange={toggleAll} />
                 </th>
                 {["তারিখ", "গ্রাহক", "পণ্য", "ঠিকানা", "ডেলিভারি", "মোট", "স্ট্যাটাস", "অ্যাকশন"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
@@ -473,20 +347,14 @@ function ProductOrdersTab({
                 const isSelected = selected.has(order.id);
                 return (
                   <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
-                    <td className="px-4 py-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={() => toggleOne(order.id)}
-                        aria-label="নির্বাচন করুন"
-                      />
-                    </td>
+                    <td className="px-4 py-3"><Checkbox checked={isSelected} onCheckedChange={() => toggleOne(order.id)} /></td>
                     <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDate(order.created_at)}</td>
                     <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{order.customer_name}</div>
+                      <div className="font-medium">{order.customer_name}</div>
                       <div className="text-xs text-muted-foreground">{order.phone}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="max-w-[160px] truncate block text-foreground">{order.product_name}</span>
+                      <span className="max-w-[160px] truncate block">{order.product_name}</span>
                       <span className="text-xs text-muted-foreground">৳{order.product_price.toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3">
@@ -495,16 +363,12 @@ function ProductOrdersTab({
                         : <span className="text-xs italic text-muted-foreground">নেই</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {order.shipping_type ? (
-                        <>{SHIPPING_LABELS[order.shipping_type]}<div className="text-foreground">+৳{order.shipping_cost}</div></>
-                      ) : (
-                        <span className="italic">ফ্রি</span>
-                      )}
+                      {order.shipping_type
+                        ? <>{SHIPPING_LABELS[order.shipping_type]}<div className="text-foreground">+৳{order.shipping_cost}</div></>
+                        : <span className="italic">ফ্রি</span>}
                     </td>
                     <td className="px-4 py-3 font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge>
-                    </td>
+                    <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         {nextStatus && (
@@ -574,9 +438,7 @@ export default function AdminOrders() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">অর্ডার ম্যানেজমেন্ট</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            কোর্স {courseOrders.length}টি · পণ্য {productOrders.length}টি
-          </p>
+          <p className="mt-0.5 text-sm text-muted-foreground">কোর্স {courseOrders.length}টি · পণ্য {productOrders.length}টি</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
@@ -589,18 +451,14 @@ export default function AdminOrders() {
             <BookOpen className="h-4 w-4" />
             কোর্স অর্ডার
             {pendingCourse > 0 && (
-              <span className="ml-1 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
-                {pendingCourse}
-              </span>
+              <span className="ml-1 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{pendingCourse}</span>
             )}
           </TabsTrigger>
           <TabsTrigger value="product" className="gap-2">
             <Package className="h-4 w-4" />
             পণ্য অর্ডার
             {pendingProduct > 0 && (
-              <span className="ml-1 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
-                {pendingProduct}
-              </span>
+              <span className="ml-1 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{pendingProduct}</span>
             )}
           </TabsTrigger>
         </TabsList>

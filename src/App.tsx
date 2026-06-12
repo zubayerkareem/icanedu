@@ -155,7 +155,7 @@ const App = () => (
                 <Route path="/admin/page-builder" element={<PageBuilder />} />
                 <Route path="/admin/issb" element={<ISSBAdmin />} />
                 <Route path="/admin/success" element={<SuccessAdmin />} />
-                <Route path="/admin/settings" element={<ComingSoon />} />
+                <Route path="/admin/settings" element={<div />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

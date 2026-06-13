@@ -26,7 +26,7 @@ export const bn = {
     productsSubtitle: "বই, গাইড, নোট ও প্রশ্নব্যাংক",
     seeAllProducts: "সব পণ্য দেখুন",
     notices: {
-      title: "সাম্প্রতিক নোটিশ",
+      title: "নোটিশ",
       seeAll: "সব নোটিশ দেখুন",
       empty: "কোনো নোটিশ নেই",
     },

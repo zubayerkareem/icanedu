@@ -26,7 +26,7 @@ export const en = {
     productsSubtitle: "Books, Guides, Notes & Question Banks",
     seeAllProducts: "See All Products",
     notices: {
-      title: "Recent Notices",
+      title: "Notices",
       seeAll: "See All Notices",
       empty: "No notices available",
     },

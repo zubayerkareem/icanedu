@@ -1,23 +1,13 @@
 import nodemailer from "nodemailer";
 import { createClient } from "@supabase/supabase-js";
 
-// ─── Transporter ──────────────────────────────────────────────
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
-
 // ─── Supabase admin client (service role) ─────────────────────
 
 function supabaseAdmin() {
-  return createClient(
-    process.env.VITE_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env vars (VITE_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)");
+  return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
 async function getUserEmail(userId: string): Promise<string | null> {
@@ -127,6 +117,20 @@ function noticeTemplate(data: { title: string; content: string }) {
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
+  // Validate Gmail env vars on every request (not at module init)
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!gmailUser || !gmailPass) {
+    console.error("[send-email] Missing env vars: GMAIL_USER or GMAIL_APP_PASSWORD not set in Vercel");
+    return res.status(500).json({ error: "Email not configured — missing GMAIL_USER or GMAIL_APP_PASSWORD" });
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPass },
+  });
+
   const { type, userId, data } = req.body ?? {};
 
   if (!type) return res.status(400).json({ error: "Missing type" });
@@ -136,46 +140,55 @@ export default async function handler(req: any, res: any) {
       if (!userId) return res.status(400).json({ error: "Missing userId" });
 
       const email = await getUserEmail(userId);
-      if (!email) return res.status(404).json({ error: "User email not found" });
+      if (!email) return res.status(404).json({ error: `User email not found for userId: ${userId}` });
 
       const template = type === "purchase"
         ? purchaseTemplate(data)
         : shippedTemplate(data);
 
       await transporter.sendMail({
-        from: `"iCANBD Academy" <${process.env.GMAIL_USER}>`,
+        from: `"iCANBD Academy" <${gmailUser}>`,
         to: email,
         subject: template.subject,
         html: template.html,
       });
 
+      console.log(`[send-email] ${type} email sent to ${email}`);
       return res.status(200).json({ ok: true, sent: 1 });
     }
 
     if (type === "notice") {
       const emails = await getAllUserEmails();
-      if (emails.length === 0) return res.status(200).json({ ok: true, sent: 0 });
+      if (emails.length === 0) {
+        console.warn("[send-email] No user emails found for notice broadcast");
+        return res.status(200).json({ ok: true, sent: 0 });
+      }
 
       const template = noticeTemplate(data);
 
-      // Send individually so each recipient sees only their own email
-      await Promise.all(
-        emails.map((email) =>
-          transporter.sendMail({
-            from: `"iCANBD Academy" <${process.env.GMAIL_USER}>`,
+      // Send sequentially to avoid SMTP connection limits
+      let sent = 0;
+      for (const email of emails) {
+        try {
+          await transporter.sendMail({
+            from: `"iCANBD Academy" <${gmailUser}>`,
             to: email,
             subject: template.subject,
             html: template.html,
-          })
-        )
-      );
+          });
+          sent++;
+        } catch (e: any) {
+          console.error(`[send-email] Failed to send notice to ${email}:`, e.message);
+        }
+      }
 
-      return res.status(200).json({ ok: true, sent: emails.length });
+      console.log(`[send-email] Notice sent to ${sent}/${emails.length} users`);
+      return res.status(200).json({ ok: true, sent });
     }
 
     return res.status(400).json({ error: "Unknown type" });
   } catch (err: any) {
-    console.error("[send-email]", err);
+    console.error("[send-email] Error:", err.message);
     return res.status(500).json({ error: err.message ?? "Failed to send email" });
   }
 }

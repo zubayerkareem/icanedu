@@ -1,15 +1,22 @@
 // Frontend helper — calls the Vercel serverless function at /api/send-email.
 // Never put credentials here; they live in .env server-side only.
 
+import { toast } from "sonner";
+
 async function post(body: object) {
-  const res = await fetch("/api/send-email", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    console.warn("[email]", err.error ?? res.statusText);
+  try {
+    const res = await fetch("/api/send-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      console.error("[email] API error", res.status, err);
+      toast.warning(`ইমেইল পাঠানো যায়নি (${res.status}): ${err.error ?? res.statusText}`);
+    }
+  } catch (e) {
+    console.error("[email] Network error:", e);
   }
 }
 

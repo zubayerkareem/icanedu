@@ -171,6 +171,28 @@ export interface IncompleteStorySet {
   incomplete_stories?: IncompleteStory[];
 }
 
+// ─── Group Discussion ─────────────────────────────────────────
+export interface GroupDiscussionTask {
+  id: string;
+  set_id: string;
+  heading: string;
+  body: string;
+  image_url: string;
+  idea: string;
+  order_index: number;
+}
+
+export interface GroupDiscussionSet {
+  id: string;
+  course_id?: string;
+  title: string;
+  order_index: number;
+  is_published: boolean;
+  is_free: boolean;
+  created_at?: string;
+  group_discussion_tasks?: GroupDiscussionTask[];
+}
+
 // ─── Planning Task ────────────────────────────────────────────
 export interface PlanningTask {
   id: string;

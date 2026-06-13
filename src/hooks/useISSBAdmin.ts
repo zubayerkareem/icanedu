@@ -7,6 +7,7 @@ import type {
   PictureStorySet, PictureStoryPicture,
   IncompleteStorySet, IncompleteStory,
   PlanningTaskSet, PlanningTask,
+  GroupDiscussionSet, GroupDiscussionTask,
 } from "@/lib/issb/types";
 
 // ─── Admin fetch: all sets (including unpublished) ────────────
@@ -252,6 +253,33 @@ export const useUpsertPlanningTaskSet = upsertMutation<Partial<PlanningTaskSet>>
   (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
 );
 export const useDeletePlanningTaskSet = deleteMutation("planning_sets", "admin_planning_sets");
+
+// ─── Group Discussion ─────────────────────────────────────────
+export function useAdminGroupDiscussionSets(courseId?: string) {
+  return useQuery<GroupDiscussionSet[]>({
+    queryKey: ["admin_group_discussion_sets", courseId ?? "all"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      let q = supabase.from("group_discussion_sets").select("*, group_discussion_tasks(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export const useUpsertGroupDiscussionSet = upsertMutation<Partial<GroupDiscussionSet>>(
+  "group_discussion_sets", "admin_group_discussion_sets",
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+);
+export const useDeleteGroupDiscussionSet = deleteMutation("group_discussion_sets", "admin_group_discussion_sets");
+
+export const useUpsertGroupDiscussionTask = upsertMutation<Partial<GroupDiscussionTask>>(
+  "group_discussion_tasks", "admin_group_discussion_sets",
+  (t) => ({ set_id: t.set_id, heading: t.heading ?? "", body: t.body ?? "", image_url: t.image_url ?? "", idea: t.idea ?? "", order_index: t.order_index ?? 0 })
+);
+export const useDeleteGroupDiscussionTask = deleteMutation("group_discussion_tasks", "admin_group_discussion_sets");
 
 export const useUpsertPlanningTask = upsertMutation<Partial<PlanningTask>>(
   "planning_tasks", "admin_planning_sets",

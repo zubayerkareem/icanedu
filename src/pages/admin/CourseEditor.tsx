@@ -477,7 +477,7 @@ export default function CourseEditor() {
                             type="checkbox"
                             checked={!!(m.issb as ISSBModuleConfig | undefined)?.[el.key]}
                             onChange={(e) => setModule(mi, {
-                              issb: { ...(m.issb ?? { iq: false, wat: false, ist: false, extempore: false, ppdt: false, pictureStory: false, incompleteStory: false, planningTask: false }), [el.key]: e.target.checked } as ISSBModuleConfig,
+                              issb: { ...(m.issb ?? { iq: false, wat: false, ist: false, extempore: false, ppdt: false, pictureStory: false, incompleteStory: false, planningTask: false, groupDiscussion: false }), [el.key]: e.target.checked } as ISSBModuleConfig,
                             })}
                             className="accent-accent"
                           />

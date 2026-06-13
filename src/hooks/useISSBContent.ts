@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type {
   IQSet, WATSet, ISTSet, ExtemporeSet,
-  PPDTSet, PictureStorySet, IncompleteStorySet, PlanningTaskSet,
+  PPDTSet, PictureStorySet, IncompleteStorySet, PlanningTaskSet, GroupDiscussionSet,
 } from "@/lib/issb/types";
 
 // ─── IQ Practice ─────────────────────────────────────────────
@@ -164,6 +164,31 @@ export function useIncompleteStorySets(courseId?: string) {
       return (data ?? []).map((s) => ({
         ...s,
         incomplete_stories: (s.incomplete_stories ?? []).sort(
+          (a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index
+        ),
+      }));
+    },
+  });
+}
+
+// ─── Group Discussion ─────────────────────────────────────────
+export function useGroupDiscussionSets(courseId?: string) {
+  return useQuery<GroupDiscussionSet[]>({
+    queryKey: ["group_discussion_sets", courseId],
+    enabled: !!courseId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      let q = supabase
+        .from("group_discussion_sets")
+        .select("*, group_discussion_tasks(*)")
+        .eq("is_published", true)
+        .order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []).map((s) => ({
+        ...s,
+        group_discussion_tasks: (s.group_discussion_tasks ?? []).sort(
           (a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index
         ),
       }));

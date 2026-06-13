@@ -66,11 +66,9 @@ export default function Checkout() {
     if (!phone.trim()) e.phone = "ফোন নম্বর প্রয়োজন";
     else if (!/^01[0-9]\d{8}$/.test(phone.trim())) e.phone = "সঠিক ফোন নম্বর দিন";
     if (!isCourse && !address.trim()) e.address = "সম্পূর্ণ ঠিকানা প্রয়োজন";
-    if (isCourse) {
-      if (!bkashTxnId.trim()) e.bkashTxnId = "ট্রানজেকশন আইডি লিখুন";
-      if (!bkashPhone.trim()) e.bkashPhone = "bKash নম্বর লিখুন";
-      else if (!/^01[0-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
-    }
+    if (!bkashTxnId.trim()) e.bkashTxnId = "ট্রানজেকশন আইডি লিখুন";
+    if (!bkashPhone.trim()) e.bkashPhone = "bKash নম্বর লিখুন";
+    else if (!/^01[0-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
     return e;
   }
 
@@ -94,8 +92,8 @@ export default function Checkout() {
       shipping_cost: shippingCost,
       total_price:   total,
       coupon_code:   couponCode,
-      bkash_txn_id:  isCourse ? bkashTxnId.trim() : null,
-      bkash_number:  isCourse ? bkashPhone.trim()  : null,
+      bkash_txn_id:  bkashTxnId.trim(),
+      bkash_number:  bkashPhone.trim(),
       status:        "pending",
     };
 
@@ -242,12 +240,13 @@ export default function Checkout() {
                 </>
               )}
 
-              {/* bKash payment — course only */}
-              {isCourse && (
-                <div className="space-y-5">
+              {/* bKash payment */}
+              <div className="space-y-5">
                   {/* Step indicator */}
                   <div className="flex items-center gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E2136E] text-white text-xs font-bold">২</div>
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E2136E] text-white text-xs font-bold">
+                      {isCourse ? "২" : "৩"}
+                    </div>
                     <p className="text-sm font-semibold text-foreground">bKash-এ পেমেন্ট করুন</p>
                   </div>
 
@@ -283,9 +282,11 @@ export default function Checkout() {
                     </p>
                   </div>
 
-                  {/* Step 3 */}
+                  {/* Step 3/4 */}
                   <div className="flex items-center gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">৩</div>
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground text-xs font-bold">
+                      {isCourse ? "৩" : "৪"}
+                    </div>
                     <p className="text-sm font-semibold text-foreground">পেমেন্টের তথ্য দিন</p>
                   </div>
 
@@ -320,7 +321,6 @@ export default function Checkout() {
                     {errors.bkashPhone && <p className="text-xs text-destructive">{errors.bkashPhone}</p>}
                   </div>
                 </div>
-              )}
 
               <Button
                 type="submit"
@@ -335,11 +335,11 @@ export default function Checkout() {
                 {loading ? "প্রক্রিয়া হচ্ছে..." : (isCourse ? "কনফার্ম করুন" : "অর্ডার দিন")}
               </Button>
 
-              {isCourse && (
-                <p className="text-center text-xs text-muted-foreground">
-                  পেমেন্ট যাচাইয়ের পর সাধারণত ২৪ ঘণ্টার মধ্যে কোর্সের অ্যাকসেস পাবেন।
-                </p>
-              )}
+              <p className="text-center text-xs text-muted-foreground">
+                {isCourse
+                  ? "পেমেন্ট যাচাইয়ের পর সাধারণত ২৪ ঘণ্টার মধ্যে কোর্সের অ্যাকসেস পাবেন।"
+                  : "পেমেন্ট যাচাইয়ের পর অর্ডার কনফার্ম করা হবে এবং ডেলিভারির ব্যবস্থা নেওয়া হবে।"}
+              </p>
             </form>
           </div>
 
@@ -372,12 +372,10 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {isCourse && (
-                <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 space-y-1">
-                  <p className="font-semibold">⚠️ গুরুত্বপূর্ণ</p>
-                  <p>Transaction ID ছাড়া পারচেজ করতে পারবেন না, তাই সঠিক তথ্য দিন।</p>
-                </div>
-              )}
+              <div className="mt-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs text-amber-700 dark:text-amber-400 space-y-1">
+                <p className="font-semibold">⚠️ গুরুত্বপূর্ণ</p>
+                <p>Transaction ID ছাড়া অর্ডার নিশ্চিত করা সম্ভব নয়, তাই সঠিক তথ্য দিন।</p>
+              </div>
             </div>
           </aside>
         </div>

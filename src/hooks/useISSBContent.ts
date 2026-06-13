@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import type {
   IQSet, WATSet, ISTSet, ExtemporeSet,
-  PPDTSet, PictureStorySet, IncompleteStorySet,
+  PPDTSet, PictureStorySet, IncompleteStorySet, PlanningTaskSet,
 } from "@/lib/issb/types";
 
 // ─── IQ Practice ─────────────────────────────────────────────
@@ -164,6 +164,31 @@ export function useIncompleteStorySets(courseId?: string) {
       return (data ?? []).map((s) => ({
         ...s,
         incomplete_stories: (s.incomplete_stories ?? []).sort(
+          (a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index
+        ),
+      }));
+    },
+  });
+}
+
+// ─── Planning Task ────────────────────────────────────────────
+export function usePlanningTaskSets(courseId?: string) {
+  return useQuery<PlanningTaskSet[]>({
+    queryKey: ["planning_sets", courseId],
+    enabled: !!courseId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      let q = supabase
+        .from("planning_sets")
+        .select("*, planning_tasks(*)")
+        .eq("is_published", true)
+        .order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []).map((s) => ({
+        ...s,
+        planning_tasks: (s.planning_tasks ?? []).sort(
           (a: { order_index: number }, b: { order_index: number }) => a.order_index - b.order_index
         ),
       }));

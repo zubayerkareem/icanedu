@@ -6,6 +6,7 @@ import type {
   PPDTSet, PPDTPicture,
   PictureStorySet, PictureStoryPicture,
   IncompleteStorySet, IncompleteStory,
+  PlanningTaskSet, PlanningTask,
 } from "@/lib/issb/types";
 
 // ─── Admin fetch: all sets (including unpublished) ────────────
@@ -230,3 +231,30 @@ export const useUpsertIncompleteStory = upsertMutation<Partial<IncompleteStory>>
   (s) => ({ set_id: s.set_id, title: s.title, instruction: s.instruction ?? "", body: s.body ?? "", word_limit: s.word_limit ?? 200, time_guide_minutes: s.time_guide_minutes ?? 10, idea: s.idea ?? "", order_index: s.order_index ?? 0 })
 );
 export const useDeleteIncompleteStory = deleteMutation("incomplete_stories", "admin_incomplete_story_sets");
+
+// ─── Planning Task ────────────────────────────────────────────
+export function useAdminPlanningTaskSets(courseId?: string) {
+  return useQuery<PlanningTaskSet[]>({
+    queryKey: ["admin_planning_sets", courseId ?? "all"],
+    staleTime: 30_000,
+    queryFn: async () => {
+      let q = supabase.from("planning_sets").select("*, planning_tasks(*)").order("order_index");
+      if (courseId) q = q.eq("course_id", courseId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export const useUpsertPlanningTaskSet = upsertMutation<Partial<PlanningTaskSet>>(
+  "planning_sets", "admin_planning_sets",
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+);
+export const useDeletePlanningTaskSet = deleteMutation("planning_sets", "admin_planning_sets");
+
+export const useUpsertPlanningTask = upsertMutation<Partial<PlanningTask>>(
+  "planning_tasks", "admin_planning_sets",
+  (t) => ({ set_id: t.set_id, heading: t.heading ?? "", body: t.body ?? "", image_url: t.image_url ?? "", idea: t.idea ?? "", order_index: t.order_index ?? 0 })
+);
+export const useDeletePlanningTask = deleteMutation("planning_tasks", "admin_planning_sets");

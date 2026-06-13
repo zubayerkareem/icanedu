@@ -170,3 +170,25 @@ export interface IncompleteStorySet {
   created_at?: string;
   incomplete_stories?: IncompleteStory[];
 }
+
+// ─── Planning Task ────────────────────────────────────────────
+export interface PlanningTask {
+  id: string;
+  set_id: string;
+  heading: string;
+  body: string;
+  image_url: string;
+  idea: string;
+  order_index: number;
+}
+
+export interface PlanningTaskSet {
+  id: string;
+  course_id?: string;
+  title: string;
+  order_index: number;
+  is_published: boolean;
+  is_free: boolean;
+  created_at?: string;
+  planning_tasks?: PlanningTask[];
+}

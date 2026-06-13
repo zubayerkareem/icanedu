@@ -21,6 +21,7 @@ import {
   useUpsertPPDTSet, useDeletePPDTSet, useUpsertPPDTPicture, useDeletePPDTPicture,
   useUpsertPictureStorySet, useDeletePictureStorySet, useUpsertPictureStoryPicture, useDeletePictureStoryPicture,
   useUpsertIncompleteStorySet, useDeleteIncompleteStorySet, useUpsertIncompleteStory, useDeleteIncompleteStory,
+  useAdminPlanningTaskSets, useUpsertPlanningTaskSet, useDeletePlanningTaskSet, useUpsertPlanningTask, useDeletePlanningTask,
 } from "@/hooks/useISSBAdmin";
 import type {
   IQSet, IQQuestion, IQOption,
@@ -29,6 +30,7 @@ import type {
   PPDTSet, PPDTPicture,
   PictureStorySet, PictureStoryPicture,
   IncompleteStorySet, IncompleteStory,
+  PlanningTaskSet, PlanningTask,
 } from "@/lib/issb/types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -892,6 +894,135 @@ function StoryCard({ story, index, expanded, onToggle, upsertS, deleteS }: {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PLANNING TASK TAB
+// ═══════════════════════════════════════════════════════════════
+
+function PlanningTab() {
+  const { data: sets = [] } = useAdminPlanningTaskSets();
+  const upsertSet = useUpsertPlanningTaskSet();
+  const deleteSet = useDeletePlanningTaskSet();
+  const upsertT = useUpsertPlanningTask();
+  const deleteT = useDeletePlanningTask();
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  async function addSet() {
+    await upsertSet.mutateAsync({ title: "নতুন প্ল্যানিং সেট", is_published: true });
+    toast.success("সেট যোগ হয়েছে");
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex justify-between">
+        <p className="text-sm text-muted-foreground">প্ল্যানিং টাস্কের ছবি, শিরোনাম ও বিবরণ যোগ করুন।</p>
+        <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
+      </div>
+      {sets.map((s) => (
+        <PlanningSetCard key={s.id} set={s} expanded={expanded === s.id}
+          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+          upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+      ))}
+    </div>
+  );
+}
+
+function PlanningSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertT, deleteT }: {
+  set: PlanningTaskSet; expanded: boolean; onToggle: () => void; onDelete: () => void;
+  upsertSet: ReturnType<typeof useUpsertPlanningTaskSet>;
+  upsertT: ReturnType<typeof useUpsertPlanningTask>;
+  deleteT: ReturnType<typeof useDeletePlanningTask>;
+}) {
+  const [title, setTitle] = useState(set.title);
+  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [free, setFree] = useState(set.is_free ?? false);
+  const tasks = (set.planning_tasks ?? []).sort((a, b) => a.order_index - b.order_index);
+  const [expandedTask, setExpandedTask] = useState<string | null>(null);
+
+  async function addTask() {
+    await upsertT.mutateAsync({ set_id: set.id, heading: "নতুন টাস্ক", body: "", image_url: "", idea: "", order_index: tasks.length });
+  }
+
+  return (
+    <div>
+      <SetHeader expanded={expanded} onToggle={onToggle}
+        title={set.title} badge={`${tasks.length} টাস্ক`} onDelete={onDelete} />
+      {expanded && (
+        <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
+            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+          </div>
+          <Field label="ফ্রি প্রিভিউ">
+            <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+          </Field>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+            <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
+          </Button>
+          <div className="border-t border-border pt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">টাস্কসমূহ</p>
+              <Button size="sm" variant="outline" onClick={addTask}><Plus className="mr-1 h-3.5 w-3.5" /> টাস্ক</Button>
+            </div>
+            {tasks.map((t, i) => (
+              <PlanningTaskCard key={t.id} task={t} index={i} expanded={expandedTask === t.id}
+                onToggle={() => setExpandedTask(expandedTask === t.id ? null : t.id)}
+                upsertT={upsertT} deleteT={deleteT} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PlanningTaskCard({ task, index, expanded, onToggle, upsertT, deleteT }: {
+  task: PlanningTask; index: number; expanded: boolean; onToggle: () => void;
+  upsertT: ReturnType<typeof useUpsertPlanningTask>;
+  deleteT: ReturnType<typeof useDeletePlanningTask>;
+}) {
+  const [heading, setHeading] = useState(task.heading);
+  const [body, setBody] = useState(task.body);
+  const [imageUrl, setImageUrl] = useState(task.image_url);
+  const [idea, setIdea] = useState(task.idea);
+
+  async function save() {
+    await upsertT.mutateAsync({ id: task.id, set_id: task.set_id, heading, body, image_url: imageUrl, idea, order_index: index });
+    toast.success("সংরক্ষিত");
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-card">
+      <div className="flex items-center gap-2 px-3 py-2">
+        <button onClick={onToggle} className="flex flex-1 items-center gap-2 text-left text-sm">
+          {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          <span className="font-medium">{index + 1}. {task.heading || "শিরোনাম নেই"}</span>
+        </button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteT.mutateAsync(task.id)}><X className="h-3.5 w-3.5" /></Button>
+      </div>
+      {expanded && (
+        <div className="border-t border-border px-3 py-3 space-y-3">
+          <Field label="শিরোনাম (Heading)">
+            <Input value={heading} onChange={(e) => setHeading(e.target.value)} placeholder="পরিকল্পনার শিরোনাম" />
+          </Field>
+          <Field label="ছবি (Map / Diagram)">
+            <ImageUpload value={imageUrl} onChange={setImageUrl} folder="thumbnails" />
+          </Field>
+          <Field label="বিবরণ (Scenario Text)">
+            <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5}
+              placeholder="পরিস্থিতির বিস্তারিত বিবরণ লিখুন..."
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
+          </Field>
+          <Field label="Idea / হিন্ট">
+            <Input value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="পরিকল্পনার সম্ভাব্য দিকনির্দেশনা..." />
+          </Field>
+          <Button size="sm" onClick={save}><Save className="mr-2 h-3.5 w-3.5" /> সংরক্ষণ</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // ROOT PAGE
 // ═══════════════════════════════════════════════════════════════
 
@@ -916,6 +1047,7 @@ export default function ISSBAdmin() {
           <TabsTrigger value="extempore">Extempore</TabsTrigger>
           <TabsTrigger value="pictures">ছবির পরীক্ষা</TabsTrigger>
           <TabsTrigger value="stories">অসম্পূর্ণ গল্প</TabsTrigger>
+          <TabsTrigger value="planning">প্ল্যানিং টাস্ক</TabsTrigger>
         </TabsList>
 
         <TabsContent value="iq"><IQTab /></TabsContent>
@@ -924,6 +1056,7 @@ export default function ISSBAdmin() {
         <TabsContent value="extempore"><ExtemporeTab /></TabsContent>
         <TabsContent value="pictures"><PictureTab /></TabsContent>
         <TabsContent value="stories"><IncompleteStoryTab /></TabsContent>
+        <TabsContent value="planning"><PlanningTab /></TabsContent>
       </Tabs>
     </div>
   );

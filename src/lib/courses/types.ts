@@ -22,6 +22,7 @@ export interface ISSBModuleConfig {
   ppdt: boolean;
   pictureStory: boolean;
   incompleteStory: boolean;
+  planningTask: boolean;
 }
 
 export const ISSB_ELEMENT_DEFS: Array<{
@@ -37,6 +38,7 @@ export const ISSB_ELEMENT_DEFS: Array<{
   { key: "extempore",       label: "Essay Writing",    labelBn: "Essay Writing",        path: "extempore" },
   { key: "pictureStory",    label: "Picture Story",    labelBn: "পিকচার স্টোরি",       path: "picture-story" },
   { key: "incompleteStory", label: "Incomplete Story", labelBn: "অসম্পূর্ণ গল্প",       path: "incomplete-story" },
+  { key: "planningTask",    label: "Planning Task",    labelBn: "প্ল্যানিং টাস্ক",       path: "planning-task" },
 ];
 
 export interface Module {

@@ -40,6 +40,7 @@ import LessonView from "./pages/LessonView";
 import IQPracticeHome from "./pages/IQPracticeHome";
 import IQPracticeExam from "./pages/IQPracticeExam";
 import IncompleteStoryHome from "./pages/IncompleteStoryHome";
+import PlanningTaskHome from "./pages/PlanningTaskHome";
 import IncompleteStoryDetail from "./pages/IncompleteStoryDetail";
 import PPDTTest from "./pages/PPDTTest";
 import PictureStoryTest from "./pages/PictureStoryTest";
@@ -99,6 +100,7 @@ const App = () => (
                 <Route path="/courses/:id/ist/:setId" element={<ISTTest />} />
                 <Route path="/courses/:id/extempore" element={<ExtemporeHome />} />
                 <Route path="/courses/:id/extempore/:setId" element={<ExtemporeTest />} />
+                <Route path="/courses/:id/planning-task" element={<PlanningTaskHome />} />
                 <Route path="/products" element={<Products />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/gallery" element={<Gallery />} />

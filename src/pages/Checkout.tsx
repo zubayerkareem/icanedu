@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { sendOrderReceivedEmail } from "@/lib/email";
 
 const BKASH_NUMBER = "01894734002";
 
@@ -110,6 +111,16 @@ export default function Checkout() {
         p_course_id: itemId,
         p_code: couponCode,
       }).then(() => {}).catch(() => {});
+    }
+
+    if (user?.id) {
+      sendOrderReceivedEmail(user.id, {
+        name: name.trim(),
+        productName: itemName,
+        orderType: orderType,
+        amount: total,
+        bkashTxnId: bkashTxnId.trim(),
+      });
     }
 
     navigate(isCourse ? "/thank-you?type=course" : "/thank-you");

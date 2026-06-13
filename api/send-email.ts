@@ -96,6 +96,27 @@ function shippedTemplate(data: { name: string; productName: string }) {
   };
 }
 
+function orderReceivedTemplate(data: { name: string; productName: string; orderType: string; amount: number; bkashTxnId: string }) {
+  const typeLabel = data.orderType === "course" ? "কোর্স" : "পণ্য";
+  return {
+    subject: `🛒 অর্ডার পাওয়া গেছে — ${data.productName}`,
+    html: baseLayout(`
+      <h2>অর্ডার পেয়েছি!</h2>
+      <p>প্রিয় <strong>${data.name}</strong>,</p>
+      <p>আপনার অর্ডার আমরা পেয়েছি। পেমেন্ট যাচাই হলে শীঘ্রই কনফার্ম করা হবে।</p>
+      <div class="info-box">
+        <p><strong>অর্ডার:</strong> ${data.productName}</p>
+        <p><strong>ধরন:</strong> ${typeLabel}</p>
+        <p><strong>মোট পরিমাণ:</strong> ৳${data.amount}</p>
+        <p><strong>bKash TxnID:</strong> ${data.bkashTxnId}</p>
+        <p><strong>স্ট্যাটাস:</strong> যাচাই হচ্ছে ⏳</p>
+      </div>
+      <p>সাধারণত ২৪ ঘণ্টার মধ্যে পেমেন্ট যাচাই করা হয়। কোনো সমস্যা হলে আমাদের সাথে যোগাযোগ করুন।</p>
+      <a href="https://icanbd.com/dashboard" class="btn">ড্যাশবোর্ড দেখুন</a>
+    `),
+  };
+}
+
 function noticeTemplate(data: { title: string; content: string }) {
   const plain = data.content.replace(/<[^>]*>/g, "").slice(0, 300);
   return {
@@ -136,6 +157,25 @@ export default async function handler(req: any, res: any) {
   if (!type) return res.status(400).json({ error: "Missing type" });
 
   try {
+    if (type === "order_received") {
+      if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+      const email = await getUserEmail(userId);
+      if (!email) return res.status(404).json({ error: `User email not found for userId: ${userId}` });
+
+      const template = orderReceivedTemplate(data);
+
+      await transporter.sendMail({
+        from: `"iCANBD Academy" <${gmailUser}>`,
+        to: email,
+        subject: template.subject,
+        html: template.html,
+      });
+
+      console.log(`[send-email] order_received email sent to ${email}`);
+      return res.status(200).json({ ok: true, sent: 1 });
+    }
+
     if (type === "purchase" || type === "shipped") {
       if (!userId) return res.status(400).json({ error: "Missing userId" });
 

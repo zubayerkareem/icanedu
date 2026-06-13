@@ -20,6 +20,16 @@ async function post(body: object) {
   }
 }
 
+export function sendOrderReceivedEmail(userId: string, data: {
+  name: string;
+  productName: string;
+  orderType: "course" | "product";
+  amount: number;
+  bkashTxnId: string;
+}) {
+  return post({ type: "order_received", userId, data });
+}
+
 export function sendPurchaseEmail(userId: string, data: {
   name: string;
   productName: string;

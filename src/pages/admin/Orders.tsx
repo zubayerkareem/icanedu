@@ -9,6 +9,7 @@ import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "@/hoo
 import { useAdminUpdateValidity } from "@/hooks/useAdminEnrollments";
 import type { Order, OrderStatus } from "@/hooks/useOrders";
 import { toast } from "sonner";
+import { sendPurchaseEmail, sendShippedEmail } from "@/lib/email";
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   pending:   "পেন্ডিং",
@@ -410,8 +411,25 @@ export default function AdminOrders() {
     updateStatus(
       { id: order.id, status: next },
       {
-        onSuccess: () => toast.success(`স্ট্যাটাস: ${STATUS_LABELS[next]}`),
-        onError:   () => toast.error("স্ট্যাটাস আপডেট ব্যর্থ হয়েছে"),
+        onSuccess: () => {
+          toast.success(`স্ট্যাটাস: ${STATUS_LABELS[next]}`);
+          if (order.user_id) {
+            if (next === "confirmed") {
+              sendPurchaseEmail(order.user_id, {
+                name: order.customer_name,
+                productName: order.product_name,
+                orderType: order.order_type,
+                amount: order.total_price,
+              });
+            } else if (next === "shipped") {
+              sendShippedEmail(order.user_id, {
+                name: order.customer_name,
+                productName: order.product_name,
+              });
+            }
+          }
+        },
+        onError: () => toast.error("স্ট্যাটাস আপডেট ব্যর্থ হয়েছে"),
       }
     );
   }

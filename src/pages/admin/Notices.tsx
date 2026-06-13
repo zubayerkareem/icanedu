@@ -13,6 +13,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { sendNoticeEmail } from "@/lib/email";
 import { RichEditor } from "@/components/RichEditor";
 import {
   useAdminNotices, useUpsertNotice, useDeleteNotice,
@@ -62,9 +63,13 @@ export default function AdminNotices() {
 
   async function handleSave() {
     if (!form.title.trim()) { toast.error("শিরোনাম প্রয়োজন"); return; }
+    const isNew = !form.id;
     try {
       await upsert.mutateAsync(form);
-      toast.success(form.id ? "নোটিশ আপডেট হয়েছে" : "নোটিশ যোগ হয়েছে");
+      toast.success(isNew ? "নোটিশ যোগ হয়েছে" : "নোটিশ আপডেট হয়েছে");
+      if (isNew && form.is_published) {
+        sendNoticeEmail({ title: form.title, content: form.content });
+      }
       setSheetOpen(false);
     } catch (e: unknown) {
       toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");

@@ -11,6 +11,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   Skills: "স্কিলস",
 };
 
+const CATEGORY_ORDER = ["ISSB", "Cadet", "Skills"];
+
 function catLabel(cat: string) {
   return CATEGORY_LABELS[cat] ?? cat;
 }
@@ -36,9 +38,14 @@ export default function Courses() {
       if (!map[cat]) map[cat] = [];
       map[cat].push(c);
     });
-    return Object.entries(map).map(([cat, list]) => ({
+    const allCats = Object.keys(map);
+    const ordered = [
+      ...CATEGORY_ORDER.filter((c) => allCats.includes(c)),
+      ...allCats.filter((c) => !CATEGORY_ORDER.includes(c)),
+    ];
+    return ordered.map((cat) => ({
       label: groupLabel(cat),
-      items: list,
+      items: map[cat],
     }));
   }, [category, items]);
 

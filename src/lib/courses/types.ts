@@ -35,7 +35,7 @@ export const ISSB_ELEMENT_DEFS: Array<{
   { key: "iq",              label: "IQ Practice",      labelBn: "IQ প্র্যাকটিস",       path: "iq-practice" },
   { key: "ppdt",            label: "PPDT Practice",    labelBn: "PPDT প্র্যাকটিস",     path: "ppdt" },
   { key: "wat",             label: "WAT Practice",     labelBn: "WAT প্র্যাকটিস",      path: "wat" },
-  { key: "ist",             label: "IST Practice",     labelBn: "IST প্র্যাকটিস",      path: "ist" },
+  { key: "ist",             label: "Incomplete Sentences", labelBn: "IST প্র্যাকটিস",      path: "ist" },
   { key: "extempore",       label: "Essay Writing",    labelBn: "Essay Writing",        path: "extempore" },
   { key: "pictureStory",    label: "Picture Story",    labelBn: "পিকচার স্টোরি",       path: "picture-story" },
   { key: "incompleteStory", label: "Incomplete Story", labelBn: "অসম্পূর্ণ গল্প",       path: "incomplete-story" },

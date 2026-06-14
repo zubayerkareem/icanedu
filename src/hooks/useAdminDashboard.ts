@@ -49,7 +49,7 @@ export function useAdminDashboard() {
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-      const [coursesRes, productsRes, studentsRes, noticesRes, ordersRes, recentOrdersRes] = await Promise.all([
+      const [coursesRes, productsRes, studentsRes, noticesRes, ordersRes, recentOrdersRes, revenueRes] = await Promise.all([
         supabase.from("courses").select("id", { count: "exact", head: true }),
         supabase.from("products").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
@@ -64,6 +64,10 @@ export function useAdminDashboard() {
           .select("id, order_type, product_name, customer_name, total_price, status, created_at")
           .order("created_at", { ascending: false })
           .limit(20),
+        supabase
+          .from("orders")
+          .select("total_price")
+          .in("status", ["confirmed", "shipped", "delivered"]),
       ]);
 
       const orders = ordersRes.data ?? [];
@@ -71,8 +75,7 @@ export function useAdminDashboard() {
 
       // ── Active & Revenue ─────────────────────────────────────────────
       const activeOrders = orders.filter((o) => !["delivered","cancelled"].includes(o.status)).length;
-      const totalRevenue  = orders
-        .filter((o) => o.status === "delivered")
+      const totalRevenue  = (revenueRes.data ?? [])
         .reduce((sum, o) => sum + (o.total_price ?? 0), 0);
 
       // ── Daily orders — last 30 days ──────────────────────────────────

@@ -71,7 +71,7 @@ export function Footer() {
             <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li className="flex items-start gap-2">
                 <Phone className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>{f.mirpur}: 01894734003</span>
+                <span>01894734002</span>
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="mt-0.5 h-4 w-4 shrink-0" />
@@ -79,7 +79,7 @@ export function Footer() {
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Pallabi Metro, Mirpur, Dhaka</span>
+                <span>Room No-212-213, RH Home Center, Green Road, Farmgate, Dhaka</span>
               </li>
             </ul>
           </div>

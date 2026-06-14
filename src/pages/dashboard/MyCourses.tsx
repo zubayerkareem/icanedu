@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useMyOrders, type Order, type OrderStatus } from "@/hooks/useOrders";
-import { MOCK_COURSES } from "@/lib/courses/mock";
 import type { Course } from "@/lib/courses/types";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -29,7 +28,7 @@ function useEnrolledDbCourses(productIds: string[]) {
       const { data, error } = await supabase
         .from("courses")
         .select("id, slug, title, thumbnail_url, category, duration, total_lessons, modules")
-        .in("id", productIds);
+        .or(`id.in.(${productIds.map((id) => `"${id}"`).join(",")}),slug.in.(${productIds.map((id) => `"${id}"`).join(",")})`);
       if (error) return [];
       return (data ?? []) as Course[];
     },
@@ -39,41 +38,43 @@ function useEnrolledDbCourses(productIds: string[]) {
 // ─── Enrolled Course Card ─────────────────────────────────────────────────────
 
 function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Course[] }) {
-  // DB course first, then mock fallback
   const course: Course | undefined =
-    dbCourses.find((c) => c.id === order.product_id) ??
-    MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id);
+    dbCourses.find((c) => c.id === order.product_id || c.slug === order.product_id);
 
   const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
   const isActive = order.status === "confirmed" || order.status === "shipped" || order.status === "delivered";
-  const courseId = order.product_id ?? course?.id ?? "";
+  const courseId = course?.id ?? order.product_id ?? "";
+  const thumbnail = course?.thumbnail_url;
+  const displayName = course?.title ?? order.product_name;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       {/* Banner */}
       <div className="relative h-44 w-full bg-muted overflow-hidden">
-        {course?.thumbnail_url ? (
+        {thumbnail ? (
           <img
-            src={course.thumbnail_url}
-            alt={order.product_name}
+            src={thumbnail}
+            alt={displayName}
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/20 to-accent/5">
-            <BookOpen className="h-12 w-12 text-accent/40" />
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-accent/30 via-accent/10 to-background">
+            <span className="font-heading text-4xl font-black text-accent/50 select-none">
+              {displayName.slice(0, 2).toUpperCase()}
+            </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
         <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2">
           <h3 className="font-heading font-bold text-white text-sm leading-snug line-clamp-2 drop-shadow">
-            {order.product_name}
+            {displayName}
           </h3>
           <Badge className={`shrink-0 text-[10px] ${status.color}`}>{status.label}</Badge>
         </div>
       </div>
 
       {/* Body */}
-      <div className="p-4 space-y-4">
+      <div className="p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -87,6 +88,7 @@ function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Cou
             </span>
           )}
         </div>
+
         {/* Validity badge */}
         {(() => {
           if (!order.valid_until) return null;
@@ -132,7 +134,7 @@ export default function MyCourses() {
 
       <div className="mt-6">
         {isLoading ? (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-80 animate-pulse rounded-2xl border border-border bg-muted/30" />
             ))}

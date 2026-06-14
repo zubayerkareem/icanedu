@@ -9,7 +9,7 @@ import { RichContent } from "@/components/RichEditor";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
-import { SecureVideoPlayer } from "@/components/SecureVideoPlayer";
+import { getEmbedUrl } from "@/lib/video";
 import { isLessonFree, type Lesson, type Module } from "@/lib/courses/types";
 
 const TYPE_ICON = {
@@ -147,7 +147,22 @@ export default function LessonView() {
 }
 
 function VideoPlayer({ url }: { url?: string }) {
-  return <SecureVideoPlayer url={url} />;
+  const embed = url ? getEmbedUrl(url) : null;
+  return (
+    <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
+      {embed ? (
+        <iframe
+          src={embed}
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="lesson video"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-white/60">ভিডিও পাওয়া যায়নি</div>
+      )}
+    </div>
+  );
 }
 
 function PdfViewer({ url }: { url?: string }) {

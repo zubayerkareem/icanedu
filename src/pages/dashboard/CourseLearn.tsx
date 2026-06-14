@@ -14,7 +14,7 @@ import { RichContent } from "@/components/RichEditor";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
-import { SecureVideoPlayer } from "@/components/SecureVideoPlayer";
+import { getEmbedUrl } from "@/lib/video";
 import { isLessonFree } from "@/lib/courses/types";
 import type { Course, LessonType, Lesson, Module } from "@/lib/courses/types";
 import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
@@ -193,7 +193,23 @@ function CurriculumSidebar({
 // ─── Lesson content viewers ───────────────────────────────────────────────────
 
 function VideoPlayer({ url }: { url?: string }) {
-  return <SecureVideoPlayer url={url} />;
+  const embed = url ? getEmbedUrl(url) : null;
+  return (
+    <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
+      {embed ? (
+        <iframe
+          key={embed}
+          src={embed}
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="lesson video"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-white/60">ভিডিও URL অবৈধ</div>
+      )}
+    </div>
+  );
 }
 
 function PdfViewer({ url }: { url?: string }) {

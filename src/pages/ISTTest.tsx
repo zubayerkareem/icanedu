@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { CheckCircle2, Clock, SkipForward, RotateCcw } from "lucide-react";
+import { CheckCircle2, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IST_SETS, type ISTSentence } from "@/lib/ist/mock";
 import { useISTSets } from "@/hooks/useISSBContent";
@@ -121,16 +121,17 @@ function Instructions({
 
 function TestScreen({
   sentences,
+  title,
   timerSeconds,
   onFinish,
 }: {
   sentences: ISTSentence[];
+  title: string;
   timerSeconds: number;
   onFinish: (answers: Record<string, string>) => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeLeft, setTimeLeft] = useState(timerSeconds);
-  const [current, setCurrent] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const finishedRef = useRef(false);
@@ -160,133 +161,75 @@ function TestScreen({
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [checkTime]);
 
-  // Force-recalculate the instant the tab becomes visible
   useEffect(() => {
     const handle = () => { if (!document.hidden) checkTime(); };
     document.addEventListener("visibilitychange", handle);
     return () => document.removeEventListener("visibilitychange", handle);
   }, [checkTime]);
 
-  // Auto-focus current sentence input
-  useEffect(() => {
-    inputRefs.current[current]?.focus();
-  }, [current]);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, idx: number) => {
     if (e.key === "Enter") {
-      if (idx < sentences.length - 1) {
-        setCurrent(idx + 1);
-      } else {
-        handleFinish();
-      }
+      e.preventDefault();
+      inputRefs.current[idx + 1]?.focus();
     }
   };
 
-  const handleSkip = () => {
-    if (current < sentences.length - 1) setCurrent(current + 1);
-    else handleFinish();
-  };
-
-  const sentence = sentences[current];
-  const answered = Object.values(answers).filter(Boolean).length;
+  const urgent = timeLeft <= 30;
+  const mins = Math.floor(timeLeft / 60);
+  const secs = timeLeft % 60;
 
   return (
-    <div className="min-h-screen bg-background"
-      style={{ backgroundImage: "radial-gradient(circle, #e5e7eb 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+    <div
+      className="min-h-screen bg-[#f4f4f5]"
+      style={{ backgroundImage: "radial-gradient(circle, #d1d5db 1px, transparent 1px)", backgroundSize: "24px 24px" }}
     >
-      <TimerPill seconds={timeLeft} total={timerSeconds} />
+      <div className="container max-w-3xl py-10 px-4 pb-24">
+        {/* Title */}
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-foreground text-center mb-8">
+          {title}
+        </h1>
 
-      <div className="container max-w-2xl pt-20 pb-24 px-4">
-        {/* Progress */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-          <span>{answered} / {sentences.length} উত্তর দেওয়া হয়েছে</span>
-          <span>{current + 1} / {sentences.length}</span>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden mb-8">
-          <div
-            className="h-full rounded-full bg-accent transition-all duration-300"
-            style={{ width: `${((current + 1) / sentences.length) * 100}%` }}
-          />
-        </div>
-
-        {/* Current sentence card */}
-        <div className="rounded-2xl border bg-background shadow-lg overflow-hidden mb-6">
-          <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-background text-xs font-bold font-heading">
-                {current + 1}
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">বাক্য সম্পূর্ণ করুন</span>
-            </div>
-
-            <p className="font-heading font-bold text-foreground text-2xl sm:text-3xl leading-relaxed mb-5">
-              {sentence.stem}…
-            </p>
-
-            <input
-              ref={(el) => { inputRefs.current[current] = el; }}
-              type="text"
-              className="w-full rounded-xl border-2 bg-muted/30 px-4 py-3 text-foreground font-medium text-lg placeholder:text-muted-foreground/50 focus:outline-none focus:border-accent transition-colors"
-              placeholder="এখানে লিখুন…"
-              value={answers[sentence.id] ?? ""}
-              onChange={(e) => setAnswers((prev) => ({ ...prev, [sentence.id]: e.target.value }))}
-              onKeyDown={(e) => handleKeyDown(e, current)}
-              autoComplete="off"
-            />
-            <p className="mt-2 text-xs text-muted-foreground">Enter চাপুন বা নিচের বাটনে ক্লিক করুন</p>
+        {/* All sentences card */}
+        <div className="rounded-2xl border bg-background shadow-sm overflow-hidden">
+          <div className="divide-y divide-border">
+            {sentences.map((s, i) => (
+              <div key={s.id} className="flex items-baseline gap-3 px-6 py-3.5">
+                <span className="shrink-0 w-7 text-sm font-semibold text-foreground text-right">
+                  {i + 1}.
+                </span>
+                <span className="shrink-0 text-sm font-semibold text-accent whitespace-nowrap">
+                  {s.stem}
+                </span>
+                <input
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  className="flex-1 min-w-0 border-0 border-b border-border bg-transparent py-0.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-accent transition-colors"
+                  placeholder="..."
+                  value={answers[s.id] ?? ""}
+                  onChange={(e) => setAnswers((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                  onKeyDown={(e) => handleKeyDown(e, i)}
+                  autoComplete="off"
+                />
+              </div>
+            ))}
           </div>
-
-          <div className="flex items-center justify-between px-6 pb-5 pt-2 border-t bg-muted/20">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground gap-1.5"
-              onClick={handleSkip}
-            >
-              <SkipForward className="h-3.5 w-3.5" />
-              {current < sentences.length - 1 ? "পরবর্তী" : "শেষ করুন"}
-            </Button>
-
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                if (current < sentences.length - 1) setCurrent(current + 1);
-                else handleFinish();
-              }}
-            >
-              {current < sentences.length - 1 ? "পরবর্তী →" : "জমা দিন ✓"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mini sentence navigator */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {sentences.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => setCurrent(i)}
-              className={[
-                "h-8 w-8 rounded-lg text-xs font-bold font-heading transition-all border",
-                i === current
-                  ? "bg-foreground text-background border-foreground scale-110 shadow-md"
-                  : answers[s.id]
-                  ? "bg-accent/20 text-accent border-accent/30"
-                  : "bg-muted text-muted-foreground border-border hover:border-foreground/30",
-              ].join(" ")}
-            >
-              {i + 1}
-            </button>
-          ))}
         </div>
       </div>
 
       {/* Sticky bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-bold text-foreground">{answered}</span>/{sentences.length} সম্পন্ন
-          </p>
+      <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur-sm px-4 py-3 z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
+          {/* Timer */}
+          <div className={[
+            "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-heading font-bold tabular-nums",
+            urgent
+              ? "bg-destructive/10 border-destructive/30 text-destructive"
+              : "bg-muted border-border text-foreground",
+          ].join(" ")}>
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            {String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}
+          </div>
+
           <Button
             variant="outline"
             size="sm"
@@ -484,6 +427,7 @@ export default function ISTTest() {
     return (
       <TestScreen
         sentences={set.sentences}
+        title={set.title}
         timerSeconds={set.timerSeconds}
         onFinish={(a) => { setAnswers(a); setPhase("results"); }}
       />

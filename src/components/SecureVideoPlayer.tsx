@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getEmbedUrl } from "@/lib/video";
 
-// Watermark cycles through 6 positions every 30s — covers more of the frame
-// so a screen recording captures the user's identity no matter where they crop
+// Watermark cycles through 8 positions every 15s — covers all corners + center
+// so cropping any single edge still leaves the watermark visible somewhere
 const POSITIONS = [
   "top-3 left-3",
   "top-3 right-3",
   "bottom-10 left-3",
   "bottom-10 right-3",
-  "top-[45%] left-3",
-  "top-[45%] right-3",
+  "top-[45%] left-[30%]",
+  "top-[45%] right-[30%]",
+  "top-[20%] left-[40%]",
+  "bottom-[30%] right-[35%]",
 ] as const;
 
 function hardenUrl(embed: string): string {
@@ -51,7 +53,7 @@ export function SecureVideoPlayer({ url }: { url?: string }) {
 
   // Rotate watermark position every 30 seconds
   useEffect(() => {
-    const t = setInterval(() => setPosIndex((i) => (i + 1) % POSITIONS.length), 30_000);
+    const t = setInterval(() => setPosIndex((i) => (i + 1) % POSITIONS.length), 15_000);
     return () => clearInterval(t);
   }, []);
 
@@ -130,7 +132,7 @@ export function SecureVideoPlayer({ url }: { url?: string }) {
           className={`absolute ${POSITIONS[posIndex]} pointer-events-none z-10 transition-all duration-[2000ms] ease-in-out`}
           aria-hidden
         >
-          <span className="block rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight text-white/25 select-none">
+          <span className="block rounded px-1.5 py-0.5 text-[11px] font-semibold leading-tight text-white/40 select-none drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {watermark}
           </span>
         </div>

@@ -92,7 +92,6 @@ export default function AdminHome() {
     { key: "totalProducts",  label: "মোট পণ্য",             icon: Package,     href: "/admin/products", color: "text-purple-500" },
     { key: "totalStudents",  label: "নিবন্ধিত শিক্ষার্থী",  icon: Users,       href: "/admin/students", color: "text-green-500" },
     { key: "activeOrders",   label: "চলমান অর্ডার",         icon: ShoppingBag, href: "/admin/orders",   color: "text-amber-500" },
-    { key: "totalRevenue",   label: "মোট আয়",              icon: TrendingUp,  href: "/admin/orders",   color: "text-emerald-500", prefix: "৳" },
     { key: "totalNotices",   label: "মোট নোটিশ",            icon: Bell,        href: "/admin/notices",  color: "text-rose-500" },
   ] as const;
 

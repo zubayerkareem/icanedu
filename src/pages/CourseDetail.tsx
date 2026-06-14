@@ -544,10 +544,10 @@ function CurriculumSection({ course, modules }: { course: Course; modules: Modul
                           <Brain className="h-4 w-4 shrink-0 text-accent" />
                           {canView ? (
                             <Link to={href} className="flex-1 text-foreground hover:text-accent hover:underline">
-                              {el.labelBn}
+                              {el.label}
                             </Link>
                           ) : (
-                            <span className="flex-1 text-foreground">{el.labelBn}</span>
+                            <span className="flex-1 text-foreground">{el.label}</span>
                           )}
                           {m.isFree ? (
                             <Link to={href}>

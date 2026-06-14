@@ -111,7 +111,7 @@ function ModuleAccordionItem({
                   className="flex w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left hover:bg-muted/60 transition-colors"
                 >
                   <Brain className="h-3.5 w-3.5 shrink-0 text-accent" />
-                  <span className="flex-1 text-xs text-foreground line-clamp-2 leading-snug">{el.labelBn}</span>
+                  <span className="flex-1 text-xs text-foreground line-clamp-2 leading-snug">{el.label}</span>
                 </Link>
               </li>
             ))}
@@ -340,7 +340,7 @@ function LearnContent({
                              transition-all duration-200"
                 >
                   <Brain className="h-10 w-10 text-accent" />
-                  <span className="text-sm font-semibold text-center px-2 leading-snug">{el.labelBn}</span>
+                  <span className="text-sm font-semibold text-center px-2 leading-snug">{el.label}</span>
                 </Link>
               ))}
             </div>

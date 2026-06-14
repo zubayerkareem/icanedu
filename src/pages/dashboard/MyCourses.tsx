@@ -25,12 +25,28 @@ function useEnrolledDbCourses(productIds: string[]) {
     enabled: productIds.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const cols = "id, slug, title, thumbnail_url, category, duration, total_lessons, modules";
+
+      // First match by id (UUIDs stored in orders)
+      const { data: byId } = await supabase
         .from("courses")
-        .select("id, slug, title, thumbnail_url, category, duration, total_lessons, modules")
-        .or(`id.in.(${productIds.map((id) => `"${id}"`).join(",")}),slug.in.(${productIds.map((id) => `"${id}"`).join(",")})`);
-      if (error) return [];
-      return (data ?? []) as Course[];
+        .select(cols)
+        .in("id", productIds);
+
+      const matchedIds = new Set((byId ?? []).map((c) => c.id));
+      const remaining = productIds.filter((pid) => !matchedIds.has(pid));
+
+      // Fallback: match remaining by slug
+      let bySlug: Course[] = [];
+      if (remaining.length > 0) {
+        const { data } = await supabase
+          .from("courses")
+          .select(cols)
+          .in("slug", remaining);
+        bySlug = (data ?? []) as Course[];
+      }
+
+      return [...(byId ?? []), ...bySlug] as Course[];
     },
   });
 }

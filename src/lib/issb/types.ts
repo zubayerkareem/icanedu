@@ -71,6 +71,7 @@ export interface ISTSet {
   order_index: number;
   is_published: boolean;
   is_free: boolean;
+  text_type: "Bangla" | "English";
   created_at?: string;
   ist_sentences?: ISTSentence[];
 }

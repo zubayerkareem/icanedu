@@ -380,6 +380,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
   const [timer, setTimer] = useState(String(set.timer_seconds));
   const [courseId, setCourseId] = useState(set.course_id ?? "");
   const [free, setFree] = useState(set.is_free ?? false);
+  const [textType, setTextType] = useState<"Bangla" | "English">(set.text_type ?? "Bangla");
   const sentences = (set.ist_sentences ?? []).sort((a, b) => a.order_index - b.order_index);
 
   async function addSentence() {
@@ -389,7 +390,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
   return (
     <div>
       <SetHeader expanded={expanded} onToggle={onToggle}
-        title={set.title} badge={`${sentences.length} বাক্য`} onDelete={onDelete} />
+        title={set.title} badge={`${sentences.length} বাক্য · ${set.text_type ?? "Bangla"}`} onDelete={onDelete} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
@@ -397,12 +398,26 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
             <Field label="মোট সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 flex-wrap">
+            <Field label="ভাষা">
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setTextType("Bangla")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", textType === "Bangla" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}
+                >বাংলা</button>
+                <button
+                  type="button"
+                  onClick={() => setTextType("English")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", textType === "English" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}
+                >English</button>
+              </div>
+            </Field>
             <Field label="ফ্রি প্রিভিউ">
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined, text_type: textType }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">

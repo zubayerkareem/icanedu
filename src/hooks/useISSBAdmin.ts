@@ -171,7 +171,7 @@ export const useDeleteWATSet = deleteMutation("wat_sets", "admin_wat_sets");
 // ─── IST ─────────────────────────────────────────────────────
 export const useUpsertISTSet = upsertMutation<Partial<ISTSet>>(
   "ist_sets", "admin_ist_sets",
-  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, text_type: s.text_type ?? "Bangla" })
 );
 export const useDeleteISTSet = deleteMutation("ist_sets", "admin_ist_sets");
 

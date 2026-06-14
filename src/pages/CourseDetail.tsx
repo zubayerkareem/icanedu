@@ -154,7 +154,6 @@ export default function CourseDetail() {
       <CurriculumSection course={course} modules={course.modules ?? []} />
       <VideosSection videos={course.videos ?? []} />
       <ResourcesSection resources={course.resources ?? []} />
-      <TeacherSection course={course} />
       <ReviewsSection course={course} />
       {related.length > 0 && <RelatedCourses related={related} />}
     </>
@@ -243,43 +242,6 @@ function CourseHero({ course }: { course: Course }) {
             )}
           </div>
 
-          {course.teachers && course.teachers.length > 0 ? (
-            <div className="mt-8 flex items-center gap-3">
-              <div className="flex -space-x-2">
-                {course.teachers.slice(0, 4).map((t, i) => (
-                  <Avatar key={i} className="h-10 w-10 ring-2 ring-background">
-                    {t.avatar && <AvatarImage src={t.avatar} />}
-                    <AvatarFallback className="bg-accent text-accent-foreground text-xs">
-                      {t.name.slice(0, 1)}
-                    </AvatarFallback>
-                  </Avatar>
-                ))}
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-foreground">
-                  {course.teachers.length} জন শিক্ষক
-                </div>
-                <div className="text-xs text-muted-foreground">বিশেষজ্ঞ শিক্ষক প্যানেল</div>
-              </div>
-            </div>
-          ) : course.teacher && (
-            <div className="mt-8 flex items-center gap-3">
-              <Avatar className="h-12 w-12 ring-2 ring-border">
-                {course.teacher.avatar && <AvatarImage src={course.teacher.avatar} />}
-                <AvatarFallback className="bg-accent text-accent-foreground">
-                  {course.teacher.name.slice(0, 1)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="text-sm font-semibold text-foreground">
-                  {course.teacher.name}
-                </div>
-                {course.teacher.short_bio && (
-                  <div className="text-xs text-muted-foreground">{course.teacher.short_bio}</div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Course highlights block */}
           {(course.long_description || (course.highlight_items?.length ?? course.highlights?.length ?? 0) > 0) && (
@@ -789,83 +751,6 @@ function DescriptionSection({ content }: { content: string }) {
   );
 }
 
-// ============ Teacher ============
-
-function TeacherCard({ teacher }: { teacher: import("@/lib/courses/types").Teacher }) {
-  return (
-    <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5 sm:flex-row sm:items-start">
-      <Avatar className="h-20 w-20 shrink-0">
-        {teacher.avatar && <AvatarImage src={teacher.avatar} />}
-        <AvatarFallback className="bg-accent text-xl text-accent-foreground">
-          {teacher.name.slice(0, 1)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1">
-        <div className="font-heading text-lg font-bold text-foreground">{teacher.name}</div>
-        {teacher.short_bio && (
-          <div className="mt-1 text-sm font-medium text-accent">{teacher.short_bio}</div>
-        )}
-        {teacher.long_bio && (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{teacher.long_bio}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TeacherSection({ course }: { course: Course }) {
-  const teachers = course.teachers;
-  const teacher = course.teacher;
-  if (!teachers?.length && !teacher) return null;
-
-  if (teachers && teachers.length > 0) {
-    return (
-      <section className="py-12 sm:py-16">
-        <div className="container max-w-4xl">
-          <h2 className="mb-6 font-heading text-2xl font-bold text-foreground sm:text-3xl">
-            শিক্ষক প্যানেল
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {teachers.map((t, i) => <TeacherCard key={i} teacher={t} />)}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <section className="py-12 sm:py-16">
-      <div className="container max-w-4xl">
-        <h2 className="mb-6 font-heading text-2xl font-bold text-foreground sm:text-3xl">
-          {t.courseDetail.teacherTitle}
-        </h2>
-        <div className="flex flex-col gap-6 rounded-lg border border-border bg-card p-6 sm:flex-row sm:items-start">
-          <Avatar className="h-24 w-24 shrink-0">
-            {teacher!.avatar && <AvatarImage src={teacher!.avatar} />}
-            <AvatarFallback className="bg-accent text-2xl text-accent-foreground">
-              {teacher!.name.slice(0, 1)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1">
-            <div className="font-heading text-xl font-bold text-foreground">
-              {teacher!.name}
-            </div>
-            {teacher!.short_bio && (
-              <div className="mt-1 text-sm font-medium text-accent">
-                {teacher!.short_bio}
-              </div>
-            )}
-            {teacher!.long_bio && (
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                {teacher!.long_bio}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ============ Reviews ============
 

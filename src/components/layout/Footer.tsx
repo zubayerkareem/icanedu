@@ -25,7 +25,7 @@ export function Footer() {
               />
             </Link>
             <p className="mt-2 text-sm text-muted-foreground">
-              {settings?.tagline || f.tagline}
+              iCAN Academy- iCAN Make It Possible
             </p>
             <div className="mt-4 flex gap-3">
               <a href="https://www.facebook.com/icanbdedu" target="_blank" rel="noreferrer"

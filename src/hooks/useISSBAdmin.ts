@@ -210,7 +210,7 @@ export const useDeletePPDTPicture = deleteMutation("ppdt_pictures", "admin_ppdt_
 // ─── Picture Story ────────────────────────────────────────────
 export const useUpsertPictureStorySet = upsertMutation<Partial<PictureStorySet>>(
   "picture_story_sets", "admin_picture_story_sets",
-  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 60, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 60, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, lang: s.lang ?? 'bn' })
 );
 export const useDeletePictureStorySet = deleteMutation("picture_story_sets", "admin_picture_story_sets");
 

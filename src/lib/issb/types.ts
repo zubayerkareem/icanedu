@@ -144,6 +144,7 @@ export interface PictureStorySet {
   order_index: number;
   is_published: boolean;
   is_free: boolean;
+  lang: 'bn' | 'en';
   created_at?: string;
   picture_story_pictures?: PictureStoryPicture[];
 }

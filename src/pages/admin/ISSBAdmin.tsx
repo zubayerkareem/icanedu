@@ -691,6 +691,7 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
   const [wrS, setWrS] = useState(String(set.write_seconds));
   const [courseId, setCourseId] = useState(set.course_id ?? "");
   const [free, setFree] = useState(set.is_free ?? false);
+  const [lang, setLang] = useState<'bn' | 'en'>(tablePrefix === "picture_story" ? ((set as PictureStorySet).lang ?? 'bn') : 'bn');
 
   async function addPicture() {
     (upsertP as ReturnType<typeof useUpsertPPDTPicture>).mutateAsync({
@@ -720,8 +721,30 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
+          {tablePrefix === "picture_story" && (
+            <Field label="ভাষা / Language">
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setLang('bn')}
+                  className={["rounded-md border px-4 py-1.5 text-sm font-medium transition-colors", lang === 'bn' ? "bg-foreground text-background border-foreground" : "bg-background text-foreground hover:bg-muted"].join(" ")}
+                >
+                  বাংলা
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLang('en')}
+                  className={["rounded-md border px-4 py-1.5 text-sm font-medium transition-colors", lang === 'en' ? "bg-foreground text-background border-foreground" : "bg-background text-foreground hover:bg-muted"].join(" ")}
+                >
+                  English
+                </button>
+              </div>
+            </Field>
+          )}
           <Button size="sm" onClick={async () => {
-            await (upsertSet as ReturnType<typeof useUpsertPPDTSet>).mutateAsync({ id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), is_free: free, course_id: courseId || undefined });
+            const payload: Record<string, unknown> = { id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), is_free: free, course_id: courseId || undefined };
+            if (tablePrefix === "picture_story") payload.lang = lang;
+            await (upsertSet as ReturnType<typeof useUpsertPPDTSet>).mutateAsync(payload as Parameters<ReturnType<typeof useUpsertPPDTSet>['mutateAsync']>[0]);
             toast.success("সংরক্ষিত");
           }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ

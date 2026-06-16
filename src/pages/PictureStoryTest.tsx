@@ -634,25 +634,33 @@ export default function PictureStoryTest() {
   const L = lang === "bn" ? BN : EN;
 
   const allSets: NormalizedSet[] = dbSets.length > 0
-    ? dbSets.map((s) => ({
-        id: s.id,
-        title: s.title,
-        is_free: s.is_free ?? false,
-        pictures: (s.picture_story_pictures ?? []).map((p): PictureStoryPicture => ({
-          id: p.id,
-          picture_number: p.picture_number,
-          image_url: p.image_url,
-          title: p.title,
-          description: p.idea,
-          idea: p.idea,
-        })),
-      }))
+    ? dbSets
+        .filter((s) => (s.lang ?? 'bn') === lang)
+        .map((s) => ({
+          id: s.id,
+          title: s.title,
+          is_free: s.is_free ?? false,
+          pictures: (s.picture_story_pictures ?? []).map((p): PictureStoryPicture => ({
+            id: p.id,
+            picture_number: p.picture_number,
+            image_url: p.image_url,
+            title: p.title,
+            description: p.idea,
+            idea: p.idea,
+          })),
+        }))
     : [{
         id: PICTURE_STORY_MOCK_SET.id,
         title: PICTURE_STORY_MOCK_SET.name,
         is_free: true,
         pictures: PICTURE_STORY_MOCK_SET.pictures,
       }];
+
+  // Reset selected set when language changes
+  const handleLangChange = (newLang: Lang) => {
+    setLang(newLang);
+    setSelectedSetId(null);
+  };
 
   const selectedSet = selectedSetId ? (allSets.find((s) => s.id === selectedSetId) ?? null) : null;
 
@@ -663,13 +671,13 @@ export default function PictureStoryTest() {
         <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">{L.title}</h1>
         <div className="flex rounded-full border border-border overflow-hidden text-sm font-medium">
           <button
-            onClick={() => setLang("bn")}
+            onClick={() => handleLangChange("bn")}
             className={["px-6 py-2 transition-colors", lang === "bn" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-muted"].join(" ")}
           >
             বাংলা
           </button>
           <button
-            onClick={() => setLang("en")}
+            onClick={() => handleLangChange("en")}
             className={["px-6 py-2 transition-colors", lang === "en" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-muted"].join(" ")}
           >
             English

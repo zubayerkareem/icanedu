@@ -37,6 +37,10 @@ const BN = {
   buyNow: "কোর্সটি কিনুন",
   premiumContent: "এই কন্টেন্টটি প্রিমিয়াম",
   premiumDesc: "এই সেটটি অ্যাক্সেস করতে কোর্সটি কিনুন।",
+  completedTitle: "সব ছবির গল্প সম্পন্ন!",
+  completedDesc: "ছবির গল্প লেখা হয়েছে।",
+  backToSet: "সেটে ফিরুন",
+  allSets: "সব সেট দেখুন",
 };
 
 const EN: typeof BN = {
@@ -65,6 +69,10 @@ const EN: typeof BN = {
   buyNow: "Buy Course",
   premiumContent: "Premium Content",
   premiumDesc: "Purchase the course to access this set.",
+  completedTitle: "All pictures completed!",
+  completedDesc: "pictures written.",
+  backToSet: "Back to Set",
+  allSets: "View All Sets",
 };
 
 type Lang = "bn" | "en";
@@ -193,7 +201,7 @@ function PictureModal({
       submitted_at: new Date().toISOString(),
     };
     onSubmitted(sub);
-    onClose();
+    // parent handles auto-advance; don't call onClose here
   };
 
   const activeTimer = phase === "observe" ? observeTimer : writeTimer;
@@ -545,6 +553,49 @@ function SetCard({
   );
 }
 
+// ─── Completion Screen ────────────────────────────────────────────────────────
+
+function CompletionScreen({
+  setTitle,
+  pictureCount,
+  L,
+  onClose,
+  onBackToSets,
+}: {
+  setTitle: string;
+  pictureCount: number;
+  L: typeof BN;
+  onClose: () => void;
+  onBackToSets: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.6)" }}
+    >
+      <div className="relative w-full max-w-sm rounded-2xl bg-background shadow-2xl p-8 flex flex-col items-center gap-6 text-center">
+        <div className="text-6xl">🎉</div>
+        <div>
+          <h2 className="font-heading font-bold text-xl text-foreground mb-2">
+            {L.completedTitle}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {setTitle} — {pictureCount}{L.pictures} {L.completedDesc}
+          </p>
+        </div>
+        <div className="flex gap-3 w-full">
+          <Button variant="outline" className="flex-1" onClick={onClose}>
+            {L.backToSet}
+          </Button>
+          <Button className="flex-1" onClick={onBackToSets}>
+            {L.allSets}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Picture Set View ─────────────────────────────────────────────────────────
 
 function PictureSetView({
@@ -559,7 +610,8 @@ function PictureSetView({
   onBack: () => void;
 }) {
   const sessionKey = `${courseId}:${set.id}`;
-  const [activePicture, setActivePicture] = useState<PictureStoryPicture | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [showCompletion, setShowCompletion] = useState(false);
   const [session, setSession] = useState<PictureStorySession>(() => {
     return loadSession(sessionKey) ?? {
       set_id: set.id,
@@ -572,7 +624,7 @@ function PictureSetView({
   const isSubmitted = (picNum: number) =>
     session.submissions.some((s) => s.picture_number === picNum);
 
-  const handleSubmitted = (sub: PictureStorySubmission) => {
+  const saveSubmission = (sub: PictureStorySubmission) => {
     const newSubs = [...session.submissions.filter((s) => s.picture_number !== sub.picture_number), sub];
     const updated: PictureStorySession = {
       ...session,
@@ -583,20 +635,46 @@ function PictureSetView({
     saveSession(sessionKey, updated);
   };
 
-  const handleCardUpload = (picNum: number, imageData: string) => {
-    handleSubmitted({ picture_number: picNum, image_data: imageData, submitted_at: new Date().toISOString() });
+  // Called from modal — save then auto-advance to next picture
+  const handleModalSubmit = (sub: PictureStorySubmission) => {
+    saveSubmission(sub);
+    const nextIdx = (activeIndex ?? 0) + 1;
+    if (nextIdx < set.pictures.length) {
+      setActiveIndex(nextIdx);
+    } else {
+      setActiveIndex(null);
+      setShowCompletion(true);
+    }
   };
+
+  // Called from inline card upload — just save, no advance
+  const handleCardUpload = (picNum: number, imageData: string) => {
+    saveSubmission({ picture_number: picNum, image_data: imageData, submitted_at: new Date().toISOString() });
+  };
+
+  const activePicture = activeIndex !== null ? set.pictures[activeIndex] : null;
 
   return (
     <>
       {activePicture && (
         <PictureModal
+          key={activeIndex}
           picture={activePicture}
           pictureNumber={activePicture.picture_number}
           courseId={courseId}
           L={L}
-          onClose={() => setActivePicture(null)}
-          onSubmitted={handleSubmitted}
+          onClose={() => setActiveIndex(null)}
+          onSubmitted={handleModalSubmit}
+        />
+      )}
+
+      {showCompletion && (
+        <CompletionScreen
+          setTitle={set.title}
+          pictureCount={set.pictures.length}
+          L={L}
+          onClose={() => setShowCompletion(false)}
+          onBackToSets={onBack}
         />
       )}
 
@@ -621,7 +699,7 @@ function PictureSetView({
               isLocked={locked}
               isSubmitted={submitted}
               L={L}
-              onStartTest={() => setActivePicture(pic)}
+              onStartTest={() => setActiveIndex(idx)}
               onUpload={(img) => handleCardUpload(pic.picture_number, img)}
             />
           );

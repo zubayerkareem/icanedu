@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { Clock, ChevronRight, ChevronLeft, RotateCcw, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EXTEMPORE_SETS, EXTEMPORE_TIMER_SECONDS, type ExtemporeEssayTopic } from "@/lib/extempore/mock";
+import { useExtemporeSets } from "@/hooks/useISSBContent";
+import { useCourse } from "@/hooks/useCourse";
 
 const STORAGE_KEY = (courseId: string, setId: string) => `extempore_${courseId}_${setId}`;
 
@@ -39,7 +41,7 @@ function TimerPill({ seconds, total }: { seconds: number; total: number }) {
 }
 
 // ─── Instructions ──────────────────────────────────────────────────────────────
-function Instructions({ topicCount, onStart }: { topicCount: number; onStart: () => void }) {
+function Instructions({ topicCount, timerSeconds, onStart }: { topicCount: number; timerSeconds: number; onStart: () => void }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundImage: "radial-gradient(circle, #d1d5db 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
       <div className="w-full max-w-lg rounded-2xl border bg-background shadow-lg p-8 sm:p-10 text-center space-y-6">
@@ -53,7 +55,7 @@ function Instructions({ topicCount, onStart }: { topicCount: number; onStart: ()
         <div className="rounded-xl bg-muted/50 border p-5 text-left space-y-3">
           {[
             "একটি বিষয় দেওয়া হবে — কোনো প্রস্তুতি নেই।",
-            `প্রতিটি বিষয়ে ${Math.floor(EXTEMPORE_TIMER_SECONDS / 60)} মিনিটে প্রবন্ধ লিখুন।`,
+            `প্রতিটি বিষয়ে ${Math.floor(timerSeconds / 60)} মিনিটে প্রবন্ধ লিখুন।`,
             "ভূমিকা, মূল অংশ ও উপসংহার সহ সুগঠিত রাখুন।",
             "সময় শেষে মডেল পয়েন্ট ও নমুনা উত্তর দেখতে পাবেন।",
           ].map((t, i) => (
@@ -74,6 +76,7 @@ function WritingScreen({
   topic,
   topicIndex,
   topicCount,
+  timerSeconds,
   savedText,
   onSave,
   onFinish,
@@ -81,15 +84,16 @@ function WritingScreen({
   topic: ExtemporeEssayTopic;
   topicIndex: number;
   topicCount: number;
+  timerSeconds: number;
   savedText: string;
   onSave: (text: string) => void;
   onFinish: () => void;
 }) {
   const [text, setText] = useState(savedText);
-  const [timeLeft, setTimeLeft] = useState(EXTEMPORE_TIMER_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(timerSeconds);
   const intervalRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const doneRef      = useRef(false);
-  const endTimeRef   = useRef<number>(Date.now() + EXTEMPORE_TIMER_SECONDS * 1000);
+  const endTimeRef   = useRef<number>(Date.now() + timerSeconds * 1000);
   const warned2mRef  = useRef(false);
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
@@ -131,7 +135,7 @@ function WritingScreen({
 
   return (
     <div className="min-h-screen bg-background" style={{ backgroundImage: "radial-gradient(circle, #e5e7eb 1px, transparent 1px)", backgroundSize: "24px 24px" }}>
-      <TimerPill seconds={timeLeft} total={EXTEMPORE_TIMER_SECONDS} />
+      <TimerPill seconds={timeLeft} total={timerSeconds} />
 
       <div className="container max-w-3xl pt-20 pb-24 px-4">
         {/* Progress */}
@@ -287,18 +291,27 @@ function ResultsScreen({
   );
 }
 
+// ─── Category label map ────────────────────────────────────────────────────────
+const CATEGORY_LABELS: Record<string, string> = {
+  current_affairs: "সমসাময়িক বিষয়",
+  abstract: "বিমূর্ত বিষয়",
+  social: "সামাজিক বিষয়",
+  ethics: "নৈতিকতা",
+  quote: "উক্তি",
+};
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 type Phase = "instructions" | "writing" | "results";
 
 export default function ExtemporeTest() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
-  const set = EXTEMPORE_SETS.find((s) => s.id === setId);
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [], isLoading } = useExtemporeSets(course?.id);
 
   const [topicIndex, setTopicIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("instructions");
 
   const storageKey = STORAGE_KEY(courseId, setId);
-
   const loadAnswers = (): Record<string, string> => {
     try { return JSON.parse(localStorage.getItem(storageKey) ?? "{}"); } catch { return {}; }
   };
@@ -312,6 +325,37 @@ export default function ExtemporeTest() {
     });
   }, [storageKey]);
 
+  // Find set — DB first, then mock fallback
+  const dbSet = dbSets.find((s) => s.id === setId);
+  const mockSet = EXTEMPORE_SETS.find((s) => s.id === setId);
+
+  const set = dbSet
+    ? {
+        id: dbSet.id,
+        title: dbSet.title,
+        timerSeconds: dbSet.timer_seconds ?? EXTEMPORE_TIMER_SECONDS,
+        topics: (dbSet.extempore_topics ?? []).map((t): ExtemporeEssayTopic => ({
+          id: t.id,
+          topic: t.topic,
+          category: t.category as ExtemporeEssayTopic["category"],
+          categoryLabel: CATEGORY_LABELS[t.category] ?? t.category,
+          hint: t.hint,
+          modelPoints: t.model_points ?? [],
+          modelEssay: t.model_essay ?? "",
+        })),
+      }
+    : mockSet
+    ? { id: mockSet.id, title: mockSet.title, timerSeconds: EXTEMPORE_TIMER_SECONDS, topics: mockSet.topics }
+    : null;
+
+  if (isLoading && !mockSet) {
+    return (
+      <div className="container flex min-h-[60vh] items-center justify-center">
+        <p className="text-muted-foreground">লোড হচ্ছে…</p>
+      </div>
+    );
+  }
+
   if (!set) {
     return (
       <div className="container flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
@@ -324,7 +368,7 @@ export default function ExtemporeTest() {
   const topic = set.topics[topicIndex];
 
   if (phase === "instructions") {
-    return <Instructions topicCount={set.topics.length} onStart={() => setPhase("writing")} />;
+    return <Instructions topicCount={set.topics.length} timerSeconds={set.timerSeconds} onStart={() => setPhase("writing")} />;
   }
 
   if (phase === "writing") {
@@ -333,6 +377,7 @@ export default function ExtemporeTest() {
         topic={topic}
         topicIndex={topicIndex}
         topicCount={set.topics.length}
+        timerSeconds={set.timerSeconds}
         savedText={answers[topic.id] ?? ""}
         onSave={(text) => saveAnswer(topic.id, text)}
         onFinish={() => setPhase("results")}

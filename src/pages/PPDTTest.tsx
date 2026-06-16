@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
+import { ArrowLeft, ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PPDT_MOCK_SET, type PPDTPicture } from "@/lib/ppdt/mock";
 import { saveSession, loadSession, type PPDTSubmission, type PPDTSessionData } from "@/lib/ppdt/storage";
@@ -396,42 +396,101 @@ function PPDTCard({
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// ─── Normalized set shape ─────────────────────────────────────────────────────
 
-export default function PPDTTest() {
-  const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = usePPDTSets(course?.id);
-  const { enrolled } = useIsEnrolled(courseId, course?.id);
+interface NormalizedPPDTSet {
+  id: string;
+  title: string;
+  is_free: boolean;
+  observe_seconds: number;
+  write_seconds: number;
+  pictures: PPDTPicture[];
+}
 
-  const usingDb = dbSets.length > 0;
-  const isFreeSet = usingDb ? (dbSets[0].is_free ?? false) : true;
-  const canAccess = isFreeSet || enrolled;
+// ─── Set Card ─────────────────────────────────────────────────────────────────
 
-  const observeSecs = usingDb ? (dbSets[0].observe_seconds ?? 30) : 30;
-  const writeSecs   = usingDb ? (dbSets[0].write_seconds   ?? 270) : 270;
+function PPDTSetCard({
+  set,
+  index,
+  enrolled,
+  courseId,
+  onSelect,
+}: {
+  set: NormalizedPPDTSet;
+  index: number;
+  enrolled: boolean;
+  courseId: string;
+  onSelect: () => void;
+}) {
+  const canAccess = set.is_free || enrolled;
+  const firstPic = set.pictures[0];
 
-  const setData = usingDb
-    ? {
-        id: dbSets[0].id,
-        name: dbSets[0].title,
-        is_active: dbSets[0].is_published,
-        pictures: (dbSets[0].ppdt_pictures ?? []).map((p): PPDTPicture => ({
-          id: p.id,
-          picture_number: p.picture_number,
-          image_url: p.image_url,
-          title: p.title,
-          description: p.idea,
-          idea: p.idea,
-        })),
-      }
-    : PPDT_MOCK_SET;
+  return (
+    <div className={["rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col", !canAccess ? "opacity-70" : ""].join(" ")}>
+      <div className="relative">
+        {firstPic ? (
+          <img
+            src={firstPic.image_url}
+            alt={set.title}
+            className="w-full h-44 object-cover"
+            style={{ filter: "blur(4px)" }}
+          />
+        ) : (
+          <div className="w-full h-44 bg-muted flex items-center justify-center">
+            <ImagePlus className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+        <span className="absolute top-2 left-2 flex items-center justify-center rounded px-2 py-0.5 bg-foreground text-background text-xs font-bold font-heading">
+          Set {index + 1}
+        </span>
+        <span className={["absolute top-2 right-2 rounded px-2 py-0.5 text-xs font-semibold", set.is_free ? "bg-green-500 text-white" : "bg-amber-500 text-white"].join(" ")}>
+          {set.is_free ? "ফ্রি" : "প্রিমিয়াম"}
+        </span>
+        {!canAccess && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Lock className="h-8 w-8 text-white drop-shadow-lg" />
+          </div>
+        )}
+      </div>
 
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div>
+          <h3 className="font-heading font-semibold text-foreground text-sm">{set.title}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{set.pictures.length}টি ছবি</p>
+        </div>
+        <div className="mt-auto">
+          {canAccess ? (
+            <Button size="sm" className="w-full" onClick={onSelect}>দেখুন</Button>
+          ) : (
+            <Button size="sm" variant="outline" className="w-full" asChild>
+              <Link to={`/courses/${courseId}`}>
+                <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
+              </Link>
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Set View (pictures inside a set) ────────────────────────────────────────
+
+function PPDTSetView({
+  set,
+  courseId,
+  onBack,
+}: {
+  set: NormalizedPPDTSet;
+  courseId: string;
+  onBack: () => void;
+}) {
+  const sessionKey = `${courseId}:${set.id}`;
   const [activePicture, setActivePicture] = useState<PPDTPicture | null>(null);
   const [session, setSession] = useState<PPDTSessionData>(() => {
-    return loadSession(courseId) ?? {
-      set_id: setData.id,
-      set_name: setData.name,
+    return loadSession(sessionKey) ?? {
+      set_id: set.id,
+      set_name: set.title,
       started_at: new Date().toISOString(),
       submissions: [],
       completed: false,
@@ -449,10 +508,10 @@ export default function PPDTTest() {
     const updated: PPDTSessionData = {
       ...session,
       submissions: newSubs,
-      completed: newSubs.length >= setData.pictures.length,
+      completed: newSubs.length >= set.pictures.length,
     };
     setSession(updated);
-    saveSession(courseId, updated);
+    saveSession(sessionKey, updated);
   };
 
   const handleCardUpload = (picNum: number, imageData: string) => {
@@ -473,52 +532,108 @@ export default function PPDTTest() {
           picture={activePicture}
           onClose={() => setActivePicture(null)}
           onSubmitted={(sub) => { handleSubmitted(sub); setActivePicture(null); }}
-          observeSecs={observeSecs}
-          writeSecs={writeSecs}
+          observeSecs={set.observe_seconds}
+          writeSecs={set.write_seconds}
         />
       )}
 
-      <div className="container py-10 sm:py-14">
-        {/* Title */}
-        <div className="flex flex-col items-center mb-8">
-          <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">PPDT</h1>
-          <p className="text-sm text-muted-foreground mt-1">Picture Perception & Description Test</p>
-        </div>
+      <div className="flex items-center gap-3 mb-6">
+        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> পেছনে
+        </Button>
+        <h2 className="font-heading font-semibold text-foreground">{set.title}</h2>
+        <span className="text-sm text-muted-foreground">· {set.pictures.length}টি ছবি</span>
+      </div>
 
-        {/* Locked state */}
-        {!canAccess && (
-          <div className="flex flex-col items-center gap-4 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Lock className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h2 className="font-heading text-lg font-semibold text-foreground">এই কন্টেন্টটি প্রিমিয়াম</h2>
-            <p className="text-sm text-muted-foreground max-w-xs">PPDT প্র্যাকটিস সেটগুলো অ্যাক্সেস করতে কোর্সটি কিনুন।</p>
-            <Button asChild>
-              <Link to={`/courses/${courseId}`}>
-                <ShoppingCart className="mr-2 h-4 w-4" /> কোর্সটি কিনুন
-              </Link>
-            </Button>
-          </div>
-        )}
-
-        {/* Grid */}
-        {canAccess && <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {setData.pictures.map((pic, idx) => {
-            const submitted = isSubmitted(pic.picture_number);
-            const locked = idx > 0 && !isSubmitted(setData.pictures[idx - 1].picture_number);
-            return (
-              <PPDTCard
-                key={pic.id}
-                picture={pic}
-                isLocked={locked}
-                isSubmitted={submitted}
-                onStartTest={() => setActivePicture(pic)}
-                onUpload={(img) => handleCardUpload(pic.picture_number, img)}
-              />
-            );
-          })}
-        </div>}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {set.pictures.map((pic, idx) => {
+          const submitted = isSubmitted(pic.picture_number);
+          const locked = idx > 0 && !isSubmitted(set.pictures[idx - 1].picture_number);
+          return (
+            <PPDTCard
+              key={pic.id}
+              picture={pic}
+              isLocked={locked}
+              isSubmitted={submitted}
+              onStartTest={() => setActivePicture(pic)}
+              onUpload={(img) => handleCardUpload(pic.picture_number, img)}
+            />
+          );
+        })}
       </div>
     </>
+  );
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
+
+export default function PPDTTest() {
+  const { id: courseId = "issb1" } = useParams<{ id: string }>();
+  const { data: course } = useCourse(courseId);
+  const { data: dbSets = [] } = usePPDTSets(course?.id);
+  const { enrolled } = useIsEnrolled(courseId, course?.id);
+
+  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+
+  const allSets: NormalizedPPDTSet[] = dbSets.length > 0
+    ? dbSets.map((s) => ({
+        id: s.id,
+        title: s.title,
+        is_free: s.is_free ?? false,
+        observe_seconds: s.observe_seconds ?? 30,
+        write_seconds: s.write_seconds ?? 270,
+        pictures: (s.ppdt_pictures ?? []).map((p): PPDTPicture => ({
+          id: p.id,
+          picture_number: p.picture_number,
+          image_url: p.image_url,
+          title: p.title,
+          description: p.idea,
+          idea: p.idea,
+        })),
+      }))
+    : [{
+        id: PPDT_MOCK_SET.id,
+        title: PPDT_MOCK_SET.name,
+        is_free: true,
+        observe_seconds: 30,
+        write_seconds: 270,
+        pictures: PPDT_MOCK_SET.pictures,
+      }];
+
+  const selectedSet = selectedSetId ? (allSets.find((s) => s.id === selectedSetId) ?? null) : null;
+
+  return (
+    <div className="container py-10 sm:py-14">
+      {/* Title */}
+      <div className="flex flex-col items-center mb-8">
+        <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">PPDT</h1>
+        <p className="text-sm text-muted-foreground mt-1">Picture Perception & Description Test</p>
+      </div>
+
+      {/* Pictures view when a set is selected */}
+      {selectedSet && (
+        <PPDTSetView
+          set={selectedSet}
+          courseId={courseId}
+          onBack={() => setSelectedSetId(null)}
+        />
+      )}
+
+      {/* Sets grid when no set selected */}
+      {!selectedSet && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {allSets.map((set, idx) => (
+            <PPDTSetCard
+              key={set.id}
+              set={set}
+              index={idx}
+              enrolled={enrolled}
+              courseId={courseId}
+              onSelect={() => setSelectedSetId(set.id)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -9,7 +9,8 @@ import { RichContent } from "@/components/RichEditor";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
-import { getEmbedUrl } from "@/lib/video";
+import { getEmbedUrl, extractYouTubeId } from "@/lib/video";
+import { useEffect, useRef } from "react";
 import { isLessonFree, type Lesson, type Module } from "@/lib/courses/types";
 
 const TYPE_ICON = {
@@ -147,10 +148,58 @@ export default function LessonView() {
 }
 
 function VideoPlayer({ url }: { url?: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const playerRef = useRef<any>(null);
+  const videoId = url ? extractYouTubeId(url) : null;
   const embed = url ? getEmbedUrl(url) : null;
+
+  useEffect(() => {
+    if (!videoId || !containerRef.current) return;
+
+    const init = () => {
+      if (!containerRef.current) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      playerRef.current = new (window as any).YT.Player(containerRef.current, {
+        videoId,
+        width: "100%",
+        height: "100%",
+        playerVars: { rel: 0, modestbranding: 1 },
+        events: {
+          // When video ends: seek back to 0 and pause — prevents end screen from appearing
+          onStateChange: ({ data }: { data: number }) => {
+            if (data === 0) {
+              playerRef.current?.seekTo(0);
+              playerRef.current?.pauseVideo();
+            }
+          },
+        },
+      });
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).YT?.Player) {
+      init();
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const prev = (window as any).onYouTubeIframeAPIReady;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).onYouTubeIframeAPIReady = () => { prev?.(); init(); };
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const s = document.createElement("script");
+        s.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(s);
+      }
+    }
+
+    return () => { playerRef.current?.destroy(); playerRef.current = null; };
+  }, [videoId]);
+
   return (
     <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-black">
-      {embed ? (
+      {videoId ? (
+        <div ref={containerRef} className="h-full w-full" />
+      ) : embed ? (
         <iframe
           src={embed}
           className="h-full w-full"

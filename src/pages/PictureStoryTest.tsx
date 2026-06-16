@@ -210,8 +210,8 @@ function PictureModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
-      style={{ background: "rgba(0,0,0,0.55)" }}
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto backdrop-blur-md"
+      style={{ background: "rgba(0,0,0,0.45)" }}
       onClick={onClose}
     >
       <div
@@ -570,8 +570,8 @@ function CompletionScreen({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(0,0,0,0.6)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+      style={{ background: "rgba(0,0,0,0.5)" }}
     >
       <div className="relative w-full max-w-sm rounded-2xl bg-background shadow-2xl p-8 flex flex-col items-center gap-6 text-center">
         <div className="text-6xl">🎉</div>

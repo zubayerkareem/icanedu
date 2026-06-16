@@ -538,7 +538,7 @@ function SetCard({
         <div className="mt-auto">
           {canAccess ? (
             <Button size="sm" className="w-full" onClick={onSelect}>
-              {L.viewSet}
+              ▶ {L.startTest}
             </Button>
           ) : (
             <Button size="sm" variant="outline" className="w-full" asChild>
@@ -559,14 +559,14 @@ function CompletionScreen({
   setTitle,
   pictureCount,
   L,
-  onClose,
   onBackToSets,
+  onRestart,
 }: {
   setTitle: string;
   pictureCount: number;
   L: typeof BN;
-  onClose: () => void;
   onBackToSets: () => void;
+  onRestart: () => void;
 }) {
   return (
     <div
@@ -584,8 +584,8 @@ function CompletionScreen({
           </p>
         </div>
         <div className="flex gap-3 w-full">
-          <Button variant="outline" className="flex-1" onClick={onClose}>
-            {L.backToSet}
+          <Button variant="outline" className="flex-1" onClick={onRestart}>
+            আবার শুরু করুন
           </Button>
           <Button className="flex-1" onClick={onBackToSets}>
             {L.allSets}
@@ -610,19 +610,30 @@ function PictureSetView({
   onBack: () => void;
 }) {
   const sessionKey = `${courseId}:${set.id}`;
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const [showCompletion, setShowCompletion] = useState(false);
-  const [session, setSession] = useState<PictureStorySession>(() => {
-    return loadSession(sessionKey) ?? {
+
+  const [session, setSession] = useState<PictureStorySession>(() =>
+    loadSession(sessionKey) ?? {
       set_id: set.id,
       started_at: new Date().toISOString(),
       submissions: [],
       completed: false,
-    };
+    }
+  );
+
+  // Start from the first unsubmitted picture; set.pictures.length means all done
+  const [activeIndex, setActiveIndex] = useState<number>(() => {
+    const saved = loadSession(sessionKey);
+    if (!saved || saved.submissions.length === 0) return 0;
+    const first = set.pictures.findIndex(
+      (p) => !saved.submissions.some((s) => s.picture_number === p.picture_number)
+    );
+    return first === -1 ? set.pictures.length : first;
   });
 
-  const isSubmitted = (picNum: number) =>
-    session.submissions.some((s) => s.picture_number === picNum);
+  const [showCompletion, setShowCompletion] = useState<boolean>(() => {
+    const saved = loadSession(sessionKey);
+    return !!(saved && saved.submissions.length >= set.pictures.length);
+  });
 
   const saveSubmission = (sub: PictureStorySubmission) => {
     const newSubs = [...session.submissions.filter((s) => s.picture_number !== sub.picture_number), sub];
@@ -635,24 +646,31 @@ function PictureSetView({
     saveSession(sessionKey, updated);
   };
 
-  // Called from modal — save then auto-advance to next picture
   const handleModalSubmit = (sub: PictureStorySubmission) => {
     saveSubmission(sub);
-    const nextIdx = (activeIndex ?? 0) + 1;
+    const nextIdx = activeIndex + 1;
     if (nextIdx < set.pictures.length) {
       setActiveIndex(nextIdx);
     } else {
-      setActiveIndex(null);
+      setActiveIndex(set.pictures.length);
       setShowCompletion(true);
     }
   };
 
-  // Called from inline card upload — just save, no advance
-  const handleCardUpload = (picNum: number, imageData: string) => {
-    saveSubmission({ picture_number: picNum, image_data: imageData, submitted_at: new Date().toISOString() });
+  const handleRestart = () => {
+    const fresh: PictureStorySession = {
+      set_id: set.id,
+      started_at: new Date().toISOString(),
+      submissions: [],
+      completed: false,
+    };
+    setSession(fresh);
+    saveSession(sessionKey, fresh);
+    setShowCompletion(false);
+    setActiveIndex(0);
   };
 
-  const activePicture = activeIndex !== null ? set.pictures[activeIndex] : null;
+  const activePicture = activeIndex < set.pictures.length ? set.pictures[activeIndex] : null;
 
   return (
     <>
@@ -663,7 +681,7 @@ function PictureSetView({
           pictureNumber={activePicture.picture_number}
           courseId={courseId}
           L={L}
-          onClose={() => setActiveIndex(null)}
+          onClose={onBack}
           onSubmitted={handleModalSubmit}
         />
       )}
@@ -673,38 +691,10 @@ function PictureSetView({
           setTitle={set.title}
           pictureCount={set.pictures.length}
           L={L}
-          onClose={() => setShowCompletion(false)}
           onBackToSets={onBack}
+          onRestart={handleRestart}
         />
       )}
-
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> {L.back}
-        </Button>
-        <h2 className="font-heading font-semibold text-foreground">{set.title}</h2>
-        <span className="text-sm text-muted-foreground">· {set.pictures.length}{L.pictures}</span>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {set.pictures.map((pic, idx) => {
-          const submitted = isSubmitted(pic.picture_number);
-          const locked = idx > 0 && !isSubmitted(set.pictures[idx - 1].picture_number);
-          return (
-            <PictureCard
-              key={pic.id}
-              picture={pic}
-              index={idx}
-              courseId={courseId}
-              isLocked={locked}
-              isSubmitted={submitted}
-              L={L}
-              onStartTest={() => setActiveIndex(idx)}
-              onUpload={(img) => handleCardUpload(pic.picture_number, img)}
-            />
-          );
-        })}
-      </div>
     </>
   );
 }

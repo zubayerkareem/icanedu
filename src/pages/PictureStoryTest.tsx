@@ -221,16 +221,26 @@ function PictureModal({
 
         {/* Picture */}
         <div className="relative">
-          <img
-            src={picture.image_url}
-            alt={picture.title}
-            className="w-full h-64 sm:h-80 object-cover transition-all duration-700"
-            style={phase === "write" ? { filter: "blur(8px)" } : {}}
-          />
-          {/* Number badge */}
-          <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
-            #{pictureNumber}
-          </span>
+          {phase === "observe" ? (
+            <>
+              <img
+                src={picture.image_url}
+                alt={picture.title}
+                className="w-full h-64 sm:h-80 object-cover"
+              />
+              <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
+                #{pictureNumber}
+              </span>
+            </>
+          ) : (
+            <div className="w-full h-40 sm:h-52 bg-white dark:bg-zinc-950 flex flex-col items-center justify-center gap-3 border-b border-border">
+              <div className="text-4xl">🧠</div>
+              <p className="text-sm font-medium text-muted-foreground text-center px-6 leading-relaxed">
+                ছবি সরিয়ে দেওয়া হয়েছে।<br />
+                <span className="font-semibold text-foreground">গল্প লিখুন।</span>
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="p-5 space-y-4">

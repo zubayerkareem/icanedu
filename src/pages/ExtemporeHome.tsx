@@ -67,7 +67,7 @@ export default function ExtemporeHome() {
 
               {canAccess ? (
                 <Button size="sm" asChild>
-                  <Link to={`/courses/${courseId}/extempore/${set.id}`}>শুরু করুন</Link>
+                  <Link to={`/courses/${courseId}/essay-writing/${set.id}`}>শুরু করুন</Link>
                 </Button>
               ) : (
                 <Button size="sm" variant="outline" asChild>

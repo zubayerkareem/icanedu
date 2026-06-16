@@ -99,8 +99,8 @@ const App = () => (
                 <Route path="/courses/:id/wat/:setId" element={<WATTest />} />
                 <Route path="/courses/:id/ist" element={<ISTHome />} />
                 <Route path="/courses/:id/ist/:setId" element={<ISTTest />} />
-                <Route path="/courses/:id/extempore" element={<ExtemporeHome />} />
-                <Route path="/courses/:id/extempore/:setId" element={<ExtemporeTest />} />
+                <Route path="/courses/:id/essay-writing" element={<ExtemporeHome />} />
+                <Route path="/courses/:id/essay-writing/:setId" element={<ExtemporeTest />} />
                 <Route path="/courses/:id/planning-task" element={<PlanningTaskHome />} />
                 <Route path="/courses/:id/group-discussion" element={<GroupDiscussionHome />} />
                 <Route path="/products" element={<Products />} />

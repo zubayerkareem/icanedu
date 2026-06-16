@@ -36,7 +36,7 @@ export const ISSB_ELEMENT_DEFS: Array<{
   { key: "ppdt",            label: "PPDT Practice",    labelBn: "PPDT প্র্যাকটিস",     path: "ppdt" },
   { key: "wat",             label: "WAT Practice",     labelBn: "WAT প্র্যাকটিস",      path: "wat" },
   { key: "ist",             label: "Incomplete Sentences", labelBn: "IST প্র্যাকটিস",      path: "ist" },
-  { key: "extempore",       label: "Essay Writing",    labelBn: "Essay Writing",        path: "extempore" },
+  { key: "extempore",       label: "Essay Writing",    labelBn: "Essay Writing",        path: "essay-writing" },
   { key: "pictureStory",    label: "Picture Story",    labelBn: "পিকচার স্টোরি",       path: "picture-story" },
   { key: "incompleteStory", label: "Incomplete Story", labelBn: "অসম্পূর্ণ গল্প",       path: "incomplete-story" },
   { key: "planningTask",    label: "Planning Task",    labelBn: "প্ল্যানিং টাস্ক",       path: "planning-task" },

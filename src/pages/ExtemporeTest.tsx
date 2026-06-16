@@ -282,7 +282,7 @@ function ResultsScreen({
             </Button>
           ) : (
             <Button variant="outline" className="flex-1" asChild>
-              <Link to={`/courses/${courseId}/extempore`}>সব সেট দেখুন</Link>
+              <Link to={`/courses/${courseId}/essay-writing`}>সব সেট দেখুন</Link>
             </Button>
           )}
         </div>

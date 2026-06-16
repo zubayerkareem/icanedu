@@ -408,7 +408,7 @@ function ExtemporeTab({ courseId }: { courseId: string }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">বিষয় সেট — hint, model points ও essay</p>
-        <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ title: "নতুন Extempore সেট", timer_seconds: 1500, is_published: true, is_free: false, course_id: courseId }); toast.success("সেট যোগ হয়েছে"); }}>
+        <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ title: "নতুন Essay Writing সেট", timer_seconds: 1500, is_published: true, is_free: false, course_id: courseId }); toast.success("সেট যোগ হয়েছে"); }}>
           <Plus className="mr-1 h-3.5 w-3.5" /> সেট যোগ
         </Button>
       </div>
@@ -418,7 +418,7 @@ function ExtemporeTab({ courseId }: { courseId: string }) {
           onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
           upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
       ))}
-      {sets.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">কোনো Extempore সেট নেই।</p>}
+      {sets.length === 0 && <p className="py-6 text-center text-xs text-muted-foreground">কোনো Essay Writing সেট নেই।</p>}
     </div>
   );
 }
@@ -806,7 +806,7 @@ const TABS = [
   { id: "iq",        label: "IQ" },
   { id: "wat",       label: "WAT" },
   { id: "ist",       label: "IST" },
-  { id: "extempore", label: "Extempore" },
+  { id: "extempore", label: "Essay Writing" },
   { id: "pictures",  label: "PPDT / Picture" },
   { id: "stories",   label: "গল্প" },
 ] as const;

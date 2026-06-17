@@ -1201,7 +1201,7 @@ export default function ISSBAdmin() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">ISSB কন্টেন্ট ম্যানেজমেন্ট</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">IQ, WAT, IST, Essay Writing ও ছবির পরীক্ষার কন্টেন্ট তৈরি করুন</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">IQ, WAT, IST, Essay Writing ও Picture Story কন্টেন্ট তৈরি করুন</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
           <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
@@ -1214,10 +1214,10 @@ export default function ISSBAdmin() {
           <TabsTrigger value="wat">WAT</TabsTrigger>
           <TabsTrigger value="ist">IST</TabsTrigger>
           <TabsTrigger value="extempore">Essay Writing</TabsTrigger>
-          <TabsTrigger value="pictures">ছবির পরীক্ষা</TabsTrigger>
-          <TabsTrigger value="stories">অসম্পূর্ণ গল্প</TabsTrigger>
-          <TabsTrigger value="planning">প্ল্যানিং টাস্ক</TabsTrigger>
-          <TabsTrigger value="groupdiscussion">গ্রুপ ডিসকাশন</TabsTrigger>
+          <TabsTrigger value="pictures">Picture Story</TabsTrigger>
+          <TabsTrigger value="stories">Incomplete Story</TabsTrigger>
+          <TabsTrigger value="planning">Planning Task</TabsTrigger>
+          <TabsTrigger value="groupdiscussion">Group Discussion</TabsTrigger>
         </TabsList>
 
         <TabsContent value="iq"><IQTab /></TabsContent>

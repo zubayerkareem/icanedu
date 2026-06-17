@@ -1,6 +1,7 @@
 {
   "functions": {
-    "api/send-email.ts": { "maxDuration": 30 }
+    "api/send-email.ts": { "maxDuration": 30 },
+    "api/import-users.ts": { "maxDuration": 60 }
   },
   "rewrites": [
     { "source": "/((?!api/|assets/).*)", "destination": "/index.html" }

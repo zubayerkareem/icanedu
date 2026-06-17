@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
-  CalendarDays, UserPlus, Save, Eye, EyeOff, X,
+  CalendarDays, UserPlus, Save, Eye, EyeOff, X, Upload, FileText,
+  CheckCircle2, XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -182,6 +183,198 @@ function EnrollmentPanel({ userId }: { userId: string }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+// ─── CSV Import dialog ─────────────────────────────────────────────────────────
+
+type ImportRow = { full_name: string; email: string; phone: string; password: string; course_id: string; valid_until: string };
+type ImportResult = { email: string; success: boolean; error?: string; emailSent?: boolean };
+
+function parseCSV(text: string): ImportRow[] {
+  const lines = text.trim().split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/\s+/g, "_"));
+  return lines.slice(1).map((line) => {
+    const values = line.split(",").map((v) => v.trim());
+    const row: any = {};
+    headers.forEach((h, i) => { row[h] = values[i] ?? ""; });
+    return row as ImportRow;
+  });
+}
+
+function CSVImportDialog({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<ImportRow[]>([]);
+  const [results, setResults] = useState<ImportResult[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [csvText, setCsvText] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      setCsvText(text);
+      setRows(parseCSV(text));
+      setResults(null);
+    };
+    reader.readAsText(file);
+  }
+
+  function handleTextChange(text: string) {
+    setCsvText(text);
+    setRows(parseCSV(text));
+    setResults(null);
+  }
+
+  async function handleImport() {
+    if (rows.length === 0) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/import-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      });
+      const json = await res.json();
+      setResults(json.results ?? []);
+      onDone();
+      toast.success(`${json.created} জন তৈরি হয়েছে, ${json.emailsSent} টি ইমেইল গেছে`);
+    } catch (e: unknown) {
+      toast.error("Import failed: " + (e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleClose(o: boolean) {
+    if (!o) { setRows([]); setResults(null); setCsvText(""); }
+    setOpen(o);
+  }
+
+  const created = results?.filter((r) => r.success).length ?? 0;
+  const failed = results?.filter((r) => !r.success).length ?? 0;
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Upload className="mr-2 h-4 w-4" /> CSV Import
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>CSV থেকে শিক্ষার্থী Import করুন</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 pt-2">
+          {/* Format hint */}
+          <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-semibold flex items-center gap-1.5"><FileText className="h-3.5 w-3.5" /> CSV ফরম্যাট (প্রথম লাইন header):</p>
+            <code className="block text-[11px] bg-background rounded px-2 py-1 border">
+              full_name,email,phone,password,course_id,valid_until
+            </code>
+            <p>course_id ও valid_until (YYYY-MM-DD) অপশনাল — খালি রাখা যাবে।</p>
+          </div>
+
+          {/* File upload */}
+          <div
+            className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-6 cursor-pointer hover:bg-muted/30 transition-colors"
+            onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+          >
+            <Upload className="mb-2 h-6 w-6 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">CSV ফাইল drag করুন বা click করে বেছে নিন</p>
+            <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+          </div>
+
+          {/* Or paste */}
+          <div className="space-y-1.5">
+            <Label className="text-xs">অথবা সরাসরি paste করুন</Label>
+            <textarea
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono min-h-[80px] resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder={"full_name,email,phone,password\nAhmed Ali,ahmed@gmail.com,01700000000,pass123"}
+              value={csvText}
+              onChange={(e) => handleTextChange(e.target.value)}
+            />
+          </div>
+
+          {/* Preview */}
+          {rows.length > 0 && !results && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{rows.length} টি রো পাওয়া গেছে — প্রিভিউ:</p>
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      {["নাম", "ইমেইল", "ফোন", "পাসওয়ার্ড", "Course ID", "Valid Until"].map((h) => (
+                        <th key={h} className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {rows.slice(0, 5).map((r, i) => (
+                      <tr key={i} className="bg-card">
+                        <td className="px-3 py-1.5 truncate max-w-[120px]">{r.full_name || "—"}</td>
+                        <td className="px-3 py-1.5 truncate max-w-[160px]">{r.email}</td>
+                        <td className="px-3 py-1.5">{r.phone || "—"}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{"•".repeat(Math.min(r.password.length, 8))}</td>
+                        <td className="px-3 py-1.5 truncate max-w-[100px] text-muted-foreground">{r.course_id || "—"}</td>
+                        <td className="px-3 py-1.5 text-muted-foreground">{r.valid_until || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rows.length > 5 && (
+                  <p className="px-3 py-1.5 text-xs text-muted-foreground bg-muted/30">...আরও {rows.length - 5} টি রো</p>
+                )}
+              </div>
+              <Button className="w-full" onClick={handleImport} disabled={loading}>
+                <Upload className="mr-2 h-4 w-4" />
+                {loading ? `Import হচ্ছে...` : `${rows.length} জন Import করুন ও ইমেইল পাঠান`}
+              </Button>
+            </div>
+          )}
+
+          {/* Results */}
+          {results && (
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <div className="flex-1 rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-green-700">{created}</p>
+                  <p className="text-xs text-green-600">তৈরি হয়েছে</p>
+                </div>
+                <div className="flex-1 rounded-lg bg-red-50 border border-red-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-red-700">{failed}</p>
+                  <p className="text-xs text-red-600">ব্যর্থ</p>
+                </div>
+                <div className="flex-1 rounded-lg bg-blue-50 border border-blue-200 p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{results.filter((r) => r.emailSent).length}</p>
+                  <p className="text-xs text-blue-600">ইমেইল গেছে</p>
+                </div>
+              </div>
+              <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg border border-border p-2">
+                {results.map((r, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs py-0.5">
+                    {r.success
+                      ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                      : <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0" />}
+                    <span className="truncate text-muted-foreground">{r.email}</span>
+                    {!r.success && <span className="text-red-500 shrink-0">{r.error}</span>}
+                  </div>
+                ))}
+              </div>
+              <Button variant="outline" className="w-full" onClick={() => { setRows([]); setResults(null); setCsvText(""); }}>
+                নতুন Import করুন
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -378,6 +571,7 @@ export default function AdminStudents() {
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
           </Button>
+          <CSVImportDialog onDone={() => refetch()} />
           <CreateStudentDialog />
           <QuickEnrollDialog />
         </div>

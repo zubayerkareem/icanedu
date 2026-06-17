@@ -1214,6 +1214,7 @@ export default function ISSBAdmin() {
           <TabsTrigger value="wat">WAT</TabsTrigger>
           <TabsTrigger value="ist">IST</TabsTrigger>
           <TabsTrigger value="extempore">Essay Writing</TabsTrigger>
+          <TabsTrigger value="ppdt">PPDT</TabsTrigger>
           <TabsTrigger value="pictures">Picture Story</TabsTrigger>
           <TabsTrigger value="stories">Incomplete Story</TabsTrigger>
           <TabsTrigger value="planning">Planning Task</TabsTrigger>
@@ -1224,7 +1225,8 @@ export default function ISSBAdmin() {
         <TabsContent value="wat"><WATTab /></TabsContent>
         <TabsContent value="ist"><ISTTab /></TabsContent>
         <TabsContent value="extempore"><ExtemporeTab /></TabsContent>
-        <TabsContent value="pictures"><PictureTab /></TabsContent>
+        <TabsContent value="ppdt"><PPDTSection /></TabsContent>
+        <TabsContent value="pictures"><PictureStorySection /></TabsContent>
         <TabsContent value="stories"><IncompleteStoryTab /></TabsContent>
         <TabsContent value="planning"><PlanningTab /></TabsContent>
         <TabsContent value="groupdiscussion"><GroupDiscussionTab /></TabsContent>

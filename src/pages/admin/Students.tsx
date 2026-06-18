@@ -59,6 +59,67 @@ function ValidityBadge({ order }: { order: Order }) {
   );
 }
 
+// ─── Set Password Dialog ───────────────────────────────────────────────────────
+
+function SetPasswordDialog({ userId, name }: { userId: string; name: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর হতে হবে"); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin-set-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      toast.success(`${name || "ব্যবহারকারীর"} পাসওয়ার্ড আপডেট হয়েছে`);
+      setPassword("");
+      setOpen(false);
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8" title="পাসওয়ার্ড সেট করুন">
+          <KeyRound className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>পাসওয়ার্ড সেট করুন</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">{name || "ব্যবহারকারী"}-এর জন্য নতুন পাসওয়ার্ড দিন</p>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label>নতুন পাসওয়ার্ড</Label>
+            <Input
+              type="text"
+              placeholder="কমপক্ষে ৬ অক্ষর"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+            />
+          </div>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "আপডেট হচ্ছে..." : "পাসওয়ার্ড সেট করুন"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Enrollment panel ──────────────────────────────────────────────────────────
 
 function EnrollmentPanel({ userId }: { userId: string }) {
@@ -914,14 +975,7 @@ export default function AdminStudents() {
 
                   {/* Actions — stop propagation so clicks don't toggle expand */}
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost" size="icon" className="h-8 w-8"
-                      title="পাসওয়ার্ড রিসেট"
-                      disabled={resetPassword.isPending}
-                      onClick={() => handleResetPassword(s.id, s.full_name)}
-                    >
-                      <KeyRound className="h-4 w-4" />
-                    </Button>
+                    <SetPasswordDialog userId={s.id} name={s.full_name} />
                     <Button
                       variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
                       title="মুছুন"

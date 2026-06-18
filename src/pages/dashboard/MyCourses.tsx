@@ -146,7 +146,7 @@ export default function MyCourses() {
   return (
     <div>
       <h1 className="font-heading text-2xl font-bold text-foreground">আমার কোর্স</h1>
-      <p className="mt-1 text-sm text-muted-foreground">আপনার নথিভুক্ত কোর্সসমূহ</p>
+      <p className="mt-1 text-sm text-muted-foreground">আমার কোর্স</p>
 
       <div className="mt-6">
         {isLoading ? (

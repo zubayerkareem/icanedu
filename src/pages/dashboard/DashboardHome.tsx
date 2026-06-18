@@ -65,7 +65,7 @@ export default function DashboardHome() {
   const newCourses   = coursesData?.items ?? [];
 
   const stats = [
-    { label: "নথিভুক্ত কোর্স",  value: courseCount,  icon: BookOpen,      href: "/dashboard/courses", color: "text-accent",       bg: "bg-accent/10" },
+    { label: "আমার কোর্স",  value: courseCount,  icon: BookOpen,      href: "/dashboard/courses", color: "text-accent",       bg: "bg-accent/10" },
     { label: "পণ্য অর্ডার",      value: orderCount,   icon: ShoppingBag,   href: "/dashboard/orders",  color: "text-blue-500",    bg: "bg-blue-500/10" },
     { label: "পরীক্ষা",          value: 0,            icon: ClipboardList, href: "/dashboard/exams",   color: "text-purple-500",  bg: "bg-purple-500/10" },
   ];

@@ -56,7 +56,7 @@ function ValidityBadge({ order }: { order: Order }) {
 function EnrollmentPanel({ userId }: { userId: string }) {
   const { data: orders = [], isLoading } = useStudentCourseOrders(userId);
   const { data: courses = [] } = useAllCoursesForSelect();
-  const enroll = useAdminEnrollStudent();
+  const enroll = useAdminDirectEnroll();
   const revoke = useAdminRevokeEnrollment();
   const updateValidity = useAdminUpdateValidity();
 
@@ -69,7 +69,7 @@ function EnrollmentPanel({ userId }: { userId: string }) {
     const course = courses.find((c) => c.id === courseId);
     if (!course) { toast.error("কোর্স বেছে নিন"); return; }
     try {
-      await enroll.mutateAsync({ email: "", courseId: course.id, courseName: course.title, validUntil: validUntil || null });
+      await enroll.mutateAsync({ userId, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
       toast.success("কোর্স অ্যাসাইন হয়েছে");
       setCourseId(""); setValidUntil("");
     } catch (e: unknown) { toast.error((e as Error)?.message); }

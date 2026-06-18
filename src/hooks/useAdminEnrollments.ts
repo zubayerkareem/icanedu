@@ -94,6 +94,43 @@ export function useAdminUpdateValidity() {
   });
 }
 
+export function useAdminDirectEnroll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      userId: string;
+      courseId: string;
+      courseName: string;
+      validUntil: string | null;
+    }) => {
+      const already = await supabase
+        .from("orders")
+        .select("id")
+        .eq("user_id", params.userId)
+        .eq("product_id", params.courseId)
+        .eq("order_type", "course")
+        .in("status", ["confirmed", "shipped", "delivered"])
+        .maybeSingle();
+      if (already.data) throw new Error("শিক্ষার্থী এই কোর্সে ইতিমধ্যে ভর্তি আছেন।");
+
+      const { error } = await supabase.from("orders").insert({
+        user_id: params.userId,
+        product_id: params.courseId,
+        product_name: params.courseName,
+        order_type: "course",
+        amount: 0,
+        status: "confirmed",
+        valid_until: params.validUntil || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student_orders"] });
+      qc.invalidateQueries({ queryKey: ["admin_students"] });
+    },
+  });
+}
+
 export function useAdminCreateStudent() {
   const qc = useQueryClient();
   return useMutation({

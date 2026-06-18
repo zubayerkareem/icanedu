@@ -28,6 +28,7 @@ import {
   useAdminRevokeEnrollment,
   useAdminUpdateValidity,
   useAdminCreateStudent,
+  useAdminDirectEnroll,
 } from "@/hooks/useAdminEnrollments";
 import type { Order } from "@/hooks/useOrders";
 
@@ -446,20 +447,22 @@ function CreateStudentDialog() {
 
 function QuickEnrollDialog() {
   const { data: courses = [] } = useAllCoursesForSelect();
-  const enroll = useAdminEnrollStudent();
+  const { data: students = [] } = useStudents();
+  const enroll = useAdminDirectEnroll();
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [validUntil, setValidUntil] = useState("");
 
   async function handleSubmit() {
-    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
+    if (!studentId) { toast.error("শিক্ষার্থী বেছে নিন"); return; }
     const course = courses.find((c) => c.id === courseId);
     if (!course) { toast.error("কোর্স বেছে নিন"); return; }
+    const student = students.find((s) => s.id === studentId);
     try {
-      await enroll.mutateAsync({ email, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
-      toast.success(`${email} — কোর্স অ্যাসাইন হয়েছে`);
-      setEmail(""); setCourseId(""); setValidUntil(""); setOpen(false);
+      await enroll.mutateAsync({ userId: studentId, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
+      toast.success(`${student?.full_name ?? student?.email ?? "শিক্ষার্থী"} — কোর্স অ্যাসাইন হয়েছে`);
+      setStudentId(""); setCourseId(""); setValidUntil(""); setOpen(false);
     } catch (e: unknown) { toast.error((e as Error)?.message); }
   }
 
@@ -476,8 +479,17 @@ function QuickEnrollDialog() {
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <Label>শিক্ষার্থীর ইমেইল</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" />
+            <Label>শিক্ষার্থী</Label>
+            <Select value={studentId} onValueChange={setStudentId}>
+              <SelectTrigger><SelectValue placeholder="শিক্ষার্থী বেছে নিন" /></SelectTrigger>
+              <SelectContent>
+                {students.filter((s) => s.role === "student").map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.full_name ? `${s.full_name} (${s.email ?? "—"})` : (s.email ?? s.id)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>কোর্স</Label>

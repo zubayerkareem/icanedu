@@ -118,7 +118,6 @@ export function useAdminDirectEnroll() {
         product_id: params.courseId,
         product_name: params.courseName,
         order_type: "course",
-        amount: 0,
         status: "confirmed",
         valid_until: params.validUntil || null,
       });

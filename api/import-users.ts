@@ -143,7 +143,6 @@ export default async function handler(req: any, res: any) {
           order_type: "course",
           product_id: course_id.trim(),
           product_name: courseName || "Course",
-          amount: 0,
           status: "confirmed",
           valid_until: valid_until?.trim() || null,
         });

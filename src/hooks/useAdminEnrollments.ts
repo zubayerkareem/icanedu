@@ -117,6 +117,7 @@ export function useAdminDirectEnroll() {
         user_id: params.userId,
         product_id: params.courseId,
         product_name: params.courseName,
+        product_price: 0,
         order_type: "course",
         status: "confirmed",
         valid_until: params.validUntil || null,

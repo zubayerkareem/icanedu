@@ -9,7 +9,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DataPagination } from "@/components/ui/data-pagination";
 import { format } from "date-fns";
+
+const PAGE_SIZE = 20;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -604,6 +607,9 @@ export default function AdminStudents() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [page, setPage] = useState(1);
+  // Reset page when filters change
+  const resetPage = () => setPage(1);
 
   const filtered = students.filter((s) => {
     const q = search.trim().toLowerCase();
@@ -634,6 +640,9 @@ export default function AdminStudents() {
 
     return matchSearch && matchRole && matchSource && matchDate;
   });
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const counts = {
     all:     students.length,
@@ -731,7 +740,7 @@ export default function AdminStudents() {
             <Input
               placeholder="নাম, ফোন বা ইমেইল..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); resetPage(); }}
               className="pl-9"
             />
           </div>
@@ -771,7 +780,7 @@ export default function AdminStudents() {
             {(["all", "student", "admin"] as const).map((r) => (
               <button
                 key={r}
-                onClick={() => setFilterRole(r)}
+                onClick={() => { setFilterRole(r); resetPage(); }}
                 className={[
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   filterRole === r
@@ -793,7 +802,7 @@ export default function AdminStudents() {
             ] as const).map((opt) => (
               <button
                 key={opt.value}
-                onClick={() => setFilterSource(opt.value)}
+                onClick={() => { setFilterSource(opt.value); resetPage(); }}
                 className={[
                   "rounded-full px-3 py-1 text-xs font-medium transition-colors",
                   filterSource === opt.value
@@ -855,7 +864,7 @@ export default function AdminStudents() {
               />
               <span className="text-xs text-muted-foreground">সব নির্বাচন ({filtered.length})</span>
             </div>
-            {filtered.map((s) => (
+            {paginated.map((s) => (
               <div key={s.id}>
                 {/* Row */}
                 <div
@@ -930,6 +939,8 @@ export default function AdminStudents() {
           </div>
         )}
       </div>
+
+      <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={(p) => { setPage(p); setExpanded(null); }} />
 
       {/* Bulk delete confirmation */}
       <AlertDialog open={bulkDeleteConfirm} onOpenChange={(o) => !o && setBulkDeleteConfirm(false)}>

@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Search, RefreshCw, BookOpen, Package, Calendar, X } from "lucide-react";
+import { DataPagination } from "@/components/ui/data-pagination";
+
+const PAGE_SIZE = 25;
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -149,6 +152,7 @@ function BulkActionBar({
 function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
   const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
@@ -161,6 +165,9 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
       (o.bkash_txn_id ?? "").toLowerCase().includes(q)
     );
   });
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
   const someChecked = filtered.some((o) => selected.has(o.id));
@@ -192,7 +199,7 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
     <div className="space-y-4">
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="নাম, ফোন, কোর্স বা TxnID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder="নাম, ফোন, কোর্স বা TxnID..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
       </div>
 
       {selected.size > 0 && (
@@ -218,7 +225,7 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
-              {filtered.map((order) => {
+              {paginated.map((order) => {
                 const nextStatus = COURSE_STATUS_NEXT[order.status];
                 const isSelected = selected.has(order.id);
                 return (
@@ -265,6 +272,7 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
           </table>
         )}
       </div>
+      <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
     </div>
   );
 }
@@ -274,6 +282,7 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
 function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
   const bulkUpdate = useBulkUpdateOrderStatus();
 
   const filtered = orders.filter((o) => {
@@ -286,6 +295,9 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
       (o.address ?? "").toLowerCase().includes(q)
     );
   });
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
   const someChecked = filtered.some((o) => selected.has(o.id));
@@ -317,7 +329,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
     <div className="space-y-4">
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="নাম, ফোন, পণ্য বা ঠিকানা..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder="নাম, ফোন, পণ্য বা ঠিকানা..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
       </div>
 
       {selected.size > 0 && (
@@ -343,7 +355,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
-              {filtered.map((order) => {
+              {paginated.map((order) => {
                 const nextStatus = PRODUCT_STATUS_NEXT[order.status];
                 const isSelected = selected.has(order.id);
                 return (
@@ -391,6 +403,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
           </table>
         )}
       </div>
+      <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
     </div>
   );
 }

@@ -525,6 +525,7 @@ export default function AdminStudents() {
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
+  const [filterDate, setFilterDate] = useState<"all" | "today" | "3d" | "7d" | "30d">("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -537,7 +538,22 @@ export default function AdminStudents() {
       (s.email ?? "").toLowerCase().includes(q) ||
       s.id.toLowerCase().includes(q);
     const matchRole = filterRole === "all" || s.role === filterRole;
-    return matchSearch && matchRole;
+
+    let matchDate = true;
+    if (filterDate !== "all" && s.created_at) {
+      const created = new Date(s.created_at);
+      const now = new Date();
+      const days = filterDate === "today" ? 0 : filterDate === "3d" ? 3 : filterDate === "7d" ? 7 : 30;
+      const cutoff = new Date(now);
+      if (filterDate === "today") {
+        cutoff.setHours(0, 0, 0, 0);
+      } else {
+        cutoff.setDate(now.getDate() - days);
+      }
+      matchDate = created >= cutoff;
+    }
+
+    return matchSearch && matchRole && matchDate;
   });
 
   const counts = {
@@ -614,6 +630,28 @@ export default function AdminStudents() {
             >
               {r === "all" ? "সব" : r === "admin" ? "অ্যাডমিন" : "শিক্ষার্থী"}{" "}
               <span className="opacity-70">({counts[r]})</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          {([
+            { value: "all", label: "সব সময়" },
+            { value: "today", label: "আজ" },
+            { value: "3d", label: "৩ দিন" },
+            { value: "7d", label: "৭ দিন" },
+            { value: "30d", label: "৩০ দিন" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setFilterDate(opt.value)}
+              className={[
+                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                filterDate === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              ].join(" ")}
+            >
+              {opt.label}
             </button>
           ))}
         </div>

@@ -20,36 +20,38 @@ const STATUS_MAP: Record<OrderStatus, { label: string; color: string }> = {
 
 // ─── Hook: fetch enrolled DB courses by product_id ────────────────────────────
 
-function useEnrolledDbCourses(productIds: string[]) {
+function useEnrolledDbCourses(productIds: string[], productNames: string[]) {
   return useQuery<Course[]>({
-    queryKey: ["enrolled_db_courses", productIds],
-    enabled: productIds.length > 0,
+    queryKey: ["enrolled_db_courses", productIds, productNames],
+    enabled: productIds.length > 0 || productNames.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
       const cols = "id, slug, title, thumbnail_url, category, duration, total_lessons, modules";
 
-      // First match by id (UUIDs stored in orders)
-      const { data: byId } = await supabase
-        .from("courses")
-        .select(cols)
-        .in("id", productIds);
+      // 1. Match by UUID id
+      const { data: byId } = productIds.length
+        ? await supabase.from("courses").select(cols).in("id", productIds)
+        : { data: [] };
 
       const matchedIds = new Set((byId ?? []).map((c) => c.id));
       const remaining = productIds.filter((pid) => !matchedIds.has(pid));
 
-      // Fallback: match remaining by slug
-      let bySlug: Course[] = [];
-      if (remaining.length > 0) {
-        const { data } = await supabase
-          .from("courses")
-          .select(cols)
-          .in("slug", remaining);
-        bySlug = (data ?? []) as Course[];
-      }
+      // 2. Fallback: match remaining by slug
+      const { data: bySlug } = remaining.length
+        ? await supabase.from("courses").select(cols).in("slug", remaining)
+        : { data: [] };
 
-      const dbCourses = [...(byId ?? []), ...bySlug] as Course[];
+      const matchedTitles = new Set([...(byId ?? []), ...(bySlug ?? [])].map((c) => c.title));
+      const unmatchedNames = productNames.filter((n) => n && !matchedTitles.has(n));
 
-      // Fill missing thumbnail_url from MOCK_COURSES fallback
+      // 3. Fallback: match by title (covers admin-enrolled courses where product_id is null/mismatched)
+      const { data: byTitle } = unmatchedNames.length
+        ? await supabase.from("courses").select(cols).in("title", unmatchedNames)
+        : { data: [] };
+
+      const dbCourses = [...(byId ?? []), ...(bySlug ?? []), ...(byTitle ?? [])] as Course[];
+
+      // 4. Fill missing thumbnail_url from MOCK_COURSES
       return dbCourses.map((c) => {
         if (c.thumbnail_url) return c;
         const mock = MOCK_COURSES.find((m) => m.id === c.id || m.slug === c.slug || m.title === c.title);
@@ -63,7 +65,7 @@ function useEnrolledDbCourses(productIds: string[]) {
 
 function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Course[] }) {
   const course: Course | undefined =
-    dbCourses.find((c) => c.id === order.product_id || c.slug === order.product_id) ??
+    dbCourses.find((c) => c.id === order.product_id || c.slug === order.product_id || c.title === order.product_name) ??
     MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id || c.title === order.product_name);
 
   const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
@@ -150,7 +152,11 @@ export default function MyCourses() {
     .map((o) => o.product_id)
     .filter((id): id is string => !!id);
 
-  const { data: dbCourses = [] } = useEnrolledDbCourses(productIds);
+  const productNames = enrollments
+    .map((o) => o.product_name)
+    .filter((n): n is string => !!n);
+
+  const { data: dbCourses = [] } = useEnrolledDbCourses(productIds, productNames);
 
   return (
     <div>

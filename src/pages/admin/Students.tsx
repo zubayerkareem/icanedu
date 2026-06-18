@@ -4,8 +4,9 @@ import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
   CalendarDays, UserPlus, Save, Eye, EyeOff, X, Upload, FileText,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, BookOpenCheck,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
@@ -520,6 +521,73 @@ function QuickEnrollDialog() {
   );
 }
 
+// ─── Bulk assign dialog ────────────────────────────────────────────────────────
+
+function BulkAssignDialog({ selectedIds, onDone }: { selectedIds: string[]; onDone: () => void }) {
+  const { data: courses = [] } = useAllCoursesForSelect();
+  const enroll = useAdminDirectEnroll();
+  const [open, setOpen] = useState(false);
+  const [courseId, setCourseId] = useState("");
+  const [validUntil, setValidUntil] = useState("");
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+
+  async function handleAssign() {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) { toast.error("কোর্স বেছে নিন"); return; }
+    setProgress({ done: 0, total: selectedIds.length });
+    let ok = 0; let fail = 0;
+    for (const userId of selectedIds) {
+      try {
+        await enroll.mutateAsync({ userId, courseId: course.id, courseName: course.title, validUntil: validUntil || null });
+        ok++;
+      } catch { fail++; }
+      setProgress({ done: ok + fail, total: selectedIds.length });
+    }
+    toast.success(`${ok} জনকে কোর্স দেওয়া হয়েছে${fail ? `, ${fail} টি ব্যর্থ` : ""}`);
+    setProgress(null); setCourseId(""); setValidUntil(""); setOpen(false); onDone();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!progress) setOpen(o); }}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <BookOpenCheck className="mr-2 h-4 w-4" /> কোর্স অ্যাসাইন
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{selectedIds.length} জনকে কোর্স অ্যাসাইন করুন</DialogTitle></DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <Label>কোর্স</Label>
+            <Select value={courseId} onValueChange={setCourseId}>
+              <SelectTrigger><SelectValue placeholder="কোর্স বেছে নিন" /></SelectTrigger>
+              <SelectContent>
+                {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>মেয়াদ <span className="text-muted-foreground text-xs">(খালি = আজীবন)</span></Label>
+            <Input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} />
+          </div>
+          {progress && (
+            <div className="space-y-1">
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-primary transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">{progress.done} / {progress.total}</p>
+            </div>
+          )}
+          <Button className="w-full" onClick={handleAssign} disabled={!courseId || !!progress}>
+            <BookOpenCheck className="mr-2 h-4 w-4" />
+            {progress ? "অ্যাসাইন হচ্ছে..." : "অ্যাসাইন করুন"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────────────────────────
 
 export default function AdminStudents() {
@@ -533,6 +601,9 @@ export default function AdminStudents() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   const filtered = students.filter((s) => {
     const q = search.trim().toLowerCase();
@@ -593,6 +664,44 @@ export default function AdminStudents() {
 
   function toggleExpand(id: string) {
     setExpanded((prev) => (prev === id ? null : id));
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((s) => selectedIds.has(s.id));
+
+  function toggleSelectAll() {
+    if (allFilteredSelected) {
+      setSelectedIds((prev) => { const next = new Set(prev); filtered.forEach((s) => next.delete(s.id)); return next; });
+    } else {
+      setSelectedIds((prev) => { const next = new Set(prev); filtered.forEach((s) => next.add(s.id)); return next; });
+    }
+  }
+
+  async function handleBulkResetPassword() {
+    const ids = [...selectedIds];
+    let ok = 0; let fail = 0;
+    for (const id of ids) {
+      try { await resetPassword.mutateAsync(id); ok++; } catch { fail++; }
+    }
+    toast.success(`${ok} জনকে রিসেট ইমেইল পাঠানো হয়েছে${fail ? `, ${fail} টি ব্যর্থ` : ""}`);
+  }
+
+  async function handleBulkDelete() {
+    setBulkDeleting(true);
+    const ids = [...selectedIds];
+    let ok = 0; let fail = 0;
+    for (const id of ids) {
+      try { await deleteStudent.mutateAsync(id); ok++; } catch { fail++; }
+    }
+    toast.success(`${ok} জন মুছে ফেলা হয়েছে${fail ? `, ${fail} টি ব্যর্থ` : ""}`);
+    setSelectedIds(new Set()); setBulkDeleting(false); setBulkDeleteConfirm(false);
   }
 
   return (
@@ -699,6 +808,25 @@ export default function AdminStudents() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5">
+          <span className="text-sm font-medium">{selectedIds.size} জন নির্বাচিত</span>
+          <div className="flex items-center gap-2 ml-auto">
+            <BulkAssignDialog selectedIds={[...selectedIds]} onDone={() => setSelectedIds(new Set())} />
+            <Button size="sm" variant="outline" onClick={handleBulkResetPassword} disabled={resetPassword.isPending}>
+              <KeyRound className="mr-2 h-4 w-4" /> পাসওয়ার্ড রিসেট
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDeleteConfirm(true)}>
+              <Trash2 className="mr-2 h-4 w-4" /> মুছুন
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Student list */}
       <div className="rounded-lg border border-border overflow-hidden">
         {isLoading ? (
@@ -718,13 +846,27 @@ export default function AdminStudents() {
           </div>
         ) : (
           <div className="divide-y divide-border bg-card">
+            {/* Select-all header */}
+            <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 border-b border-border">
+              <Checkbox
+                checked={allFilteredSelected}
+                onCheckedChange={toggleSelectAll}
+                aria-label="সব নির্বাচন করুন"
+              />
+              <span className="text-xs text-muted-foreground">সব নির্বাচন ({filtered.length})</span>
+            </div>
             {filtered.map((s) => (
               <div key={s.id}>
                 {/* Row */}
                 <div
-                  className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30"
+                  className={["flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30", selectedIds.has(s.id) ? "bg-primary/5" : ""].join(" ")}
                   onClick={() => toggleExpand(s.id)}
                 >
+                  {/* Checkbox — stop expand on click */}
+                  <div onClick={(e) => { e.stopPropagation(); toggleSelect(s.id); }} className="shrink-0">
+                    <Checkbox checked={selectedIds.has(s.id)} />
+                  </div>
+
                   <span className="shrink-0 text-muted-foreground">
                     {expanded === s.id
                       ? <ChevronDown className="h-4 w-4" />
@@ -788,6 +930,28 @@ export default function AdminStudents() {
           </div>
         )}
       </div>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={(o) => !o && setBulkDeleteConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selectedIds.size} জনকে মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই ব্যবহারকারীদের অ্যাকাউন্ট এবং সমস্ত ডেটা স্থায়ীভাবে মুছে যাবে।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? "মুছছে..." : "স্থায়ীভাবে মুছুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>

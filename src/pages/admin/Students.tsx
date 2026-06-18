@@ -616,7 +616,7 @@ export default function AdminStudents() {
       {/* Filters */}
       <div className="space-y-2">
         {/* Row 1: search + date range */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative flex-1 min-w-48 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -628,22 +628,14 @@ export default function AdminStudents() {
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="min-w-[180px] justify-start gap-2">
-                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+              <Button variant="outline" size="sm" className="min-w-[190px] justify-start gap-2">
+                <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
                 {dateRange?.from ? (
-                  dateRange.to ? (
-                    <span>{format(dateRange.from, "dd MMM")} – {format(dateRange.to, "dd MMM yyyy")}</span>
-                  ) : (
-                    format(dateRange.from, "dd MMM yyyy")
-                  )
+                  dateRange.to
+                    ? <span>{format(dateRange.from, "dd MMM")} – {format(dateRange.to, "dd MMM yy")}</span>
+                    : <span>{format(dateRange.from, "dd MMM yyyy")}</span>
                 ) : (
                   <span className="text-muted-foreground">Select Date Range</span>
-                )}
-                {dateRange?.from && (
-                  <X
-                    className="ml-auto h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
-                    onClick={(e) => { e.stopPropagation(); setDateRange(undefined); }}
-                  />
                 )}
               </Button>
             </PopoverTrigger>
@@ -657,6 +649,11 @@ export default function AdminStudents() {
               />
             </PopoverContent>
           </Popover>
+          {dateRange?.from && (
+            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setDateRange(undefined)}>
+              <X className="mr-1 h-3.5 w-3.5" /> Clear Date
+            </Button>
+          )}
         </div>
 
         {/* Row 2: role + source filters */}

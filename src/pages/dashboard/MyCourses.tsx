@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useMyOrders, type Order, type OrderStatus } from "@/hooks/useOrders";
 import type { Course } from "@/lib/courses/types";
+import { MOCK_COURSES } from "@/lib/courses/mock";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -46,7 +47,14 @@ function useEnrolledDbCourses(productIds: string[]) {
         bySlug = (data ?? []) as Course[];
       }
 
-      return [...(byId ?? []), ...bySlug] as Course[];
+      const dbCourses = [...(byId ?? []), ...bySlug] as Course[];
+
+      // Fill missing thumbnail_url from MOCK_COURSES fallback
+      return dbCourses.map((c) => {
+        if (c.thumbnail_url) return c;
+        const mock = MOCK_COURSES.find((m) => m.id === c.id || m.slug === c.slug || m.title === c.title);
+        return mock?.thumbnail_url ? { ...c, thumbnail_url: mock.thumbnail_url } : c;
+      });
     },
   });
 }
@@ -55,7 +63,8 @@ function useEnrolledDbCourses(productIds: string[]) {
 
 function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Course[] }) {
   const course: Course | undefined =
-    dbCourses.find((c) => c.id === order.product_id || c.slug === order.product_id);
+    dbCourses.find((c) => c.id === order.product_id || c.slug === order.product_id) ??
+    MOCK_COURSES.find((c) => c.id === order.product_id || c.slug === order.product_id || c.title === order.product_name);
 
   const status = STATUS_MAP[order.status] ?? STATUS_MAP.pending;
   const isActive = order.status === "confirmed" || order.status === "shipped" || order.status === "delivered";

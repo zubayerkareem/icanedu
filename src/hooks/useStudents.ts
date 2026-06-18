@@ -18,7 +18,7 @@ export function useStudents() {
     queryFn: async () => {
       const [{ data: profiles, error: pErr }, { data: roles, error: rErr }, { data: users, error: uErr }] =
         await Promise.all([
-          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at"),
+          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at, source"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.rpc("admin_list_users"),
         ]);
@@ -37,7 +37,7 @@ export function useStudents() {
         email: emailMap[p.id] ?? null,
         role: roleMap[p.id] ?? "student",
         created_at: p.created_at ?? null,
-        source: (p as any).source ?? null,
+        source: p.source ?? null,
       }));
     },
   });

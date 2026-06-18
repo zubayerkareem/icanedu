@@ -146,6 +146,12 @@ export function useAdminCreateStudent() {
       if (error) throw error;
       if (data?.error === "email_exists")
         throw new Error("এই ইমেইলে ইতিমধ্যে একটি অ্যাকাউন্ট আছে।");
+      if (data?.user_id) {
+        await supabase.rpc("admin_mark_user_source", {
+          p_user_id: data.user_id,
+          p_source: "admin_created",
+        });
+      }
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),

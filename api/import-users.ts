@@ -120,13 +120,15 @@ export default async function handler(req: any, res: any) {
 
       const userId = authData.user.id;
 
-      // 2. Update profile with full_name and phone
-      if (full_name?.trim() || phone?.trim()) {
-        await db
-          .from("profiles")
-          .update({ full_name: full_name?.trim() || null, phone: phone?.trim() || null })
-          .eq("id", userId);
-      }
+      // 2. Update profile with full_name, phone, and mark as admin_created
+      await db
+        .from("profiles")
+        .update({
+          full_name: full_name?.trim() || null,
+          phone: phone?.trim() || null,
+          source: "admin_created",
+        })
+        .eq("id", userId);
 
       // 3. Enroll in course if provided
       let courseName: string | undefined;

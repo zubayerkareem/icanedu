@@ -9,6 +9,7 @@ export interface StudentProfile {
   email: string | null;
   role: string;
   created_at: string | null;
+  source: string | null;
 }
 
 export function useStudents() {
@@ -17,7 +18,7 @@ export function useStudents() {
     queryFn: async () => {
       const [{ data: profiles, error: pErr }, { data: roles, error: rErr }, { data: users, error: uErr }] =
         await Promise.all([
-          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at"),
+          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at, source"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.rpc("admin_list_users"),
         ]);
@@ -36,7 +37,20 @@ export function useStudents() {
         email: emailMap[p.id] ?? null,
         role: roleMap[p.id] ?? "student",
         created_at: p.created_at ?? null,
+        source: p.source ?? null,
       }));
+    },
+  });
+}
+
+export function useMarkUserSource() {
+  return useMutation({
+    mutationFn: async ({ userId, source }: { userId: string; source: string }) => {
+      const { error } = await supabase.rpc("admin_mark_user_source", {
+        p_user_id: userId,
+        p_source: source,
+      });
+      if (error) throw error;
     },
   });
 }

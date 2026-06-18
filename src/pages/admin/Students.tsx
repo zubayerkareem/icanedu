@@ -1,10 +1,14 @@
 import { useState, useRef } from "react";
+import type { DateRange } from "react-day-picker";
 import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
   CalendarDays, UserPlus, Save, Eye, EyeOff, X, Upload, FileText,
   CheckCircle2, XCircle,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -525,7 +529,8 @@ export default function AdminStudents() {
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
-  const [filterDate, setFilterDate] = useState<"all" | "today" | "3d" | "7d" | "30d">("all");
+  const [filterSource, setFilterSource] = useState<"all" | "registered" | "admin_created">("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -538,22 +543,25 @@ export default function AdminStudents() {
       (s.email ?? "").toLowerCase().includes(q) ||
       s.id.toLowerCase().includes(q);
     const matchRole = filterRole === "all" || s.role === filterRole;
+    const matchSource =
+      filterSource === "all" ||
+      (filterSource === "registered" && (s.source === "registered" || s.source === null)) ||
+      (filterSource === "admin_created" && s.source === "admin_created");
 
     let matchDate = true;
-    if (filterDate !== "all" && s.created_at) {
+    if (s.created_at && (dateRange?.from || dateRange?.to)) {
       const created = new Date(s.created_at);
-      const now = new Date();
-      const days = filterDate === "today" ? 0 : filterDate === "3d" ? 3 : filterDate === "7d" ? 7 : 30;
-      const cutoff = new Date(now);
-      if (filterDate === "today") {
-        cutoff.setHours(0, 0, 0, 0);
-      } else {
-        cutoff.setDate(now.getDate() - days);
+      if (dateRange.from) {
+        const from = new Date(dateRange.from); from.setHours(0, 0, 0, 0);
+        if (created < from) matchDate = false;
       }
-      matchDate = created >= cutoff;
+      if (dateRange.to) {
+        const to = new Date(dateRange.to); to.setHours(23, 59, 59, 999);
+        if (created > to) matchDate = false;
+      }
     }
 
-    return matchSearch && matchRole && matchDate;
+    return matchSearch && matchRole && matchSource && matchDate;
   });
 
   const counts = {
@@ -605,55 +613,92 @@ export default function AdminStudents() {
         </div>
       </div>
 
-      {/* Search + filter */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="নাম, ফোন বা ইমেইল..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+      {/* Filters */}
+      <div className="space-y-2">
+        {/* Row 1: search + date range */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-48 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="নাম, ফোন বা ইমেইল..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="min-w-[180px] justify-start gap-2">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <span>{format(dateRange.from, "dd MMM")} – {format(dateRange.to, "dd MMM yyyy")}</span>
+                  ) : (
+                    format(dateRange.from, "dd MMM yyyy")
+                  )
+                ) : (
+                  <span className="text-muted-foreground">Select Date Range</span>
+                )}
+                {dateRange?.from && (
+                  <X
+                    className="ml-auto h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+                    onClick={(e) => { e.stopPropagation(); setDateRange(undefined); }}
+                  />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                disabled={{ after: new Date() }}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-        <div className="flex gap-1.5">
-          {(["all", "student", "admin"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setFilterRole(r)}
-              className={[
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                filterRole === r
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
-              ].join(" ")}
-            >
-              {r === "all" ? "সব" : r === "admin" ? "অ্যাডমিন" : "শিক্ষার্থী"}{" "}
-              <span className="opacity-70">({counts[r]})</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-1.5">
-          {([
-            { value: "all", label: "সব সময়" },
-            { value: "today", label: "আজ" },
-            { value: "3d", label: "৩ দিন" },
-            { value: "7d", label: "৭ দিন" },
-            { value: "30d", label: "৩০ দিন" },
-          ] as const).map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setFilterDate(opt.value)}
-              className={[
-                "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                filterDate === opt.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80",
-              ].join(" ")}
-            >
-              {opt.label}
-            </button>
-          ))}
+
+        {/* Row 2: role + source filters */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex gap-1.5">
+            {(["all", "student", "admin"] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setFilterRole(r)}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  filterRole === r
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ].join(" ")}
+              >
+                {r === "all" ? "সব" : r === "admin" ? "অ্যাডমিন" : "শিক্ষার্থী"}{" "}
+                <span className="opacity-70">({counts[r]})</span>
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-border" />
+          <div className="flex gap-1.5">
+            {([
+              { value: "all", label: "All Users" },
+              { value: "registered", label: "Registered" },
+              { value: "admin_created", label: "Admin Created" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setFilterSource(opt.value)}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  filterSource === opt.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ].join(" ")}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

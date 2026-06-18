@@ -144,6 +144,10 @@ export default async function handler(req: any, res: any) {
           product_id: course_id.trim(),
           product_name: courseName || "Course",
           product_price: 0,
+          customer_name: courseName || "Course",
+          phone: "",
+          shipping_cost: 0,
+          total_price: 0,
           status: "confirmed",
           valid_until: valid_until?.trim() || null,
         });

@@ -58,6 +58,9 @@ import MyCourses from "./pages/dashboard/MyCourses";
 import MyOrders from "./pages/dashboard/MyOrders";
 import Profile from "./pages/dashboard/Profile";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
+import { useSetting } from "@/hooks/useSiteSettings";
+import AdminSettings from "./pages/admin/Settings";
 import AdminHome from "./pages/admin/AdminHome";
 import AdminCourses from "./pages/admin/Courses";
 import CourseEditor from "./pages/admin/CourseEditor";
@@ -71,6 +74,12 @@ import SuccessAdmin from "./pages/admin/SuccessAdmin";
 
 const queryClient = new QueryClient();
 
+function GATracker() {
+  const gaId = useSetting("ga_measurement_id");
+  useGoogleAnalytics(gaId);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -82,6 +91,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <GATracker />
             <Routes>
               {/* Public site */}
               <Route element={<PublicLayout />}>
@@ -159,7 +169,7 @@ const App = () => (
                 <Route path="/admin/page-builder" element={<PageBuilder />} />
                 <Route path="/admin/issb" element={<ISSBAdmin />} />
                 <Route path="/admin/success" element={<SuccessAdmin />} />
-                <Route path="/admin/settings" element={<div />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

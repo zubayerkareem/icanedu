@@ -138,20 +138,20 @@ export function useAdminDirectEnroll() {
 export function useAdminCreateStudent() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const { data, error } = await supabase.rpc("admin_create_student", {
-        p_email: email.trim().toLowerCase(),
-        p_password: password,
+    mutationFn: async ({ email, password, full_name, phone }: { email: string; password: string; full_name?: string; phone?: string }) => {
+      const res = await fetch("/api/admin-create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          full_name: full_name ?? "",
+          phone: phone ?? "",
+          role: "student",
+        }),
       });
-      if (error) throw error;
-      if (data?.error === "email_exists")
-        throw new Error("এই ইমেইলে ইতিমধ্যে একটি অ্যাকাউন্ট আছে।");
-      if (data?.user_id) {
-        await supabase.rpc("admin_mark_user_source", {
-          p_user_id: data.user_id,
-          p_source: "admin_created",
-        });
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "অ্যাকাউন্ট তৈরি করতে সমস্যা হয়েছে");
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),

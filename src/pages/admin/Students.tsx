@@ -453,17 +453,21 @@ function CSVImportDialog({ onDone }: { onDone: () => void }) {
 function CreateStudentDialog() {
   const createStudent = useAdminCreateStudent();
   const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState({ full_name: "", email: "", phone: "", password: "" });
   const [showPw, setShowPw] = useState(false);
 
-  async function handleCreate() {
-    if (!email.trim()) { toast.error("ইমেইল দিন"); return; }
-    if (password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"); return; }
+  const setField = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((p) => ({ ...p, [k]: e.target.value }));
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.email.trim()) { toast.error("ইমেইল দিন"); return; }
+    if (form.password.length < 6) { toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষর"); return; }
     try {
-      await createStudent.mutateAsync({ email, password });
-      toast.success(`${email} — অ্যাকাউন্ট তৈরি হয়েছে`);
-      setEmail(""); setPassword(""); setOpen(false);
+      await createStudent.mutateAsync(form);
+      toast.success(`${form.full_name || form.email} — অ্যাকাউন্ট তৈরি হয়েছে`);
+      setForm({ full_name: "", email: "", phone: "", password: "" });
+      setOpen(false);
     } catch (e: unknown) { toast.error((e as Error)?.message); }
   }
 
@@ -474,39 +478,44 @@ function CreateStudentDialog() {
           <UserPlus className="mr-2 h-4 w-4" /> নতুন শিক্ষার্থী
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>নতুন শিক্ষার্থী তৈরি করুন</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 pt-2">
+        <form onSubmit={handleCreate} className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <Label>ইমেইল</Label>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@gmail.com" />
+            <Label>পূর্ণ নাম</Label>
+            <Input value={form.full_name} onChange={setField("full_name")} placeholder="মোঃ রহিম উদ্দিন" />
           </div>
           <div className="space-y-1.5">
-            <Label>পাসওয়ার্ড</Label>
+            <Label>ইমেইল <span className="text-destructive">*</span></Label>
+            <Input type="email" value={form.email} onChange={setField("email")} placeholder="student@gmail.com" required />
+          </div>
+          <div className="space-y-1.5">
+            <Label>ফোন</Label>
+            <Input type="tel" value={form.phone} onChange={setField("phone")} placeholder="01XXXXXXXXX" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>পাসওয়ার্ড <span className="text-destructive">*</span></Label>
             <div className="relative">
               <Input
                 type={showPw ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={form.password}
+                onChange={setField("password")}
                 placeholder="কমপক্ষে ৬ অক্ষর"
                 className="pr-9"
+                required
               />
-              <button
-                type="button"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                onClick={() => setShowPw((s) => !s)}
-              >
+              <button type="button" className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowPw((s) => !s)}>
                 {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
-          <Button className="w-full" onClick={handleCreate} disabled={createStudent.isPending}>
+          <Button type="submit" className="w-full" disabled={createStudent.isPending}>
             <UserPlus className="mr-2 h-4 w-4" />
             {createStudent.isPending ? "তৈরি হচ্ছে..." : "অ্যাকাউন্ট তৈরি করুন"}
           </Button>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

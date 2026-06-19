@@ -85,7 +85,7 @@ export default function ForgotPassword() {
     if (token.length < 6) { toast.error("৬ সংখ্যার OTP দিন"); return; }
     setOtpLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({ email, token, type: "magiclink" });
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
       if (error) {
         toast.error("OTP সঠিক নয় বা মেয়াদ শেষ হয়েছে।", { description: error.message });
         setOtp(["", "", "", "", "", ""]);

@@ -95,7 +95,7 @@ function SetPasswordDialog({ userId, name }: { userId: string; name: string | nu
           <KeyRound className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>পাসওয়ার্ড সেট করুন</DialogTitle>
         </DialogHeader>

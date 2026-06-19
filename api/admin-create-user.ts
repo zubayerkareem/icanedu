@@ -27,12 +27,12 @@ export default async function handler(req: any, res: any) {
 
   const userId = data.user.id;
 
-  // 2. Create profile row
-  const { error: profileErr } = await db.from("profiles").insert({
+  // 2. Create profile row (upsert in case a trigger already created it)
+  const { error: profileErr } = await db.from("profiles").upsert({
     id: userId,
     full_name: full_name ?? null,
     phone: phone ?? null,
-  });
+  }, { onConflict: "id" });
   if (profileErr) return res.status(400).json({ error: profileErr.message });
 
   // 3. Assign role if admin

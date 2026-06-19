@@ -32,6 +32,7 @@ import { useStudents, useDeleteStudent, useResetStudentPassword } from "@/hooks/
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
+  useEnrolledStudentIds,
   useAdminEnrollStudent,
   useAdminRevokeEnrollment,
   useAdminUpdateValidity,
@@ -671,7 +672,10 @@ export default function AdminStudents() {
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
   const [filterSource, setFilterSource] = useState<"all" | "registered" | "admin_created">("all");
+  const [filterCourse, setFilterCourse] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const { data: courses = [] } = useAllCoursesForSelect();
+  const { data: enrolledIds } = useEnrolledStudentIds(filterCourse === "all" ? null : filterCourse);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -708,7 +712,9 @@ export default function AdminStudents() {
       }
     }
 
-    return matchSearch && matchRole && matchSource && matchDate;
+    const matchCourse = filterCourse === "all" || (enrolledIds ?? []).includes(s.id);
+
+    return matchSearch && matchRole && matchSource && matchDate && matchCourse;
   });
 
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
@@ -844,7 +850,7 @@ export default function AdminStudents() {
           )}
         </div>
 
-        {/* Row 2: role + source filters */}
+        {/* Row 2: role + source + course filters */}
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex gap-1.5">
             {(["all", "student", "admin"] as const).map((r) => (
@@ -884,6 +890,24 @@ export default function AdminStudents() {
               </button>
             ))}
           </div>
+          <div className="h-4 w-px bg-border" />
+          <Select value={filterCourse} onValueChange={(v) => { setFilterCourse(v); resetPage(); }}>
+            <SelectTrigger className="h-8 w-56 text-xs">
+              <BookOpenCheck className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+              <SelectValue placeholder="কোর্স অনুযায়ী ফিল্টার" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">সব কোর্স</SelectItem>
+              {courses.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filterCourse !== "all" && (
+            <button onClick={() => { setFilterCourse("all"); resetPage(); }} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+              <X className="h-3 w-3" /> Clear
+            </button>
+          )}
         </div>
       </div>
 

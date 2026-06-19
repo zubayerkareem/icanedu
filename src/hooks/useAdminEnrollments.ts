@@ -19,6 +19,23 @@ export function useStudentCourseOrders(userId: string | null) {
   });
 }
 
+export function useEnrolledStudentIds(courseId: string | null) {
+  return useQuery<string[]>({
+    queryKey: ["enrolled_student_ids", courseId],
+    enabled: !!courseId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("user_id")
+        .eq("product_id", courseId!)
+        .eq("order_type", "course")
+        .neq("status", "cancelled");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id).filter(Boolean);
+    },
+  });
+}
+
 export function useAllCoursesForSelect() {
   return useQuery<{ id: string; title: string }[]>({
     queryKey: ["courses_for_select"],

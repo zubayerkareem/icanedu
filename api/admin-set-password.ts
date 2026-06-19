@@ -15,7 +15,7 @@ export default async function handler(req: any, res: any) {
   if (password.length < 6) return res.status(400).json({ error: "Password must be at least 6 characters" });
 
   const db = supabaseAdmin();
-  const { error } = await db.auth.admin.updateUserById(userId, { password });
+  const { error } = await db.auth.admin.updateUserById(userId, { password, email_confirm: true });
   if (error) return res.status(400).json({ error: error.message });
 
   return res.status(200).json({ success: true });

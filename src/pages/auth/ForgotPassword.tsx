@@ -36,10 +36,7 @@ export default function ForgotPassword() {
     setEmailError("");
     setEmailLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: parsed.data,
-        options: { shouldCreateUser: false },
-      });
+      const { error } = await supabase.auth.resetPasswordForEmail(parsed.data);
       if (error) { toast.error(t.toast.resetEmailFailed, { description: error.message }); return; }
       setStep("otp");
       toast.success("OTP পাঠানো হয়েছে! আপনার ইমেইল চেক করুন।");
@@ -85,7 +82,7 @@ export default function ForgotPassword() {
     if (token.length < 6) { toast.error("৬ সংখ্যার OTP দিন"); return; }
     setOtpLoading(true);
     try {
-      const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+      const { error } = await supabase.auth.verifyOtp({ email, token, type: "recovery" });
       if (error) {
         toast.error("OTP সঠিক নয় বা মেয়াদ শেষ হয়েছে।", { description: error.message });
         setOtp(["", "", "", "", "", ""]);
@@ -102,10 +99,7 @@ export default function ForgotPassword() {
 
   const resendOtp = async () => {
     if (resendCooldown > 0) return;
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) { toast.error("পুনরায় পাঠানো ব্যর্থ হয়েছে।"); return; }
     toast.success("নতুন OTP পাঠানো হয়েছে।");
     setResendCooldown(60);

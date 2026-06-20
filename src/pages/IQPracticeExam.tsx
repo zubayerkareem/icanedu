@@ -425,8 +425,6 @@ export default function IQPracticeExam() {
   const handleSelect = useCallback((optionId: string) => {
     if (!set) return;
     const qId = set.questions[currentQ].id;
-    // if already answered, lock it — no resubmit
-    if (answersRef.current[qId]) return;
     setAnswers((prev) => {
       const next = { ...prev, [qId]: optionId };
       answersRef.current = next;
@@ -499,7 +497,6 @@ export default function IQPracticeExam() {
               selected={answers[question.id]}
               onSelect={handleSelect}
               showResult={false}
-              locked={!!answers[question.id]}
             />
 
             {/* Navigation */}

@@ -42,6 +42,7 @@ function QuestionCard({
   selected,
   onSelect,
   showResult,
+  locked,
 }: {
   question: IQQuestion;
   index: number;
@@ -49,11 +50,17 @@ function QuestionCard({
   selected: string | undefined;
   onSelect: (optionId: string) => void;
   showResult: boolean;
+  locked?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-7">
       <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
         <span>প্রশ্ন {index + 1} / {total}</span>
+        {locked && !showResult && (
+          <span className="flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-accent font-medium">
+            <CheckCircle2 className="h-3 w-3" /> উত্তর দেওয়া হয়েছে
+          </span>
+        )}
       </div>
 
       <p className="font-heading text-base font-semibold leading-relaxed text-foreground sm:text-lg">
@@ -74,20 +81,25 @@ function QuestionCard({
           const isCorrect = showResult && opt.id === question.correct;
           const isWrong = showResult && isSelected && opt.id !== question.correct;
           const label = String.fromCharCode(65 + i);
+          const isDisabled = showResult || locked;
 
           return (
             <li key={opt.id}>
               <button
-                onClick={() => !showResult && onSelect(opt.id)}
-                disabled={showResult}
+                onClick={() => !isDisabled && onSelect(opt.id)}
+                disabled={isDisabled}
                 className={[
                   "w-full rounded-lg border px-4 py-3 text-left text-sm transition-all",
                   isCorrect
                     ? "border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300"
                     : isWrong
                     ? "border-destructive bg-destructive/5 text-destructive"
+                    : isSelected && locked
+                    ? "border-accent bg-accent/10 text-accent opacity-80 cursor-not-allowed"
                     : isSelected
                     ? "border-accent bg-accent/10 text-accent"
+                    : locked
+                    ? "border-border bg-background text-muted-foreground cursor-not-allowed opacity-60"
                     : "border-border bg-background text-foreground hover:border-accent/50 hover:bg-muted/50",
                 ].join(" ")}
               >
@@ -121,20 +133,22 @@ function QuestionNav({
       {Array.from({ length: total }).map((_, i) => {
         const isPast = i < current;
         const isCurrent = i === current;
+        const isAnswered = isPast && !skipped.has(String(i));
+        const isSkipped = isPast && skipped.has(String(i));
         return (
           <button
             key={i}
-            disabled={isPast || isCurrent}
-            onClick={() => !isPast && !isCurrent && onGoto(i)}
-            title={isPast && skipped.has(String(i)) ? "Skip করা হয়েছে" : undefined}
+            disabled={isCurrent}
+            onClick={() => !isCurrent && onGoto(i)}
+            title={isAnswered ? "উত্তর দেওয়া হয়েছে (পরিবর্তন করা যাবে না)" : isSkipped ? "Skip করা হয়েছে — উত্তর দিতে পারবেন" : undefined}
             className={[
               "h-8 w-8 rounded-md text-xs font-semibold transition-colors",
               isCurrent
                 ? "bg-accent text-accent-foreground cursor-default"
-                : isPast && skipped.has(String(i))
-                ? "bg-amber-100 text-amber-700 cursor-not-allowed opacity-70 dark:bg-amber-900/30 dark:text-amber-400"
-                : isPast
-                ? "bg-green-100 text-green-700 cursor-not-allowed opacity-70 dark:bg-green-900/30 dark:text-green-400"
+                : isSkipped
+                ? "bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400"
+                : isAnswered
+                ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400"
                 : "bg-muted text-muted-foreground hover:bg-muted/80",
             ].join(" ")}
           >
@@ -411,6 +425,8 @@ export default function IQPracticeExam() {
   const handleSelect = useCallback((optionId: string) => {
     if (!set) return;
     const qId = set.questions[currentQ].id;
+    // if already answered, lock it — no resubmit
+    if (answersRef.current[qId]) return;
     setAnswers((prev) => {
       const next = { ...prev, [qId]: optionId };
       answersRef.current = next;
@@ -483,35 +499,44 @@ export default function IQPracticeExam() {
               selected={answers[question.id]}
               onSelect={handleSelect}
               showResult={false}
+              locked={!!answers[question.id]}
             />
 
             {/* Navigation */}
-            <div className="mt-6 flex items-center justify-end gap-3">
-              {currentQ < set.questions.length - 1 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSkip}
-                >
-                  Skip করুন
-                </Button>
-              )}
-              {currentQ < set.questions.length - 1 ? (
-                <Button
-                  size="sm"
-                  onClick={() => setCurrentQ((q) => Math.min(set.questions.length - 1, q + 1))}
-                >
-                  পরের প্রশ্ন <ArrowRight className="ml-1.5 h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  className="bg-green-600 text-white hover:bg-green-700"
-                  onClick={handleSubmit}
-                >
-                  <Send className="mr-1.5 h-4 w-4" /> জমা দিন
-                </Button>
-              )}
+            <div className="mt-6 flex items-center justify-between gap-3">
+              {/* Back button */}
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentQ === 0}
+                onClick={() => setCurrentQ((q) => Math.max(0, q - 1))}
+              >
+                <ArrowLeft className="mr-1.5 h-4 w-4" /> আগের প্রশ্ন
+              </Button>
+
+              <div className="flex items-center gap-3">
+                {currentQ < set.questions.length - 1 && !answers[question.id] && (
+                  <Button variant="outline" size="sm" onClick={handleSkip}>
+                    Skip করুন
+                  </Button>
+                )}
+                {currentQ < set.questions.length - 1 ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setCurrentQ((q) => Math.min(set.questions.length - 1, q + 1))}
+                  >
+                    পরের প্রশ্ন <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="bg-green-600 text-white hover:bg-green-700"
+                    onClick={handleSubmit}
+                  >
+                    <Send className="mr-1.5 h-4 w-4" /> জমা দিন
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Question nav dots */}

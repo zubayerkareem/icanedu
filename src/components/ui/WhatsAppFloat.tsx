@@ -18,7 +18,7 @@ const DEPARTMENTS = [
   },
   {
     label: "E-Commerce",
-    sublabel: "ই-কমার্স কোর্স",
+    sublabel: "প্রোডাক্ট অর্ডার হেল্পলাইন",
     number: "8801894734004",
     color: "bg-violet-600",
     text: "text-white",

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
-  User, Mail, Monitor, Clock, Lock, Shield, CheckCircle2,
+  User, Mail, Monitor, Clock, Lock, Shield, CheckCircle2, Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
 import {
   useStudentMetadata, useSaveStudentMetadata, type ServiceBranch,
 } from "@/hooks/useStudentMetadata";
@@ -80,12 +81,55 @@ function LockedField({ label, value }: { label: string; value: string }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Profile() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { data: meta, isLoading } = useStudentMetadata(user?.id);
   const save = useSaveStudentMetadata();
 
   const [issbId, setIssbId] = useState("");
   const [branch, setBranch] = useState<ServiceBranch | "">("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("ছবির সাইজ ২ মেগাবাইটের বেশি হওয়া যাবে না");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("শুধুমাত্র ছবি ফাইল আপলোড করুন");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      toast.success("প্রোফাইল ছবি আপডেট হয়েছে");
+    } catch {
+      toast.error("ছবি আপলোড ব্যর্থ হয়েছে। আবার চেষ্টা করুন।");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   const { browser, os } = parseUserAgent();
   const lastSignIn = user?.last_sign_in_at
@@ -113,6 +157,58 @@ export default function Profile() {
       <div>
         <h1 className="font-heading text-2xl font-bold text-foreground">আমার প্রোফাইল</h1>
         <p className="mt-1 text-sm text-muted-foreground">আপনার অ্যাকাউন্টের তথ্য</p>
+      </div>
+
+      {/* Avatar upload */}
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">প্রোফাইল ছবি</p>
+        <div className="flex flex-col items-center gap-4">
+          <div className="group relative">
+            <div className="h-24 w-24 overflow-hidden rounded-full border-2 border-border bg-muted flex items-center justify-center">
+              {profile?.avatar_url ? (
+                <img
+                  src={profile.avatar_url}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <User className="h-10 w-10 text-muted-foreground/40" />
+              )}
+            </div>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
+              aria-label="ছবি পরিবর্তন করুন"
+            >
+              <Camera className="h-5 w-5" />
+            </button>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleAvatarUpload}
+          />
+
+          <div className="text-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading
+                ? "আপলোড হচ্ছে..."
+                : profile?.avatar_url
+                ? "ছবি পরিবর্তন করুন"
+                : "ছবি আপলোড করুন"}
+            </Button>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">JPG, PNG বা WebP · সর্বোচ্চ ২ MB</p>
+          </div>
+        </div>
       </div>
 
       {/* Account info — view only */}

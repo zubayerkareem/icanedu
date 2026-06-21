@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   BookOpen, ShoppingBag, ClipboardList, ChevronRight,
   Bell, Package, BookMarked, ShoppingCart, Megaphone,
-  Sparkles, Star,
+  Sparkles, Star, UserCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -90,6 +90,23 @@ export default function DashboardHome() {
         <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/10" />
         <div className="absolute -bottom-10 right-16 h-28 w-28 rounded-full bg-white/5" />
       </div>
+
+      {/* ── No-photo alert ─────────────────────────────────────────────── */}
+      {!profile?.avatar_url && (
+        <Link
+          to="/dashboard/profile"
+          className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 transition-colors hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/20 dark:hover:bg-amber-950/30"
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+            <UserCircle className="h-5 w-5 text-amber-500" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">প্রোফাইল ছবি যোগ করুন</p>
+            <p className="text-xs text-amber-600/70 dark:text-amber-500/70">আপনার প্রোফাইল সম্পন্ন করতে একটি ছবি আপলোড করুন।</p>
+          </div>
+          <ChevronRight className="h-4 w-4 shrink-0 text-amber-400" />
+        </Link>
+      )}
 
       {/* ── Stat cards ─────────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-3">

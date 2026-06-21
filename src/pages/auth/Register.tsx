@@ -235,8 +235,10 @@ export default function Register() {
           {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="phone">{t.auth.phone}</Label>
-          <Input id="phone" type="tel" value={form.phone} onChange={setField("phone")} placeholder="01XXXXXXXXX" />
+          <Label htmlFor="phone">
+            {t.auth.phone} <span className="text-destructive">*</span>
+          </Label>
+          <Input id="phone" type="tel" required value={form.phone} onChange={setField("phone")} placeholder="01XXXXXXXXX" />
           {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

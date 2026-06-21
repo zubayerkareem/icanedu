@@ -65,23 +65,59 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact Info */}
+          {/* App Download & Community */}
           <div>
-            <h4 className="font-heading text-sm font-semibold text-foreground">{f.contactInfo}</h4>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <Phone className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>01894734002</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-                <a href="mailto:icanedu23@gmail.com" className="hover:text-accent">icanedu23@gmail.com</a>
-              </li>
-              <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>Room No-212-213, RH Home Center, Green Road, Farmgate, Dhaka</span>
-              </li>
-            </ul>
+            <h4 className="font-heading text-sm font-semibold text-foreground">অ্যাপ ডাউনলোড করুন</h4>
+            <div className="mt-3 space-y-2.5">
+              {/* Google Play */}
+              <a
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-accent hover:bg-accent/5"
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0" fill="none">
+                  <path d="M3.18 23.76c.27.15.57.24.9.24.32 0 .63-.08.9-.23l11.6-6.71-2.81-2.81L3.18 23.76z" fill="#EA4335"/>
+                  <path d="M20.68 9.27l-2.62-1.52L14.77 11l3.29 3.29 2.62-1.52a1.49 1.49 0 0 0 0-2.5z" fill="#FBBC05"/>
+                  <path d="M3.18.24A1.47 1.47 0 0 0 2.59 0C2.27 0 1.98.09 1.72.24L13.5 12 3.18.24z" fill="#4285F4"/>
+                  <path d="M1.72.24C1.21.52.88 1.06.88 1.7v20.6c0 .64.33 1.18.84 1.46L13.5 12 1.72.24z" fill="#34A853"/>
+                </svg>
+                <div className="leading-tight">
+                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">GET IT ON</p>
+                  <p className="text-sm font-semibold text-foreground">Google Play</p>
+                </div>
+              </a>
+
+              {/* App Store */}
+              <a
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-accent hover:bg-accent/5"
+              >
+                <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-foreground" fill="currentColor">
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                <div className="leading-tight">
+                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">DOWNLOAD ON THE</p>
+                  <p className="text-sm font-semibold text-foreground">App Store</p>
+                </div>
+              </a>
+
+              {/* Facebook Helpline Group */}
+              <a
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-[#1877F2] hover:bg-[#1877F2]/5"
+              >
+                <Facebook className="h-6 w-6 shrink-0 text-[#1877F2]" />
+                <div className="leading-tight">
+                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">JOIN OUR</p>
+                  <p className="text-sm font-semibold text-foreground">Helpline Group</p>
+                </div>
+              </a>
+            </div>
           </div>
         </div>
 

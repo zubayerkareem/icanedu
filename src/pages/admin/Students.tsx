@@ -4,8 +4,9 @@ import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
   CalendarDays, UserPlus, Save, Eye, EyeOff, X, Upload, FileText,
-  CheckCircle2, XCircle, BookOpenCheck,
+  CheckCircle2, XCircle, BookOpenCheck, Download,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -682,7 +683,7 @@ export default function AdminStudents() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [page, setPage] = useState(1);
-  // Reset page when filters change
+  const [exporting, setExporting] = useState(false);
   const resetPage = () => setPage(1);
 
   const filtered = students.filter((s) => {
@@ -789,6 +790,72 @@ export default function AdminStudents() {
     setSelectedIds(new Set()); setBulkDeleting(false); setBulkDeleteConfirm(false);
   }
 
+  async function exportCSV() {
+    if (filtered.length === 0) return;
+    setExporting(true);
+    try {
+      const ids = filtered.map((s) => s.id);
+
+      const { data: orders, error } = await supabase
+        .from("orders")
+        .select("user_id, product_name, order_type, status")
+        .in("user_id", ids);
+      if (error) throw error;
+
+      const ordersByUser: Record<string, { product_name: string; order_type: string; status: string }[]> = {};
+      for (const o of orders ?? []) {
+        if (!ordersByUser[o.user_id]) ordersByUser[o.user_id] = [];
+        ordersByUser[o.user_id].push(o);
+      }
+
+      const STATUS_BN: Record<string, string> = {
+        pending: "অপেক্ষমাণ", confirmed: "নিশ্চিত", shipped: "পাঠানো",
+        delivered: "পৌঁছেছে", cancelled: "বাতিল",
+      };
+
+      const headers = ["Name", "Phone", "Email", "Registered At", "Role", "Courses", "Products", "Profile Image URL"];
+      const rows = filtered.map((s) => {
+        const userOrders = ordersByUser[s.id] ?? [];
+        const courses = userOrders
+          .filter((o) => o.order_type === "course")
+          .map((o) => `${o.product_name} [${STATUS_BN[o.status] ?? o.status}]`)
+          .join(" | ");
+        const products = userOrders
+          .filter((o) => o.order_type === "product")
+          .map((o) => `${o.product_name} [${STATUS_BN[o.status] ?? o.status}]`)
+          .join(" | ");
+
+        return [
+          s.full_name ?? "",
+          s.phone ?? "",
+          s.email ?? "",
+          s.created_at ? new Date(s.created_at).toLocaleDateString("en-GB") : "",
+          s.role === "admin" ? "Admin" : "Student",
+          courses,
+          products,
+          s.avatar_url ?? "",
+        ];
+      });
+
+      const csv = [headers, ...rows]
+        .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `students_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${filtered.length} জনের ডেটা এক্সপোর্ট হয়েছে`);
+    } catch {
+      toast.error("এক্সপোর্ট ব্যর্থ হয়েছে");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -800,6 +867,10 @@ export default function AdminStudents() {
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
             <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportCSV} disabled={exporting || filtered.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            {exporting ? "এক্সপোর্ট হচ্ছে..." : `Export CSV (${filtered.length})`}
           </Button>
           <CSVImportDialog onDone={() => refetch()} />
           <CreateStudentDialog />

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, ChevronDown, ChevronRight, Save, X, RefreshCw } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Save, X, RefreshCw, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,9 @@ import {
   useUpsertIncompleteStorySet, useDeleteIncompleteStorySet, useUpsertIncompleteStory, useDeleteIncompleteStory,
   useAdminPlanningTaskSets, useUpsertPlanningTaskSet, useDeletePlanningTaskSet, useUpsertPlanningTask, useDeletePlanningTask,
   useAdminGroupDiscussionSets, useUpsertGroupDiscussionSet, useDeleteGroupDiscussionSet, useUpsertGroupDiscussionTask, useDeleteGroupDiscussionTask,
+  useReorderIQSets, useReorderWATSets, useReorderISTSets, useReorderExtemporeSets,
+  useReorderPPDTSets, useReorderPictureStorySets, useReorderIncompleteStorySets,
+  useReorderPlanningTaskSets, useReorderGroupDiscussionSets,
 } from "@/hooks/useISSBAdmin";
 import type {
   IQSet, IQQuestion, IQOption,
@@ -36,6 +39,54 @@ import type {
 } from "@/lib/issb/types";
 
 const uid = () => Math.random().toString(36).slice(2, 10);
+
+// ─── Drag-sort hook ───────────────────────────────────────────
+
+function useDragSort<T extends { id: string }>(
+  serverItems: T[],
+  onReorder: (items: { id: string; order_index: number }[]) => void
+) {
+  const [items, setItems] = useState<T[]>(serverItems);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const dragIdx = useRef<number | null>(null);
+  const currentItems = useRef<T[]>(serverItems);
+  const onReorderRef = useRef(onReorder);
+  onReorderRef.current = onReorder;
+
+  useEffect(() => {
+    setItems(serverItems);
+    currentItems.current = serverItems;
+  }, [serverItems]);
+
+  function handleDragStart(i: number) {
+    dragIdx.current = i;
+    setDragId(currentItems.current[i]?.id ?? null);
+  }
+
+  function handleDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    if (dragIdx.current === null || dragIdx.current === i) return;
+    const next = [...currentItems.current];
+    const [moved] = next.splice(dragIdx.current, 1);
+    next.splice(i, 0, moved);
+    dragIdx.current = i;
+    currentItems.current = next;
+    setItems(next);
+  }
+
+  function handleDrop() {
+    dragIdx.current = null;
+    setDragId(null);
+    onReorderRef.current(currentItems.current.map((s, i) => ({ id: s.id, order_index: i })));
+  }
+
+  function handleDragEnd() {
+    dragIdx.current = null;
+    setDragId(null);
+  }
+
+  return { items, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd };
+}
 
 // ─── Shared helpers ───────────────────────────────────────────
 
@@ -74,6 +125,7 @@ function SetHeader({
 }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
+      <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground/40 hover:text-muted-foreground/70 active:cursor-grabbing" />
       <button onClick={onToggle} className="flex flex-1 items-center gap-2 text-left">
         {expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
         <span className="font-medium text-foreground">{title}</span>
@@ -96,7 +148,11 @@ function IQTab() {
   const deleteSet = useDeleteIQSet();
   const upsertQ = useUpsertIQQuestion();
   const deleteQ = useDeleteIQQuestion();
+  const reorder = useReorderIQSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন IQ সেট", timer_seconds: 300, is_published: true });
@@ -109,13 +165,16 @@ function IQTab() {
         <p className="text-sm text-muted-foreground">প্রতিটি সেটে MCQ প্রশ্ন যোগ করুন। সঠিক উত্তর চিহ্নিত করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <IQSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertQ={upsertQ} deleteQ={deleteQ} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <IQSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertQ={upsertQ} deleteQ={deleteQ} />
+        </div>
       ))}
-      {sets.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">কোনো IQ সেট নেই। উপরে যোগ করুন।</p>}
+      {localSets.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">কোনো IQ সেট নেই। উপরে যোগ করুন।</p>}
     </div>
   );
 }
@@ -263,7 +322,11 @@ function WATTab() {
   const { data: sets = [] } = useAdminWATSets();
   const upsert = useUpsertWATSet();
   const del = useDeleteWATSet();
+  const reorder = useReorderWATSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsert.mutateAsync({ title: "নতুন WAT সেট", words: [], word_seconds: 10, is_published: true });
@@ -276,11 +339,14 @@ function WATTab() {
         <p className="text-sm text-muted-foreground">প্রতিটি শব্দের জন্য সময় সেট করুন। শব্দগুলি একটি একটি করে দেখানো হবে।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <WATSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await del.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsert={upsert} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <WATSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await del.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsert={upsert} />
+        </div>
       ))}
     </div>
   );
@@ -347,7 +413,11 @@ function ISTTab() {
   const deleteSet = useDeleteISTSet();
   const upsertS = useUpsertISTSentence();
   const deleteS = useDeleteISTSentence();
+  const reorder = useReorderISTSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন IST সেট", timer_seconds: 300, is_published: true });
@@ -360,11 +430,14 @@ function ISTTab() {
         <p className="text-sm text-muted-foreground">অসম্পূর্ণ বাক্যের stem ও example উত্তর যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <ISTSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertS={upsertS} deleteS={deleteS} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <ISTSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertS={upsertS} deleteS={deleteS} />
+        </div>
       ))}
     </div>
   );
@@ -467,7 +540,11 @@ function ExtemporeTab() {
   const deleteSet = useDeleteExtemporeSet();
   const upsertT = useUpsertExtemporeTopic();
   const deleteT = useDeleteExtemporeTopic();
+  const reorder = useReorderExtemporeSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন Essay Writing সেট", timer_seconds: 1500, is_published: true });
@@ -480,11 +557,14 @@ function ExtemporeTab() {
         <p className="text-sm text-muted-foreground">প্রতিটি topic-এ hint, model points ও model essay যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <ExtemporeSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <ExtemporeSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+        </div>
       ))}
     </div>
   );
@@ -624,7 +704,11 @@ function PPDTSection() {
   const deleteSet = useDeletePPDTSet();
   const upsertP = useUpsertPPDTPicture();
   const deleteP = useDeletePPDTPicture();
+  const reorder = useReorderPPDTSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন PPDT সেট", observe_seconds: 30, write_seconds: 270, is_published: true });
@@ -637,12 +721,15 @@ function PPDTSection() {
         <p className="text-sm text-muted-foreground">প্রতিটি সেটে ছবি আপলোড করুন। পর্যবেক্ষণ ও লেখার সময় সেট করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <PictureSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); }}
-          tablePrefix="ppdt" upsertSet={upsertSet} upsertP={upsertP} deleteP={deleteP}
-          pictures={(s.ppdt_pictures ?? []).sort((a, b) => a.order_index - b.order_index)} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <PictureSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); }}
+            tablePrefix="ppdt" upsertSet={upsertSet} upsertP={upsertP} deleteP={deleteP}
+            pictures={(s.ppdt_pictures ?? []).sort((a, b) => a.order_index - b.order_index)} />
+        </div>
       ))}
     </div>
   );
@@ -654,7 +741,11 @@ function PictureStorySection() {
   const deleteSet = useDeletePictureStorySet();
   const upsertP = useUpsertPictureStoryPicture();
   const deleteP = useDeletePictureStoryPicture();
+  const reorder = useReorderPictureStorySets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন Picture Story সেট", observe_seconds: 30, write_seconds: 60, is_published: true });
@@ -667,12 +758,15 @@ function PictureStorySection() {
         <p className="text-sm text-muted-foreground">Picture Story সেটে ছবি ও idea যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <PictureSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); }}
-          tablePrefix="picture_story" upsertSet={upsertSet} upsertP={upsertP} deleteP={deleteP}
-          pictures={(s.picture_story_pictures ?? []).sort((a, b) => a.order_index - b.order_index)} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <PictureSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); }}
+            tablePrefix="picture_story" upsertSet={upsertSet} upsertP={upsertP} deleteP={deleteP}
+            pictures={(s.picture_story_pictures ?? []).sort((a, b) => a.order_index - b.order_index)} />
+        </div>
       ))}
     </div>
   );
@@ -810,7 +904,11 @@ function IncompleteStoryTab() {
   const deleteSet = useDeleteIncompleteStorySet();
   const upsertS = useUpsertIncompleteStory();
   const deleteS = useDeleteIncompleteStory();
+  const reorder = useReorderIncompleteStorySets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন গল্প সেট", is_published: true });
@@ -823,11 +921,14 @@ function IncompleteStoryTab() {
         <p className="text-sm text-muted-foreground">অসম্পূর্ণ গল্পের body, word limit ও idea যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <IncompleteStorySetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertS={upsertS} deleteS={deleteS} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <IncompleteStorySetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertS={upsertS} deleteS={deleteS} />
+        </div>
       ))}
     </div>
   );
@@ -943,7 +1044,11 @@ function GroupDiscussionTab() {
   const deleteSet = useDeleteGroupDiscussionSet();
   const upsertT = useUpsertGroupDiscussionTask();
   const deleteT = useDeleteGroupDiscussionTask();
+  const reorder = useReorderGroupDiscussionSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন গ্রুপ ডিসকাশন সেট", is_published: true });
@@ -956,11 +1061,14 @@ function GroupDiscussionTab() {
         <p className="text-sm text-muted-foreground">গ্রুপ ডিসকাশনের ছবি, শিরোনাম ও বিবরণ যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <GroupDiscussionSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <GroupDiscussionSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+        </div>
       ))}
     </div>
   );
@@ -1072,7 +1180,11 @@ function PlanningTab() {
   const deleteSet = useDeletePlanningTaskSet();
   const upsertT = useUpsertPlanningTask();
   const deleteT = useDeletePlanningTask();
+  const reorder = useReorderPlanningTaskSets();
   const [expanded, setExpanded] = useState<string | null>(null);
+  const { items: localSets, dragId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } = useDragSort(
+    sets, (ordered) => { reorder.mutateAsync(ordered); toast.success("ক্রম সংরক্ষিত হয়েছে"); }
+  );
 
   async function addSet() {
     await upsertSet.mutateAsync({ title: "নতুন প্ল্যানিং সেট", is_published: true });
@@ -1085,11 +1197,14 @@ function PlanningTab() {
         <p className="text-sm text-muted-foreground">প্ল্যানিং টাস্কের ছবি, শিরোনাম ও বিবরণ যোগ করুন।</p>
         <Button size="sm" onClick={addSet}><Plus className="mr-2 h-4 w-4" /> সেট যোগ</Button>
       </div>
-      {sets.map((s) => (
-        <PlanningSetCard key={s.id} set={s} expanded={expanded === s.id}
-          onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
-          onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
-          upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+      {localSets.map((s, i) => (
+        <div key={s.id} draggable onDragStart={() => handleDragStart(i)} onDragOver={(e) => handleDragOver(e, i)} onDrop={handleDrop} onDragEnd={handleDragEnd}
+          style={{ opacity: dragId === s.id ? 0.4 : 1, transition: "opacity 0.15s" }}>
+          <PlanningSetCard set={s} expanded={expanded === s.id}
+            onToggle={() => setExpanded(expanded === s.id ? null : s.id)}
+            onDelete={async () => { await deleteSet.mutateAsync(s.id); toast.success("মুছে ফেলা হয়েছে"); }}
+            upsertSet={upsertSet} upsertT={upsertT} deleteT={deleteT} />
+        </div>
       ))}
     </div>
   );

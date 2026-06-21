@@ -286,3 +286,31 @@ export const useUpsertPlanningTask = upsertMutation<Partial<PlanningTask>>(
   (t) => ({ set_id: t.set_id, heading: t.heading ?? "", body: t.body ?? "", image_url: t.image_url ?? "", idea: t.idea ?? "", order_index: t.order_index ?? 0 })
 );
 export const useDeletePlanningTask = deleteMutation("planning_tasks", "admin_planning_sets");
+
+// ─── Reorder sets (batch order_index update) ──────────────────
+
+function reorderMutation(table: string, queryKey: string) {
+  return function useReorder() {
+    const qc = useQueryClient();
+    return useMutation({
+      mutationFn: async (items: { id: string; order_index: number }[]) => {
+        await Promise.all(
+          items.map(({ id, order_index }) =>
+            supabase.from(table).update({ order_index }).eq("id", id)
+          )
+        );
+      },
+      onSuccess: () => qc.invalidateQueries({ queryKey: [queryKey] }),
+    });
+  };
+}
+
+export const useReorderIQSets             = reorderMutation("iq_sets",               "admin_iq_sets");
+export const useReorderWATSets            = reorderMutation("wat_sets",              "admin_wat_sets");
+export const useReorderISTSets            = reorderMutation("ist_sets",              "admin_ist_sets");
+export const useReorderExtemporeSets      = reorderMutation("extempore_sets",        "admin_extempore_sets");
+export const useReorderPPDTSets           = reorderMutation("ppdt_sets",             "admin_ppdt_sets");
+export const useReorderPictureStorySets   = reorderMutation("picture_story_sets",    "admin_picture_story_sets");
+export const useReorderIncompleteStorySets= reorderMutation("incomplete_story_sets", "admin_incomplete_story_sets");
+export const useReorderPlanningTaskSets   = reorderMutation("planning_sets",         "admin_planning_sets");
+export const useReorderGroupDiscussionSets= reorderMutation("group_discussion_sets", "admin_group_discussion_sets");

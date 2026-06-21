@@ -9,7 +9,6 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { useProduct } from "@/hooks/useProducts";
-import { useAuth } from "@/hooks/useAuth";
 import { t } from "@/lib/strings";
 
 function formatBnNumber(n: number): string {
@@ -28,7 +27,6 @@ export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: product, isLoading } = useProduct(id);
-  const { user } = useAuth();
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightbox, setLightbox] = useState(false);
 
@@ -209,19 +207,12 @@ export default function ProductDetail() {
                   className="w-full bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base rounded-xl"
                   onClick={() => {
                     const price = product.discount_price ?? product.price ?? 0;
-                    const url = `/checkout?productId=${encodeURIComponent(product.id)}&productName=${encodeURIComponent(product.name)}&price=${price}`;
-                    if (!user) { navigate(`/login?redirect=${encodeURIComponent(url)}`); return; }
-                    navigate(url);
+                    navigate(`/checkout?productId=${encodeURIComponent(product.id)}&productName=${encodeURIComponent(product.name)}&price=${price}`);
                   }}
                 >
                   <ShoppingBag className="mr-2 h-5 w-5" />
                   {t.productDetail.orderNow}
                 </Button>
-                {!user && (
-                  <p className="text-center text-xs text-muted-foreground">
-                    অর্ডার করতে <Link to="/login" className="text-accent hover:underline">লগইন করুন</Link>
-                  </p>
-                )}
               </div>
 
               {/* Delivery & contact */}

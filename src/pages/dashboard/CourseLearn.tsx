@@ -15,6 +15,7 @@ import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
 import { getEmbedUrl } from "@/lib/video";
+import { BunnyVideoPlayer } from "@/components/BunnyVideoPlayer";
 import { isLessonFree } from "@/lib/courses/types";
 import type { Course, LessonType, Lesson, Module } from "@/lib/courses/types";
 import { ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
@@ -287,7 +288,15 @@ function LearnContent({
               </div>
             </div>
           ) : lesson.type === "video" ? (
-            <VideoPlayer url={lesson.video_url} />
+            lesson.bunny_video_id ? (
+              <BunnyVideoPlayer
+                videoId={lesson.bunny_video_id}
+                courseId={course.id}
+                courseSlug={course.slug}
+              />
+            ) : (
+              <VideoPlayer url={lesson.video_url} />
+            )
           ) : lesson.type === "pdf" ? (
             <PdfViewer url={lesson.pdf_url} />
           ) : (

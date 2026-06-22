@@ -10,6 +10,7 @@ export interface Lesson {
   isPreview?: boolean; // legacy free-preview flag
   isFree?: boolean; // viewable without enrollment
   video_url?: string; // YouTube/Vimeo link (type: video)
+  bunny_video_id?: string; // Bunny Stream video GUID (type: video)
   pdf_url?: string; // uploaded PDF public URL (type: pdf)
   content?: string; // TipTap HTML (type: text / quiz / assignment)
 }

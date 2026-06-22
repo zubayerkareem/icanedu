@@ -52,7 +52,7 @@ function baseLayout(content: string) {
     <div class="body">${content}</div>
     <div class="footer">
       iCANBD Academy &bull; Farmgate, Dhaka &bull;
-      <a href="https://icanbd.com" style="color:#16a34a;">icanbd.com</a>
+      <a href="https://www.icanbd.com" style="color:#16a34a;">icanbd.com</a>
     </div>
   </div>
 </body>
@@ -74,7 +74,7 @@ function purchaseTemplate(data: { name: string; productName: string; orderType: 
         <p><strong>স্ট্যাটাস:</strong> কনফার্ম ✅</p>
       </div>
       <p>${data.orderType === "course" ? "আপনার কোর্স এখন অ্যাক্সেসযোগ্য।" : "আপনার পণ্য শীঘ্রই পাঠানো হবে।"}</p>
-      <a href="https://icanbd.com/dashboard" class="btn">ড্যাশবোর্ড দেখুন</a>
+      <a href="https://www.icanbd.com/dashboard" class="btn">ড্যাশবোর্ড দেখুন</a>
     `),
   };
 }
@@ -91,7 +91,7 @@ function shippedTemplate(data: { name: string; productName: string }) {
         <p><strong>স্ট্যাটাস:</strong> পাঠানো হয়েছে 📦</p>
       </div>
       <p>কোনো সমস্যা হলে আমাদের সাথে যোগাযোগ করুন।</p>
-      <a href="https://icanbd.com/dashboard/orders" class="btn">অর্ডার দেখুন</a>
+      <a href="https://www.icanbd.com/dashboard/orders" class="btn">অর্ডার দেখুন</a>
     `),
   };
 }
@@ -112,7 +112,7 @@ function orderReceivedTemplate(data: { name: string; productName: string; orderT
         <p><strong>স্ট্যাটাস:</strong> যাচাই হচ্ছে ⏳</p>
       </div>
       <p>সাধারণত ২৪ ঘণ্টার মধ্যে পেমেন্ট যাচাই করা হয়। কোনো সমস্যা হলে আমাদের সাথে যোগাযোগ করুন।</p>
-      <a href="https://icanbd.com/dashboard" class="btn">ড্যাশবোর্ড দেখুন</a>
+      <a href="https://www.icanbd.com/dashboard" class="btn">ড্যাশবোর্ড দেখুন</a>
     `),
   };
 }
@@ -128,7 +128,7 @@ function noticeTemplate(data: { title: string; content: string }) {
         <p><strong>${data.title}</strong></p>
         <p>${plain}${data.content.length > 300 ? "..." : ""}</p>
       </div>
-      <a href="https://icanbd.com/notices" class="btn">সম্পূর্ণ নোটিশ দেখুন</a>
+      <a href="https://www.icanbd.com/notices" class="btn">সম্পূর্ণ নোটিশ দেখুন</a>
     `),
   };
 }

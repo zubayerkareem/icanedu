@@ -59,6 +59,7 @@ import MyOrders from "./pages/dashboard/MyOrders";
 import Profile from "./pages/dashboard/Profile";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
+import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { useSetting } from "@/hooks/useSiteSettings";
 import AdminSettings from "./pages/admin/Settings";
 import AdminHome from "./pages/admin/AdminHome";
@@ -80,6 +81,12 @@ function GATracker() {
   return null;
 }
 
+function MetaPixelTracker() {
+  const pixelId = useSetting("meta_pixel_id");
+  useMetaPixel(pixelId);
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
@@ -92,6 +99,7 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <GATracker />
+            <MetaPixelTracker />
             <Routes>
               {/* Public site */}
               <Route element={<PublicLayout />}>

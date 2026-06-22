@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ShoppingBag, BookOpen, Truck, Copy, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { sendOrderReceivedEmail } from "@/lib/email";
+import { trackEvent } from "@/lib/meta";
 
 const BKASH_NUMBER = "01894734002";
 
@@ -48,6 +49,18 @@ export default function Checkout() {
   const itemName    = params.get(isCourse ? "courseName" : "productName") ?? (isCourse ? "কোর্স" : "পণ্য");
   const itemPrice   = Number(params.get("price") ?? 0);
   const couponCode  = params.get("coupon") ?? null;
+
+  useEffect(() => {
+    if (!itemId) return;
+    trackEvent("InitiateCheckout", {
+      content_ids: [itemId],
+      content_name: itemName,
+      content_type: "product",
+      currency: "BDT",
+      value: itemPrice,
+      num_items: 1,
+    });
+  }, [itemId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [name,       setName]       = useState("");
   const [phone,      setPhone]      = useState("");
@@ -105,6 +118,15 @@ export default function Checkout() {
       toast.error("অর্ডার সম্পন্ন হয়নি: " + error.message);
       return;
     }
+
+    trackEvent("Purchase", {
+      content_ids: [itemId],
+      content_name: itemName,
+      content_type: "product",
+      currency: "BDT",
+      value: total,
+      num_items: 1,
+    });
 
     if (isCourse && couponCode && itemId) {
       supabase.rpc("increment_coupon_use", {

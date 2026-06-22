@@ -40,6 +40,7 @@ import { useCourse, useRelatedCourses } from "@/hooks/useCourse";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { getEmbedUrl } from "@/lib/video";
+import { trackEvent } from "@/lib/meta";
 import { t } from "@/lib/strings";
 import { isLessonFree, ISSB_ELEMENT_DEFS } from "@/lib/courses/types";
 import type { Course, CourseVideo, LessonType, Module, Coupon } from "@/lib/courses/types";
@@ -131,6 +132,17 @@ export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { data: course, isLoading } = useCourse(id);
   const { data: related = [] } = useRelatedCourses(course);
+
+  useEffect(() => {
+    if (!course) return;
+    trackEvent("ViewContent", {
+      content_ids: [course.id],
+      content_name: course.title,
+      content_type: "product",
+      currency: "BDT",
+      value: course.discount_price ?? course.price ?? 0,
+    });
+  }, [course?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) return <CourseHeroSkeleton />;
 
@@ -349,7 +361,16 @@ function CourseHero({ course }: { course: Course }) {
                   className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
                   asChild
                 >
-                  <Link to={buyHref}>
+                  <Link
+                    to={buyHref}
+                    onClick={() => trackEvent("AddToCart", {
+                      content_ids: [course.id],
+                      content_name: course.title,
+                      content_type: "product",
+                      currency: "BDT",
+                      value: finalPrice,
+                    })}
+                  >
                     {course.price && course.price > 0
                       ? t.courseDetail.buyNow
                       : t.courseDetail.enroll}

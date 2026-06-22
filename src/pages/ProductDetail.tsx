@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ShoppingBag, Truck, Phone, ChevronLeft, PackageX, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { useProduct } from "@/hooks/useProducts";
+import { trackEvent } from "@/lib/meta";
 import { t } from "@/lib/strings";
 
 function formatBnNumber(n: number): string {
@@ -29,6 +30,17 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useProduct(id);
   const [activeIdx, setActiveIdx] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+
+  useEffect(() => {
+    if (!product) return;
+    trackEvent("ViewContent", {
+      content_ids: [product.id],
+      content_name: product.name,
+      content_type: "product",
+      currency: "BDT",
+      value: product.discount_price ?? product.price ?? 0,
+    });
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const gallery = (() => {
     const primary = product?.image_url ? [product.image_url] : [];
@@ -207,6 +219,13 @@ export default function ProductDetail() {
                   className="w-full bg-accent text-accent-foreground hover:bg-accent/90 h-12 text-base rounded-xl"
                   onClick={() => {
                     const price = product.discount_price ?? product.price ?? 0;
+                    trackEvent("AddToCart", {
+                      content_ids: [product.id],
+                      content_name: product.name,
+                      content_type: "product",
+                      currency: "BDT",
+                      value: price,
+                    });
                     navigate(`/checkout?productId=${encodeURIComponent(product.id)}&productName=${encodeURIComponent(product.name)}&price=${price}`);
                   }}
                 >

@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -23,6 +25,8 @@ export default function Login() {
     ?? (location.state as { from?: string } | null)?.from
     ?? "/dashboard";
 
+  const { blocked, clearBlocked } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,6 +45,7 @@ export default function Login() {
       return;
     }
     setErrors({});
+    clearBlocked();
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: parsed.data.email,
@@ -78,6 +83,18 @@ export default function Login() {
         </>
       }
     >
+      {blocked && (
+        <div className="mb-4 flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div>
+            <p className="font-semibold">অ্যাক্সেস ব্লক করা হয়েছে</p>
+            <p className="mt-0.5 text-destructive/80">
+              এই অ্যাকাউন্টটি অন্য একটি ডিভাইসে সক্রিয় আছে। লগইন করতে আমাদের সাথে যোগাযোগ করুন।
+            </p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="space-y-1.5">
           <Label htmlFor="email">{t.auth.email}</Label>

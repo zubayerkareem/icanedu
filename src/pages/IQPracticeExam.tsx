@@ -166,10 +166,12 @@ function ResultScreen({
   set,
   answers,
   courseId,
+  onRetake,
 }: {
   set: IQSet;
   answers: Record<string, string>;
   courseId: string;
+  onRetake: () => void;
 }) {
   const score = set.questions.filter((q) => answers[q.id] === q.correct).length;
   const total = set.questions.length;
@@ -297,9 +299,14 @@ function ResultScreen({
         })}
       </div>
 
-      <Button asChild>
-        <Link to={`/courses/${courseId}/iq-practice`}>সব সেট দেখুন</Link>
-      </Button>
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button variant="outline" onClick={onRetake}>
+          আবার পরীক্ষা দিন
+        </Button>
+        <Button asChild>
+          <Link to={`/courses/${courseId}/iq-practice`}>সব সেট দেখুন</Link>
+        </Button>
+      </div>
     </div>
   );
 }
@@ -430,6 +437,22 @@ export default function IQPracticeExam() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitted]); // ← ONLY submitted — endTimeRef is never reset mid-exam
 
+  const handleRetake = useCallback(() => {
+    if (!set) return;
+    // Reset refs synchronously before submitted flips — timer effect reads these on next run
+    timeLeftRef.current = set.timerSeconds;
+    answersRef.current = {};
+    autoSubmitRef.current = false;
+    // Clear persisted progress so next page load also starts fresh
+    saveProgress(courseId, setId, { answers: {}, timeLeft: set.timerSeconds, completed: false });
+    // Reset state — setting submitted last triggers the useEffect to restart the timer
+    setAnswers({});
+    setCurrentQ(0);
+    setSkipped(new Set());
+    setTimeLeft(set.timerSeconds);
+    setSubmitted(false);
+  }, [courseId, setId, set]);
+
   const handleSelect = useCallback((optionId: string) => {
     if (!set) return;
     const qId = set.questions[currentQ].id;
@@ -495,6 +518,7 @@ export default function IQPracticeExam() {
             set={set}
             answers={answers}
             courseId={courseId}
+            onRetake={handleRetake}
           />
         ) : (
           <>

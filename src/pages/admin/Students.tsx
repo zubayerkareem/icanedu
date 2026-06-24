@@ -4,7 +4,7 @@ import {
   Users, Search, RefreshCw, ShieldCheck, GraduationCap, Trash2,
   KeyRound, BookOpen, ChevronDown, ChevronRight, Plus, Ban,
   CalendarDays, UserPlus, Save, Eye, EyeOff, X, Upload, FileText,
-  CheckCircle2, XCircle, BookOpenCheck, Download,
+  CheckCircle2, XCircle, BookOpenCheck, Download, MonitorX,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -29,7 +29,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useStudents, useDeleteStudent, useResetStudentPassword } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices } from "@/hooks/useStudents";
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
@@ -669,6 +669,7 @@ export default function AdminStudents() {
   const { data: students = [], isLoading, error, refetch } = useStudents();
   const deleteStudent = useDeleteStudent();
   const resetPassword = useResetStudentPassword();
+  const clearDevices = useAdminClearDevices();
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
@@ -1080,6 +1081,21 @@ export default function AdminStudents() {
                   {/* Actions — stop propagation so clicks don't toggle expand */}
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <SetPasswordDialog userId={s.id} name={s.full_name} />
+                    <Button
+                      variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20"
+                      title="ডিভাইস ক্লিয়ার করুন"
+                      disabled={clearDevices.isPending}
+                      onClick={async () => {
+                        try {
+                          await clearDevices.mutateAsync(s.id);
+                          toast.success(`${s.full_name ?? "ব্যবহারকারীর"} ডিভাইস ক্লিয়ার হয়েছে`);
+                        } catch {
+                          toast.error("ডিভাইস ক্লিয়ার ব্যর্থ হয়েছে");
+                        }
+                      }}
+                    >
+                      <MonitorX className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
                       title="মুছুন"

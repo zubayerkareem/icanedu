@@ -66,6 +66,17 @@ export function useDeleteStudent() {
   });
 }
 
+export function useAdminClearDevices() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.rpc("admin_clear_device_token", { p_user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),
+  });
+}
+
 export function useResetStudentPassword() {
   return useMutation({
     mutationFn: async (userId: string) => {

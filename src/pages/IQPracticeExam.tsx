@@ -341,6 +341,10 @@ export default function IQPracticeExam() {
   const timeLeftRef    = useRef(timeLeft);
   const endTimeRef     = useRef<number>(Date.now() + timeLeft * 1000);
   const autoSubmitRef  = useRef(false);
+  // Updated synchronously on every render — cleanup reads this to avoid
+  // overwriting completed: true with completed: false after submission
+  const submittedRef   = useRef(submitted);
+  submittedRef.current = submitted;
 
   // Keep refs in sync with state
   useEffect(() => { answersRef.current = answers; }, [answers]);
@@ -413,11 +417,15 @@ export default function IQPracticeExam() {
     return () => {
       clearInterval(timerRef.current!);
       document.removeEventListener("visibilitychange", onVisible);
-      saveProgress(courseId, setId, {
-        answers: answersRef.current,
-        timeLeft: timeLeftRef.current,
-        completed: false,
-      });
+      // Only persist mid-exam state — skip if already submitted so we don't
+      // overwrite completed: true with completed: false
+      if (!submittedRef.current) {
+        saveProgress(courseId, setId, {
+          answers: answersRef.current,
+          timeLeft: timeLeftRef.current,
+          completed: false,
+        });
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitted]); // ← ONLY submitted — endTimeRef is never reset mid-exam

@@ -1,9 +1,9 @@
-import { Link, useParams } from "react-router-dom";
-import { CheckCircle2, Clock, Lock, PlayCircle, ShoppingCart } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { CheckCircle2, Clock, Lock, PlayCircle, RotateCcw, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IQ_SETS } from "@/lib/iq-practice/mock";
-import { loadProgress } from "@/hooks/useIQProgress";
+import { clearProgress, loadProgress } from "@/hooks/useIQProgress";
 import { useIQSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useCourse } from "@/hooks/useCourse";
@@ -16,6 +16,7 @@ function formatTime(seconds: number) {
 
 export default function IQPracticeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: course } = useCourse(courseId);
   const { data: dbSets = [] } = useIQSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
@@ -130,9 +131,18 @@ export default function IQPracticeHome() {
                           </Link>
                         </Button>
                       ) : isCompleted ? (
-                        <Button variant="outline" size="sm" disabled>
-                          <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> সম্পন্ন
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              clearProgress(courseId, set.id);
+                              navigate(`/courses/${courseId}/iq-practice/${set.id}`);
+                            }}
+                          >
+                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> আবার পরীক্ষা দিন
+                          </Button>
+                        </div>
                       ) : isInProgress ? (
                         <Button size="sm" asChild>
                           <Link to={`/courses/${courseId}/iq-practice/${set.id}`}>

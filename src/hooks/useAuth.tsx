@@ -88,16 +88,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (newSession?.user) {
         if (event === "SIGNED_IN") {
-          // ── "First device wins" check ──────────────────────────────────────
-          // Run inside setTimeout to avoid Supabase's re-entrant call warning
+          // ── "First device wins" check (admins are fully exempt) ────────────
           setTimeout(async () => {
-            const { data: p, error: checkErr } = await supabase
-              .from("profiles")
-              .select("device_token")
-              .eq("id", newSession.user.id)
-              .maybeSingle();
+            // Fetch role and device_token together before deciding anything
+            const [{ data: p, error: pErr }, { data: r }] = await Promise.all([
+              supabase
+                .from("profiles")
+                .select("device_token")
+                .eq("id", newSession.user.id)
+                .maybeSingle(),
+              supabase.from("user_roles").select("role").eq("user_id", newSession.user.id),
+            ]);
 
-            if (!checkErr) {
+            const isAdmin = (r as { role: string }[] | null)?.some((x) => x.role === "admin") ?? false;
+
+            if (!isAdmin && !pErr) {
               const existingToken = (p as { device_token?: string | null } | null)?.device_token;
               const myLocalToken  = localStorage.getItem(DT_KEY);
 
@@ -109,15 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // No active device (or same device re-logging in) → claim the session
-            const token = crypto.randomUUID();
-            localStorage.setItem(DT_KEY, token);
-            const { error: writeErr } = await supabase
-              .from("profiles")
-              .update({ device_token: token })
-              .eq("id", newSession.user.id);
-
-            if (writeErr) localStorage.removeItem(DT_KEY); // column not migrated — fail open
+            // Admin OR no active device (or same device re-logging in) → claim the session
+            if (!isAdmin) {
+              const token = crypto.randomUUID();
+              localStorage.setItem(DT_KEY, token);
+              const { error: writeErr } = await supabase
+                .from("profiles")
+                .update({ device_token: token })
+                .eq("id", newSession.user.id);
+              if (writeErr) localStorage.removeItem(DT_KEY);
+            }
 
             await loadProfileAndRole(newSession.user.id);
           }, 0);

@@ -106,10 +106,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const existingToken = (p as { device_token?: string | null } | null)?.device_token;
               const myLocalToken  = localStorage.getItem(DT_KEY);
 
-              // Another device already owns this account → block this login
+              // Another device already owns this account → block this login.
+              // Use scope:'local' so only this device's client session is cleared.
+              // scope:'global' (the default) revokes ALL server sessions including
+              // the active device's, which would incorrectly kick Device 1 out.
               if (existingToken && existingToken !== myLocalToken) {
                 setBlocked(true);
-                await supabase.auth.signOut();
+                await supabase.auth.signOut({ scope: "local" });
                 return;
               }
 

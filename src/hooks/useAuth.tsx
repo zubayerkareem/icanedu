@@ -112,9 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await supabase.auth.signOut();
                 return;
               }
+
+              // This device already owns the session — no need to regenerate the token.
+              // Regenerating causes a race window where localStorage has the new token
+              // but the DB hasn't been updated yet, causing other tabs to falsely kick the user.
+              if (existingToken && existingToken === myLocalToken) {
+                await loadProfileAndRole(newSession.user.id);
+                return;
+              }
             }
 
-            // Admin OR no active device (or same device re-logging in) → claim the session
+            // Admin OR no active device → claim the session with a new token
             if (!isAdmin) {
               const token = crypto.randomUUID();
               localStorage.setItem(DT_KEY, token);
@@ -122,7 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .from("profiles")
                 .update({ device_token: token })
                 .eq("id", newSession.user.id);
-              if (writeErr) localStorage.removeItem(DT_KEY);
+              if (writeErr) {
+                localStorage.removeItem(DT_KEY);
+                await supabase.auth.signOut();
+                return;
+              }
             }
 
             await loadProfileAndRole(newSession.user.id);

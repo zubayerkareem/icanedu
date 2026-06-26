@@ -532,11 +532,21 @@ export default function CourseEditor() {
                     {/* type-conditional content */}
                     <div className="mt-2">
                       {l.type === "video" && (
-                        <Input
-                          value={l.video_url ?? ""}
-                          onChange={(e) => setLesson(mi, li, { video_url: e.target.value })}
-                          placeholder="https://youtube.com/watch?v=... বা https://vimeo.com/..."
-                        />
+                        <div className="space-y-2">
+                          <Input
+                            value={l.bunny_video_id ?? ""}
+                            onChange={(e) => setLesson(mi, li, { bunny_video_id: e.target.value })}
+                            placeholder="Bunny Video ID — e.g. a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                          />
+                          <p className="px-1 text-[10px] text-muted-foreground">
+                            Bunny Video ID থাকলে সেটি ব্যবহৃত হবে। না থাকলে নিচের YouTube/Vimeo URL ব্যবহৃত হবে।
+                          </p>
+                          <Input
+                            value={l.video_url ?? ""}
+                            onChange={(e) => setLesson(mi, li, { video_url: e.target.value })}
+                            placeholder="YouTube/Vimeo URL — https://youtube.com/watch?v=..."
+                          />
+                        </div>
                       )}
                       {l.type === "pdf" && (
                         <FileUpload value={l.pdf_url} onChange={(url) => setLesson(mi, li, { pdf_url: url })} />

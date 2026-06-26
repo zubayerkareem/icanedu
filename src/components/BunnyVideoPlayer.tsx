@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -8,25 +8,29 @@ interface Props {
   courseSlug?: string;
 }
 
-// 5 positions scattered across the video frame so no crop hides all marks
+// 9 positions in a 3×3 grid, odd rows offset right — survives any crop region
 const POSITIONS: React.CSSProperties[] = [
-  { top: "12%",  left: "8%" },
-  { top: "12%",  right: "8%" },
-  { top: "47%",  left: "28%" },
-  { top: "73%",  left: "8%" },
-  { top: "73%",  right: "8%" },
+  { top:  "8%", left:  "4%" },
+  { top:  "8%", left: "38%" },
+  { top:  "8%", right: "4%" },
+  { top: "44%", left: "18%" },
+  { top: "44%", right: "18%" },
+  { top: "78%", left:  "4%" },
+  { top: "78%", left: "38%" },
+  { top: "78%", right: "4%" },
+  { top: "26%", left: "62%" },
 ];
 
 const MARK_STYLE: React.CSSProperties = {
   position: "absolute",
   color: "white",
-  opacity: 0.22,
-  fontSize: "13px",
+  opacity: 0.28,
+  fontSize: "12px",
   fontWeight: 700,
   transform: "rotate(-18deg)",
   whiteSpace: "nowrap",
-  textShadow: "0 1px 4px rgba(0,0,0,0.95)",
-  letterSpacing: "0.03em",
+  textShadow: "0 0 6px rgba(0,0,0,1), 0 1px 3px rgba(0,0,0,0.9)",
+  letterSpacing: "0.04em",
   pointerEvents: "none",
   userSelect: "none",
 };
@@ -35,11 +39,20 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
   const { profile, user } = useAuth();
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
+  // Session date stamped at load time — helps identify when a pirated recording was made
+  const sessionDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "-");
   const watermarkText =
     profile?.full_name
-      ? `${profile.full_name} · ${user?.email ?? ""}`
-      : (user?.email ?? "");
+      ? `${profile.full_name} · ${user?.email ?? ""} · ${sessionDate}`
+      : `${user?.email ?? ""} · ${sessionDate}`;
+
+  const retry = useCallback(() => {
+    setError(false);
+    setEmbedUrl(null);
+    setRetryCount((n) => n + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +80,7 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
 
     void load();
     return () => { cancelled = true; };
-  }, [videoId, courseId, courseSlug]);
+  }, [videoId, courseId, courseSlug, retryCount]);
 
   return (
     <div
@@ -81,10 +94,16 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error state with retry */}
       {error && (
-        <div className="absolute inset-0 flex items-center justify-center text-sm text-white/50">
-          ভিডিও লোড করা যায়নি
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <p className="text-sm text-white/50">ভিডিও লোড করা যায়নি</p>
+          <button
+            onClick={retry}
+            className="rounded-md border border-white/20 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10"
+          >
+            আবার চেষ্টা করুন
+          </button>
         </div>
       )}
 
@@ -100,7 +119,7 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
             title="lesson video"
           />
 
-          {/* Tiled watermark — visible on screen recordings */}
+          {/* Tiled identity watermark — persists in screen recordings for piracy tracing */}
           {watermarkText && (
             <div
               style={{

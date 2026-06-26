@@ -10,6 +10,7 @@ import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
 import { getEmbedUrl, extractYouTubeId } from "@/lib/video";
+import { BunnyVideoPlayer } from "@/components/BunnyVideoPlayer";
 import { useEffect, useRef } from "react";
 import { isLessonFree, type Lesson, type Module } from "@/lib/courses/types";
 
@@ -86,7 +87,15 @@ export default function LessonView() {
             {!canView ? (
               <LockedCard loggedIn={!!user} courseHref={courseHref} />
             ) : current.type === "video" ? (
-              <VideoPlayer url={current.video_url} />
+              current.bunny_video_id ? (
+                <BunnyVideoPlayer
+                  videoId={current.bunny_video_id}
+                  courseId={course.id}
+                  courseSlug={course.slug}
+                />
+              ) : (
+                <VideoPlayer url={current.video_url} />
+              )
             ) : current.type === "pdf" ? (
               <PdfViewer url={current.pdf_url} />
             ) : (

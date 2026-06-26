@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Maximize, Minimize } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -8,7 +9,7 @@ interface Props {
   courseSlug?: string;
 }
 
-// 9 positions in a 3×3 grid, odd rows offset right — survives any crop region
+// 9 positions in a 3×3 offset grid — survives any crop region
 const POSITIONS: React.CSSProperties[] = [
   { top:  "8%", left:  "4%" },
   { top:  "8%", left: "38%" },
@@ -37,17 +38,20 @@ const MARK_STYLE: React.CSSProperties = {
 
 export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
   const { profile, user } = useAuth();
-  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Session date stamped at load time — helps identify when a pirated recording was made
+  const [embedUrl, setEmbedUrl]       = useState<string | null>(null);
+  const [error, setError]             = useState(false);
+  const [retryCount, setRetryCount]   = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Session date stamped at load time — helps trace when a pirated recording was made
   const sessionDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "-");
-  const watermarkText =
-    profile?.full_name
-      ? `${profile.full_name} · ${user?.email ?? ""} · ${sessionDate}`
-      : `${user?.email ?? ""} · ${sessionDate}`;
+  const watermarkText = profile?.full_name
+    ? `${profile.full_name} · ${user?.email ?? ""} · ${sessionDate}`
+    : `${user?.email ?? ""} · ${sessionDate}`;
 
+  // ── Signed URL fetch ─────────────────────────────────────────────────────────
   const retry = useCallback(() => {
     setError(false);
     setEmbedUrl(null);
@@ -82,8 +86,34 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
     return () => { cancelled = true; };
   }, [videoId, courseId, courseSlug, retryCount]);
 
+  // ── Custom fullscreen (container div, not iframe) ─────────────────────────
+  // We do NOT use allowFullScreen on the iframe. If the browser fullscreens only
+  // the iframe, our watermark overlay stays behind in the parent DOM and disappears.
+  // By fullscreening the container div ourselves, the watermark travels with it.
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await containerRef.current.requestFullscreen();
+      }
+    } catch {
+      // Browser denied fullscreen (e.g. not triggered by user gesture) — ignore
+    }
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-black"
       onContextMenu={(e) => e.preventDefault()}
     >
@@ -107,19 +137,25 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
         </div>
       )}
 
-      {/* Player + watermark */}
+      {/* Player + watermark + fullscreen button */}
       {embedUrl && (
         <>
+          {/*
+            Iframe does NOT have allowFullScreen / fullscreen in allow.
+            This prevents the browser from fullscreening only the iframe
+            (which would leave our watermark overlay behind).
+            Our custom button fullscreens the container div instead,
+            so the watermark is always included.
+          */}
           <iframe
             key={embedUrl}
             src={embedUrl}
             className="h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             title="lesson video"
           />
 
-          {/* Tiled identity watermark — persists in screen recordings for piracy tracing */}
+          {/* Identity watermark — present in fullscreen because the container goes fullscreen */}
           {watermarkText && (
             <div
               style={{
@@ -138,6 +174,19 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
               ))}
             </div>
           )}
+
+          {/* Custom fullscreen button — visible on hover or when already fullscreen */}
+          <button
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "ছোট করুন" : "ফুলস্ক্রিন"}
+            style={{ zIndex: 20, opacity: isFullscreen ? 1 : undefined }}
+            className="absolute bottom-3 right-3 flex items-center justify-center rounded-md bg-black/60 p-1.5 text-white/80 opacity-0 transition-all hover:opacity-100 hover:bg-black/80 hover:text-white focus:opacity-100"
+          >
+            {isFullscreen
+              ? <Minimize className="h-4 w-4" />
+              : <Maximize className="h-4 w-4" />
+            }
+          </button>
         </>
       )}
     </div>

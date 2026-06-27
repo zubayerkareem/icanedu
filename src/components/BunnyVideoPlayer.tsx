@@ -27,18 +27,11 @@ const WARN_BASE: React.CSSProperties = {
   textShadow: "0 0 8px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,0.95)",
 };
 
-// ── Layer B: user identity grid ───────────────────────────────────────────────
-// 9-position 3×3 offset grid — survives any crop region
+// ── Layer B: user identity — 3 positions, spread to survive any crop ──────────
 const ID_POSITIONS: React.CSSProperties[] = [
-  { top:  "8%", left:  "4%" },
-  { top:  "8%", left: "38%" },
-  { top:  "8%", right: "4%" },
-  { top: "44%", left: "18%" },
-  { top: "44%", right: "18%" },
-  { top: "78%", left:  "4%" },
-  { top: "78%", left: "38%" },
-  { top: "78%", right: "4%" },
-  { top: "26%", left: "62%" },
+  { top:  "8%", left:  "5%" },   // top-left
+  { top: "46%", right: "6%" },   // middle-right
+  { top: "78%", left: "28%" },   // bottom-centre
 ];
 
 const ID_MARK: React.CSSProperties = {

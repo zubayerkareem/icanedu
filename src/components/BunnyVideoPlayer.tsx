@@ -9,8 +9,27 @@ interface Props {
   courseSlug?: string;
 }
 
-// 9 positions in a 3×3 offset grid — survives any crop region
-const POSITIONS: React.CSSProperties[] = [
+// ── Layer A: iCAN Academy legal warning ──────────────────────────────────────
+// 4 positions spread so at least one survives any crop
+const WARN_POSITIONS: { style: React.CSSProperties }[] = [
+  { style: { top: "12%",  left: "50%",  transform: "translateX(-50%) rotate(-12deg)" } },
+  { style: { top: "40%",  left:  "6%",  transform: "rotate(-12deg)" } },
+  { style: { top: "40%",  right: "6%",  transform: "rotate(-12deg)" } },
+  { style: { top: "68%",  left: "50%",  transform: "translateX(-50%) rotate(-12deg)" } },
+];
+
+const WARN_BASE: React.CSSProperties = {
+  position: "absolute",
+  pointerEvents: "none",
+  userSelect: "none",
+  textAlign: "center",
+  color: "white",
+  textShadow: "0 0 8px rgba(0,0,0,1), 0 1px 4px rgba(0,0,0,0.95)",
+};
+
+// ── Layer B: user identity grid ───────────────────────────────────────────────
+// 9-position 3×3 offset grid — survives any crop region
+const ID_POSITIONS: React.CSSProperties[] = [
   { top:  "8%", left:  "4%" },
   { top:  "8%", left: "38%" },
   { top:  "8%", right: "4%" },
@@ -22,10 +41,10 @@ const POSITIONS: React.CSSProperties[] = [
   { top: "26%", left: "62%" },
 ];
 
-const MARK_STYLE: React.CSSProperties = {
+const ID_MARK: React.CSSProperties = {
   position: "absolute",
   color: "white",
-  opacity: 0.28,
+  opacity: 0.30,
   fontSize: "12px",
   fontWeight: 700,
   transform: "rotate(-18deg)",
@@ -36,22 +55,40 @@ const MARK_STYLE: React.CSSProperties = {
   userSelect: "none",
 };
 
+// Shared overlay wrapper style
+const OVERLAY: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  pointerEvents: "none",
+  userSelect: "none",
+  zIndex: 10,
+  overflow: "hidden",
+  transition: "opacity 0.7s ease",
+};
+
 export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
   const { profile, user } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [embedUrl, setEmbedUrl]       = useState<string | null>(null);
-  const [error, setError]             = useState(false);
-  const [retryCount, setRetryCount]   = useState(0);
+  const [embedUrl, setEmbedUrl]         = useState<string | null>(null);
+  const [error, setError]               = useState(false);
+  const [retryCount, setRetryCount]     = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // 0 = warning layer, 1 = identity layer — alternates every 3 s
+  const [activeLayer, setActiveLayer]   = useState<0 | 1>(0);
 
-  // Session date stamped at load time — helps trace when a pirated recording was made
   const sessionDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "-");
-  const watermarkText = profile?.full_name
+  const idText = profile?.full_name
     ? `${profile.full_name} · ${user?.email ?? ""} · ${sessionDate}`
     : `${user?.email ?? ""} · ${sessionDate}`;
 
-  // ── Signed URL fetch ─────────────────────────────────────────────────────────
+  // ── Watermark layer alternation ───────────────────────────────────────────
+  useEffect(() => {
+    const id = setInterval(() => setActiveLayer((l) => (l === 0 ? 1 : 0)), 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Signed URL fetch ──────────────────────────────────────────────────────
   const retry = useCallback(() => {
     setError(false);
     setEmbedUrl(null);
@@ -86,29 +123,19 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
     return () => { cancelled = true; };
   }, [videoId, courseId, courseSlug, retryCount]);
 
-  // ── Custom fullscreen (container div, not iframe) ─────────────────────────
-  // We do NOT use allowFullScreen on the iframe. If the browser fullscreens only
-  // the iframe, our watermark overlay stays behind in the parent DOM and disappears.
-  // By fullscreening the container div ourselves, the watermark travels with it.
+  // ── Container-level fullscreen (keeps watermark in fullscreen) ────────────
   useEffect(() => {
-    const onFsChange = () => {
-      setIsFullscreen(document.fullscreenElement === containerRef.current);
-    };
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
+    const onChange = () => setIsFullscreen(document.fullscreenElement === containerRef.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
     if (!containerRef.current) return;
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await containerRef.current.requestFullscreen();
-      }
-    } catch {
-      // Browser denied fullscreen (e.g. not triggered by user gesture) — ignore
-    }
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await containerRef.current.requestFullscreen();
+    } catch { /* user gesture required — ignore */ }
   }, []);
 
   return (
@@ -117,14 +144,14 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
       className="relative aspect-video w-full overflow-hidden rounded-xl border border-border bg-black"
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Loading spinner */}
+      {/* Loading */}
       {!embedUrl && !error && (
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/70" />
         </div>
       )}
 
-      {/* Error state with retry */}
+      {/* Error + retry */}
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
           <p className="text-sm text-white/50">ভিডিও লোড করা যায়নি</p>
@@ -137,16 +164,9 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
         </div>
       )}
 
-      {/* Player + watermark + fullscreen button */}
       {embedUrl && (
         <>
-          {/*
-            Iframe does NOT have allowFullScreen / fullscreen in allow.
-            This prevents the browser from fullscreening only the iframe
-            (which would leave our watermark overlay behind).
-            Our custom button fullscreens the container div instead,
-            so the watermark is always included.
-          */}
+          {/* iframe — no allowFullScreen so browser can't fullscreen it alone */}
           <iframe
             key={embedUrl}
             src={embedUrl}
@@ -155,37 +175,59 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
             title="lesson video"
           />
 
-          {/* Identity watermark — present in fullscreen because the container goes fullscreen */}
-          {watermarkText && (
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                pointerEvents: "none",
-                userSelect: "none",
-                zIndex: 10,
-                overflow: "hidden",
-              }}
-            >
-              {POSITIONS.map((pos, i) => (
-                <span key={i} style={{ ...MARK_STYLE, ...pos }}>
-                  {watermarkText}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* ── Layer A: iCAN Academy legal warning ── */}
+          <div style={{ ...OVERLAY, opacity: activeLayer === 0 ? 1 : 0 }}>
+            {WARN_POSITIONS.map(({ style }, i) => (
+              <div key={i} style={{ ...WARN_BASE, ...style }}>
+                <p style={{
+                  fontSize: "15px",
+                  fontWeight: 800,
+                  letterSpacing: "0.06em",
+                  opacity: 0.55,
+                  marginBottom: "3px",
+                  lineHeight: 1.2,
+                }}>
+                  iCAN Academy
+                </p>
+                <p style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  opacity: 0.45,
+                  maxWidth: "210px",
+                  lineHeight: 1.4,
+                }}>
+                  ভিডিও রেকর্ড/ ডাউনলোড করা নিষিদ্ধ
+                </p>
+                <p style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  opacity: 0.45,
+                  maxWidth: "210px",
+                  lineHeight: 1.4,
+                }}>
+                  করলে আইনানুগ ব্যবস্থা নেয়া হবে।
+                </p>
+              </div>
+            ))}
+          </div>
 
-          {/* Custom fullscreen button — visible on hover or when already fullscreen */}
+          {/* ── Layer B: user identity grid ── */}
+          <div style={{ ...OVERLAY, opacity: activeLayer === 1 ? 1 : 0 }}>
+            {ID_POSITIONS.map((pos, i) => (
+              <span key={i} style={{ ...ID_MARK, ...pos }}>
+                {idText}
+              </span>
+            ))}
+          </div>
+
+          {/* Fullscreen toggle — hover to reveal */}
           <button
             onClick={toggleFullscreen}
             title={isFullscreen ? "ছোট করুন" : "ফুলস্ক্রিন"}
             style={{ zIndex: 20, opacity: isFullscreen ? 1 : undefined }}
             className="absolute bottom-3 right-3 flex items-center justify-center rounded-md bg-black/60 p-1.5 text-white/80 opacity-0 transition-all hover:opacity-100 hover:bg-black/80 hover:text-white focus:opacity-100"
           >
-            {isFullscreen
-              ? <Minimize className="h-4 w-4" />
-              : <Maximize className="h-4 w-4" />
-            }
+            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
           </button>
         </>
       )}

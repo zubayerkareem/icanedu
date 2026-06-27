@@ -3,31 +3,24 @@ import { X } from "lucide-react";
 
 const DEPARTMENTS = [
   {
-    label: "ISSB Support",
+    label: "ISSB",
     sublabel: "আইএসএসবি প্রস্তুতি",
-    number: "8801894734002",
+    number: "8801711447403",
     color: "bg-emerald-600",
     text: "text-white",
   },
   {
-    label: "Cadet Support",
-    sublabel: "ক্যাডেট কোচিং",
-    number: "8801894734003",
+    label: "Cadet Admission (Offline)",
+    sublabel: "ক্যাডেট কলেজ ভর্তি — অফলাইন",
+    number: "8801894734007",
     color: "bg-sky-600",
     text: "text-white",
   },
   {
-    label: "E-Commerce",
-    sublabel: "প্রোডাক্ট অর্ডার হেল্পলাইন",
-    number: "8801894734004",
+    label: "Cadet Admission (Online)",
+    sublabel: "ক্যাডেট কলেজ ভর্তি — অনলাইন",
+    number: "8801894734018",
     color: "bg-violet-600",
-    text: "text-white",
-  },
-  {
-    label: "Other Courses",
-    sublabel: "অন্যান্য কোর্স",
-    number: "8801894734005",
-    color: "bg-orange-500",
     text: "text-white",
   },
 ];

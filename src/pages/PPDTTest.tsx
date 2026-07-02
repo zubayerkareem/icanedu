@@ -171,7 +171,7 @@ function PPDTModal({
               <img
                 src={picture.image_url}
                 alt={picture.title}
-                className="w-full h-64 sm:h-80 object-cover"
+                className="w-full object-contain bg-muted"
                 style={{ filter: "blur(8px)" }}
               />
               <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
@@ -320,7 +320,7 @@ function PPDTCard({
         <img
           src={picture.image_url}
           alt={picture.title}
-          className="w-full h-44 object-cover"
+          className="w-full object-contain bg-muted"
           style={isLocked
             ? { filter: "grayscale(1) brightness(0.7) blur(4px)" }
             : { filter: "blur(4px)" }}
@@ -432,11 +432,11 @@ function PPDTSetCard({
           <img
             src={firstPic.image_url}
             alt={set.title}
-            className="w-full h-44 object-cover"
+            className="w-full object-contain bg-muted"
             style={{ filter: "blur(4px)" }}
           />
         ) : (
-          <div className="w-full h-44 bg-muted flex items-center justify-center">
+          <div className="w-full h-32 bg-muted flex items-center justify-center">
             <ImagePlus className="h-8 w-8 text-muted-foreground" />
           </div>
         )}

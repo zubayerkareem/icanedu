@@ -199,7 +199,6 @@ function TaskCard({
               src={task.image_url}
               alt={task.heading}
               className="w-full object-contain bg-muted"
-              style={{ maxHeight: "180px" }}
             />
           ) : (
             <div className="w-full h-36 bg-muted flex items-center justify-center text-muted-foreground text-sm">

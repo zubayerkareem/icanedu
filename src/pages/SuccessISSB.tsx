@@ -2,13 +2,10 @@ import { Link } from "react-router-dom";
 import { Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSuccessStories } from "@/hooks/useSuccessStories";
-import { SUCCESS_STORIES } from "@/lib/success/stories";
 
 export default function SuccessISSB() {
-  const { data: dbStories } = useSuccessStories("issb");
-  const stories = dbStories && dbStories.length > 0
-    ? dbStories.map((s) => ({ id: s.id, image: s.image_url ?? "", title: s.name, description: s.description ?? "" }))
-    : SUCCESS_STORIES;
+  const { data: dbStories, isLoading } = useSuccessStories("issb");
+  const stories = (dbStories ?? []).map((s) => ({ id: s.id, image: s.image_url ?? "", title: s.name, description: s.description ?? "" }));
   return (
     <>
       {/* Hero */}
@@ -40,26 +37,38 @@ export default function SuccessISSB() {
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">আমাদের শিক্ষার্থীরা যা অর্জন করেছেন</p>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {stories.map((s) => (
-              <div
-                key={s.id}
-                className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-              >
-                <div className="w-full overflow-hidden rounded-lg bg-muted">
-                  <img
-                    src={s.image}
-                    alt={s.title}
-                    className="w-full h-auto object-contain"
-                  />
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-xl border border-border bg-card p-5">
+                  <div className="h-48 animate-pulse rounded-lg bg-muted" />
+                  <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-muted" />
+                  <div className="mt-2 h-3 animate-pulse rounded bg-muted" />
                 </div>
-                <div>
-                  <h3 className="font-heading font-semibold text-foreground text-base">{s.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {stories.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="w-full overflow-hidden rounded-lg bg-muted">
+                    <img
+                      src={s.image}
+                      alt={s.title}
+                      className="w-full h-auto object-contain"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-semibold text-foreground text-base">{s.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

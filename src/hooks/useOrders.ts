@@ -87,8 +87,9 @@ export function useDeleteOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("orders").delete().eq("id", id);
+      const { data, error } = await supabase.from("orders").delete().eq("id", id).select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("মুছতে ব্যর্থ — অনুমতি নেই বা রেকর্ড পাওয়া যায়নি");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });
@@ -98,8 +99,9 @@ export function useBulkDeleteOrders() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ids: string[]) => {
-      const { error } = await supabase.from("orders").delete().in("id", ids);
+      const { data, error } = await supabase.from("orders").delete().in("id", ids).select("id");
       if (error) throw error;
+      if (!data?.length) throw new Error("মুছতে ব্যর্থ — অনুমতি নেই বা রেকর্ড পাওয়া যায়নি");
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["orders"] }),
   });

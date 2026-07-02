@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { INCOMPLETE_STORIES, type IncompleteStory } from "@/lib/incomplete-story/mock";
+import type { IncompleteStory } from "@/lib/incomplete-story/mock";
 import { loadSubmission, saveSubmission } from "@/hooks/useStorySubmission";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useIncompleteStorySets } from "@/hooks/useISSBContent";
@@ -514,27 +514,25 @@ export default function IncompleteStoryHome() {
 
   const L = lang === "bn" ? BN : EN;
 
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useIncompleteStorySets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useIncompleteStorySets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
-  const usingDb = dbSets.length > 0;
+  const isLoading = courseLoading || setsLoading;
   type StoryWithAccess = IncompleteStory & { is_free: boolean };
 
-  const stories: StoryWithAccess[] = usingDb
-    ? dbSets.flatMap((set) =>
-        (set.incomplete_stories ?? []).map((s) => ({
-          id: s.id,
-          title: s.title,
-          instruction: s.instruction ?? "",
-          body: s.body,
-          wordLimit: String(s.word_limit),
-          timeGuide: `${s.time_guide_minutes} minutes`,
-          idea: s.idea ?? "",
-          is_free: set.is_free ?? false,
-        }))
-      )
-    : INCOMPLETE_STORIES.map((s) => ({ ...s, is_free: true }));
+  const stories: StoryWithAccess[] = dbSets.flatMap((set) =>
+    (set.incomplete_stories ?? []).map((s) => ({
+      id: s.id,
+      title: s.title,
+      instruction: s.instruction ?? "",
+      body: s.body,
+      wordLimit: String(s.word_limit),
+      timeGuide: `${s.time_guide_minutes} minutes`,
+      idea: s.idea ?? "",
+      is_free: set.is_free ?? false,
+    }))
+  );
 
   const submissions = stories.map((s) => loadSubmission(courseId, s.id));
 
@@ -577,6 +575,15 @@ export default function IncompleteStoryHome() {
         </div>
 
         {/* 3-column grid */}
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border bg-card h-48 animate-pulse bg-muted/40" />
+            ))}
+          </div>
+        ) : stories.length === 0 ? (
+          <p className="py-16 text-center text-muted-foreground">কোনো গল্প পাওয়া যায়নি।</p>
+        ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {stories.map((story, idx) => {
             const canAccess = story.is_free || enrolled;
@@ -609,6 +616,7 @@ export default function IncompleteStoryHome() {
             );
           })}
         </div>
+        )}
       </div>
     </>
   );

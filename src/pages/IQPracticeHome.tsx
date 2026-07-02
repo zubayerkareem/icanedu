@@ -2,7 +2,6 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Clock, Lock, PlayCircle, RotateCcw, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IQ_SETS } from "@/lib/iq-practice/mock";
 import { clearProgress, loadProgress } from "@/hooks/useIQProgress";
 import { useIQSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
@@ -17,21 +16,19 @@ function formatTime(seconds: number) {
 export default function IQPracticeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useIQSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useIQSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
-  const usingDb = dbSets.length > 0;
-  const sets = usingDb
-    ? dbSets.map((s) => ({
-        id: s.id,
-        title: s.title,
-        description: s.description ?? "",
-        timerSeconds: s.timer_seconds,
-        questions: s.iq_questions ?? [],
-        is_free: s.is_free,
-      }))
-    : IQ_SETS.map((s) => ({ ...s, is_free: true }));
+  const isLoading = courseLoading || setsLoading;
+  const sets = dbSets.map((s) => ({
+    id: s.id,
+    title: s.title,
+    description: s.description ?? "",
+    timerSeconds: s.timer_seconds,
+    questions: s.iq_questions ?? [],
+    is_free: s.is_free,
+  }));
 
   return (
     <>
@@ -48,6 +45,15 @@ export default function IQPracticeHome() {
 
       <section className="py-10 sm:py-14">
         <div className="container max-w-3xl">
+          {isLoading ? (
+            <div className="grid gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-xl border bg-card p-5 h-24 animate-pulse bg-muted/40" />
+              ))}
+            </div>
+          ) : sets.length === 0 ? (
+            <p className="py-16 text-center text-muted-foreground">কোনো সেট পাওয়া যায়নি।</p>
+          ) : (
           <div className="grid gap-4">
             {sets.map((set, idx) => {
               const canAccess = set.is_free || enrolled;
@@ -162,6 +168,7 @@ export default function IQPracticeHome() {
               );
             })}
           </div>
+          )}
         </div>
       </section>
     </>

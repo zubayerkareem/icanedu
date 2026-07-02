@@ -2,27 +2,24 @@ import { Link, useParams } from "react-router-dom";
 import { FileEdit, Lock, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EXTEMPORE_SETS, EXTEMPORE_TIMER_SECONDS } from "@/lib/extempore/mock";
 import { useExtemporeSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useCourse } from "@/hooks/useCourse";
 
 export default function ExtemporeHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useExtemporeSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useExtemporeSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
-  const usingDb = dbSets.length > 0;
-  const sets = usingDb
-    ? dbSets.map((s) => ({
-        id: s.id,
-        title: s.title,
-        topics: s.extempore_topics ?? [],
-        is_free: s.is_free,
-      }))
-    : EXTEMPORE_SETS.map((s) => ({ ...s, is_free: true }));
-  const timerSeconds = usingDb ? (dbSets[0]?.timer_seconds ?? EXTEMPORE_TIMER_SECONDS) : EXTEMPORE_TIMER_SECONDS;
+  const isLoading = courseLoading || setsLoading;
+  const sets = dbSets.map((s) => ({
+    id: s.id,
+    title: s.title,
+    topics: s.extempore_topics ?? [],
+    is_free: s.is_free,
+  }));
+  const timerSeconds = dbSets[0]?.timer_seconds ?? 0;
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
@@ -38,6 +35,15 @@ export default function ExtemporeHome() {
         </p>
       </div>
 
+      {isLoading ? (
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden divide-y divide-border">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse bg-muted/40" />
+          ))}
+        </div>
+      ) : sets.length === 0 ? (
+        <p className="py-16 text-center text-muted-foreground">কোনো সেট পাওয়া যায়নি।</p>
+      ) : (
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         {sets.map((set, idx) => {
           const canAccess = set.is_free || enrolled;
@@ -80,6 +86,7 @@ export default function ExtemporeHome() {
           );
         })}
       </div>
+      )}
 
       <div className="mt-6 rounded-xl border bg-muted/40 p-5">
         <h3 className="font-heading font-semibold text-foreground mb-3">Essay Writing কী?</h3>

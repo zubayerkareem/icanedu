@@ -2,27 +2,33 @@ import { Link, useParams } from "react-router-dom";
 import { Brain, Lock, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { WAT_SETS } from "@/lib/wat/mock";
 import { useWATSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useCourse } from "@/hooks/useCourse";
 
 export default function WATHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useWATSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useWATSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
-  const usingDb = dbSets.length > 0;
-  const sets = usingDb
-    ? dbSets.map((s) => ({ id: s.id, title: s.title, is_free: s.is_free }))
-    : WAT_SETS.map((s) => ({ id: s.id, title: s.title, is_free: true }));
+  const isLoading = courseLoading || setsLoading;
+  const sets = dbSets.map((s) => ({ id: s.id, title: s.title, is_free: s.is_free }));
 
   return (
     <div className="container max-w-2xl py-10 sm:py-14">
 
       <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl text-center mb-8">WAT</h1>
 
+      {isLoading ? (
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden divide-y divide-border">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse bg-muted/40" />
+          ))}
+        </div>
+      ) : sets.length === 0 ? (
+        <p className="py-16 text-center text-muted-foreground">কোনো সেট পাওয়া যায়নি।</p>
+      ) : (
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         {sets.map((set, idx) => {
           const canAccess = set.is_free || enrolled;
@@ -60,6 +66,7 @@ export default function WATHome() {
           );
         })}
       </div>
+      )}
     </div>
   );
 }

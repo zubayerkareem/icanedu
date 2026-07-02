@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { Brain, Lock, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IST_SETS } from "@/lib/ist/mock";
 import { useISTSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useCourse } from "@/hooks/useCourse";
@@ -12,22 +11,20 @@ type TextType = "Bangla" | "English";
 
 export default function ISTHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useISTSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useISTSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
   const [textType, setTextType] = useState<TextType>("Bangla");
 
-  const usingDb = dbSets.length > 0;
-  const allSets = usingDb
-    ? dbSets.map((s) => ({
-        id: s.id,
-        title: s.title,
-        timerSeconds: s.timer_seconds,
-        sentences: s.ist_sentences ?? [],
-        is_free: s.is_free,
-        text_type: (s.text_type ?? "Bangla") as TextType,
-      }))
-    : IST_SETS.map((s) => ({ ...s, is_free: true, text_type: "Bangla" as TextType }));
+  const isLoading = courseLoading || setsLoading;
+  const allSets = dbSets.map((s) => ({
+    id: s.id,
+    title: s.title,
+    timerSeconds: s.timer_seconds,
+    sentences: s.ist_sentences ?? [],
+    is_free: s.is_free,
+    text_type: (s.text_type ?? "Bangla") as TextType,
+  }));
 
   const sets = allSets.filter((s) => s.text_type === textType);
 
@@ -57,7 +54,13 @@ export default function ISTHome() {
         ))}
       </div>
 
-      {sets.length === 0 ? (
+      {isLoading ? (
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden divide-y divide-border">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 animate-pulse bg-muted/40" />
+          ))}
+        </div>
+      ) : sets.length === 0 ? (
         <div className="rounded-xl border bg-card p-10 text-center text-sm text-muted-foreground">
           এই ভাষায় কোনো সেট পাওয়া যায়নি।
         </div>

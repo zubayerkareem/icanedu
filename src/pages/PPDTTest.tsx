@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PPDT_MOCK_SET, type PPDTPicture } from "@/lib/ppdt/mock";
+import type { PPDTPicture } from "@/lib/ppdt/mock";
 import { saveSession, loadSession, type PPDTSubmission, type PPDTSessionData } from "@/lib/ppdt/storage";
 import { useCountdown } from "@/hooks/useCountdown";
 import { usePPDTSets } from "@/hooks/useISSBContent";
@@ -569,36 +569,28 @@ function PPDTSetView({
 
 export default function PPDTTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = usePPDTSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = usePPDTSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
 
-  const allSets: NormalizedPPDTSet[] = dbSets.length > 0
-    ? dbSets.map((s) => ({
-        id: s.id,
-        title: s.title,
-        is_free: s.is_free ?? false,
-        observe_seconds: s.observe_seconds ?? 30,
-        write_seconds: s.write_seconds ?? 270,
-        pictures: (s.ppdt_pictures ?? []).map((p): PPDTPicture => ({
-          id: p.id,
-          picture_number: p.picture_number,
-          image_url: p.image_url,
-          title: p.title,
-          description: p.idea,
-          idea: p.idea,
-        })),
-      }))
-    : [{
-        id: PPDT_MOCK_SET.id,
-        title: PPDT_MOCK_SET.name,
-        is_free: true,
-        observe_seconds: 30,
-        write_seconds: 270,
-        pictures: PPDT_MOCK_SET.pictures,
-      }];
+  const isLoading = courseLoading || setsLoading;
+  const allSets: NormalizedPPDTSet[] = dbSets.map((s) => ({
+    id: s.id,
+    title: s.title,
+    is_free: s.is_free ?? false,
+    observe_seconds: s.observe_seconds ?? 30,
+    write_seconds: s.write_seconds ?? 270,
+    pictures: (s.ppdt_pictures ?? []).map((p): PPDTPicture => ({
+      id: p.id,
+      picture_number: p.picture_number,
+      image_url: p.image_url,
+      title: p.title,
+      description: p.idea,
+      idea: p.idea,
+    })),
+  }));
 
   const selectedSet = selectedSetId ? (allSets.find((s) => s.id === selectedSetId) ?? null) : null;
 
@@ -621,18 +613,28 @@ export default function PPDTTest() {
 
       {/* Sets grid when no set selected */}
       {!selectedSet && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {allSets.map((set, idx) => (
-            <PPDTSetCard
-              key={set.id}
-              set={set}
-              index={idx}
-              enrolled={enrolled}
-              courseId={courseId}
-              onSelect={() => setSelectedSetId(set.id)}
-            />
-          ))}
-        </div>
+        isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border bg-card h-48 animate-pulse bg-muted/40" />
+            ))}
+          </div>
+        ) : allSets.length === 0 ? (
+          <p className="py-16 text-center text-muted-foreground">কোনো সেট পাওয়া যায়নি।</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {allSets.map((set, idx) => (
+              <PPDTSetCard
+                key={set.id}
+                set={set}
+                index={idx}
+                enrolled={enrolled}
+                courseId={courseId}
+                onSelect={() => setSelectedSetId(set.id)}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );

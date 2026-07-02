@@ -701,36 +701,31 @@ function PictureSetView({
 
 export default function PictureStoryTest() {
   const { id: courseId = "issb1" } = useParams<{ id: string }>();
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = usePictureStorySets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = usePictureStorySets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
+
+  const isLoading = courseLoading || setsLoading;
 
   const [lang, setLang] = useState<Lang>("bn");
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
   const L = lang === "bn" ? BN : EN;
 
-  const allSets: NormalizedSet[] = dbSets.length > 0
-    ? dbSets
-        .filter((s) => (s.lang ?? 'bn') === lang)
-        .map((s) => ({
-          id: s.id,
-          title: s.title,
-          is_free: s.is_free ?? false,
-          pictures: (s.picture_story_pictures ?? []).map((p): PictureStoryPicture => ({
-            id: p.id,
-            picture_number: p.picture_number,
-            image_url: p.image_url,
-            title: p.title,
-            description: p.idea,
-            idea: p.idea,
-          })),
-        }))
-    : [{
-        id: PICTURE_STORY_MOCK_SET.id,
-        title: PICTURE_STORY_MOCK_SET.name,
-        is_free: true,
-        pictures: PICTURE_STORY_MOCK_SET.pictures,
-      }];
+  const allSets: NormalizedSet[] = dbSets
+    .filter((s) => (s.lang ?? 'bn') === lang)
+    .map((s) => ({
+      id: s.id,
+      title: s.title,
+      is_free: s.is_free ?? false,
+      pictures: (s.picture_story_pictures ?? []).map((p): PictureStoryPicture => ({
+        id: p.id,
+        picture_number: p.picture_number,
+        image_url: p.image_url,
+        title: p.title,
+        description: p.idea,
+        idea: p.idea,
+      })),
+    }));
 
   // Reset selected set when language changes
   const handleLangChange = (newLang: Lang) => {
@@ -773,19 +768,36 @@ export default function PictureStoryTest() {
 
       {/* Sets grid when no set is selected */}
       {!selectedSet && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {allSets.map((set, idx) => (
-            <SetCard
-              key={set.id}
-              set={set}
-              index={idx}
-              enrolled={enrolled}
-              courseId={courseId}
-              L={L}
-              onSelect={() => setSelectedSetId(set.id)}
-            />
-          ))}
-        </div>
+        isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">
+                <div className="w-full h-40 bg-muted/40" />
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-muted/40 rounded w-3/4" />
+                  <div className="h-3 bg-muted/40 rounded w-1/2" />
+                  <div className="h-8 bg-muted/40 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : allSets.length === 0 ? (
+          <p className="text-center text-muted-foreground py-16">কোনো সেট পাওয়া যায়নি।</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {allSets.map((set, idx) => (
+              <SetCard
+                key={set.id}
+                set={set}
+                index={idx}
+                enrolled={enrolled}
+                courseId={courseId}
+                L={L}
+                onSelect={() => setSelectedSetId(set.id)}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );

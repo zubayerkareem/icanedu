@@ -258,9 +258,11 @@ function TaskCard({
 export default function GroupDiscussionHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
 
-  const { data: course } = useCourse(courseId);
-  const { data: dbSets = [] } = useGroupDiscussionSets(course?.id);
+  const { data: course, isLoading: courseLoading } = useCourse(courseId);
+  const { data: dbSets = [], isLoading: setsLoading } = useGroupDiscussionSets(course?.id);
   const { enrolled } = useIsEnrolled(courseId, course?.id);
+
+  const isLoading = courseLoading || setsLoading;
 
   const tasks = dbSets.flatMap((set) =>
     (set.group_discussion_tasks ?? []).map((t) => ({
@@ -275,7 +277,24 @@ export default function GroupDiscussionHome() {
         <h1 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">Group Discussion</h1>
       </div>
 
-      {tasks.length === 0 ? (
+      {isLoading ? (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-card overflow-hidden shadow-sm animate-pulse">
+              <div className="w-full h-40 bg-muted/40" />
+              <div className="p-4 space-y-3">
+                <div className="h-4 bg-muted/40 rounded w-3/4" />
+                <div className="h-3 bg-muted/40 rounded" />
+                <div className="h-3 bg-muted/40 rounded w-5/6" />
+                <div className="flex gap-2 mt-2">
+                  <div className="h-8 bg-muted/40 rounded flex-1" />
+                  <div className="h-8 bg-muted/40 rounded flex-1" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : tasks.length === 0 ? (
         <p className="text-center text-muted-foreground py-16">কোনো টপিক পাওয়া যায়নি।</p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

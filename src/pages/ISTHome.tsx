@@ -84,17 +84,6 @@ export default function ISTHome() {
                   </p>
                 </div>
 
-                {!set.is_free && (
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 shrink-0">
-                    Premium
-                  </Badge>
-                )}
-                {set.is_free && !enrolled && (
-                  <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 shrink-0">
-                    ফ্রি
-                  </Badge>
-                )}
-
                 {canAccess ? (
                   <Button size="sm" className="shrink-0 bg-foreground text-background hover:bg-foreground/90" asChild>
                     <Link to={`/courses/${courseId}/ist/${set.id}`}>Start</Link>

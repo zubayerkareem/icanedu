@@ -96,11 +96,6 @@ export default function IQPracticeHome() {
                           <h2 className="font-heading text-base font-semibold text-foreground">
                             {set.title}
                           </h2>
-                          {set.is_free && !enrolled && (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200">
-                              ফ্রি
-                            </Badge>
-                          )}
                           {isCompleted && (
                             <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                               সম্পন্ন

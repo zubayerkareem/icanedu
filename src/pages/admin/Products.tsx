@@ -15,8 +15,9 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useAdminProducts, useUpsertProduct, useDeleteProduct } from "@/hooks/useAdminProducts";
+import { useAdminProducts, useUpsertProduct, useDeleteProduct, useBulkDeleteProducts } from "@/hooks/useAdminProducts";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { Product } from "@/lib/products/types";
 
 type FormData = {
@@ -63,18 +64,35 @@ const CATEGORIES = ["বই", "প্রশ্নব্যাংক", "নোট
 
 export default function AdminProducts() {
   const { data: products = [], isLoading, error, refetch } = useAdminProducts();
-  const upsert = useUpsertProduct();
-  const deleteProduct = useDeleteProduct();
+  const upsert         = useUpsertProduct();
+  const deleteProduct  = useDeleteProduct();
+  const bulkDelete     = useBulkDeleteProducts();
 
-  const [search, setSearch]     = useState("");
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [form, setForm]           = useState<FormData>(empty);
-  const [deleteId, setDeleteId]   = useState<string | null>(null);
+  const [search, setSearch]               = useState("");
+  const [sheetOpen, setSheetOpen]         = useState(false);
+  const [form, setForm]                   = useState<FormData>(empty);
+  const [deleteId, setDeleteId]           = useState<string | null>(null);
+  const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
 
   const filtered = products.filter((p) => {
     const q = search.trim().toLowerCase();
     return !q || p.name.toLowerCase().includes(q) || (p.category ?? "").toLowerCase().includes(q);
   });
+
+  const allSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
+  const someSelected = filtered.some((p) => selectedIds.has(p.id));
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds((prev) => { const n = new Set(prev); filtered.forEach((p) => n.delete(p.id)); return n; });
+    } else {
+      setSelectedIds((prev) => { const n = new Set(prev); filtered.forEach((p) => n.add(p.id)); return n; });
+    }
+  }
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
 
   function openNew()             { setForm(empty); setSheetOpen(true); }
   function openEdit(p: Product)  { setForm(toForm(p as Product & { is_published?: boolean })); setSheetOpen(true); }
@@ -119,6 +137,18 @@ export default function AdminProducts() {
     }
   }
 
+  async function handleBulkDelete() {
+    try {
+      await bulkDelete.mutateAsync([...selectedIds]);
+      toast.success(`${selectedIds.size}টি পণ্য মুছে ফেলা হয়েছে`);
+      setSelectedIds(new Set());
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "মুছতে সমস্যা হয়েছে");
+    } finally {
+      setBulkDeleteConfirm(false);
+    }
+  }
+
   return (
     <div>
       {/* Header */}
@@ -135,6 +165,22 @@ export default function AdminProducts() {
           </Button>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="mt-4 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-2.5">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size}টি নির্বাচিত</span>
+          <Button
+            size="sm" variant="destructive" className="ml-auto"
+            onClick={() => setBulkDeleteConfirm(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> মুছুন ({selectedIds.size})
+          </Button>
+          <button onClick={() => setSelectedIds(new Set())} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative mt-5 max-w-sm">
@@ -171,6 +217,13 @@ export default function AdminProducts() {
           <table className="w-full text-sm">
             <thead className="border-b border-border bg-muted/50">
               <tr>
+                <th className="w-10 px-4 py-3">
+                  <Checkbox
+                    checked={allSelected}
+                    data-state={someSelected && !allSelected ? "indeterminate" : undefined}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </th>
                 {["পণ্য", "ক্যাটাগরি", "মূল্য", "স্টক", "স্ট্যাটাস", "অ্যাকশন"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                 ))}
@@ -179,8 +232,12 @@ export default function AdminProducts() {
             <tbody className="divide-y divide-border bg-card">
               {filtered.map((p) => {
                 const prod = p as Product & { is_published?: boolean };
+                const isSelected = selectedIds.has(p.id);
                 return (
-                  <tr key={p.id} className="transition-colors hover:bg-muted/30">
+                  <tr key={p.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
+                    <td className="px-4 py-3">
+                      <Checkbox checked={isSelected} onCheckedChange={() => toggleSelect(p.id)} />
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         {p.image_url ? (
@@ -359,7 +416,7 @@ export default function AdminProducts() {
         </SheetContent>
       </Sheet>
 
-      {/* Delete confirmation */}
+      {/* Single delete confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -374,6 +431,26 @@ export default function AdminProducts() {
               disabled={deleteProduct.isPending}
             >
               {deleteProduct.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selectedIds.size}টি পণ্য মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleBulkDelete}
+              disabled={bulkDelete.isPending}
+            >
+              {bulkDelete.isPending ? "মুছছে..." : "মুছে ফেলুন"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

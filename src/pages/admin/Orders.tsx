@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Search, RefreshCw, BookOpen, Package, Calendar, X } from "lucide-react";
+import { Search, RefreshCw, BookOpen, Package, Calendar, X, Trash2 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { DataPagination } from "@/components/ui/data-pagination";
 
 const PAGE_SIZE = 25;
@@ -8,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus } from "@/hooks/useOrders";
+import { useOrders, useUpdateOrderStatus, useBulkUpdateOrderStatus, useDeleteOrder, useBulkDeleteOrders } from "@/hooks/useOrders";
 import { useAdminUpdateValidity } from "@/hooks/useAdminEnrollments";
 import type { Order, OrderStatus } from "@/hooks/useOrders";
 import { toast } from "sonner";
@@ -123,11 +128,12 @@ function ValidityCell({ order }: { order: Order }) {
 // ─── Bulk action bar ───────────────────────────────────────────────────────────
 
 function BulkActionBar({
-  count, onApply, onClear, isPending,
+  count, onApply, onClear, onDelete, isPending,
 }: {
   count: number;
   onApply: (status: OrderStatus) => void;
   onClear: () => void;
+  onDelete: () => void;
   isPending: boolean;
 }) {
   return (
@@ -139,6 +145,9 @@ function BulkActionBar({
             {STATUS_LABELS[s]}
           </Button>
         ))}
+        <Button size="sm" variant="destructive" className="h-7 text-xs" onClick={onDelete} disabled={isPending}>
+          <Trash2 className="mr-1 h-3 w-3" /> মুছুন
+        </Button>
       </div>
       <button onClick={onClear} className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
         <X className="h-4 w-4" />
@@ -153,7 +162,11 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const bulkUpdate = useBulkUpdateOrderStatus();
+  const deleteOrder = useDeleteOrder();
+  const bulkDeleteOrders = useBulkDeleteOrders();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
@@ -195,6 +208,22 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
     );
   }
 
+  function handleDelete() {
+    if (!deleteId) return;
+    deleteOrder.mutate(deleteId, {
+      onSuccess: () => { toast.success("অর্ডার মুছে ফেলা হয়েছে"); setDeleteId(null); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
+  function handleBulkDelete() {
+    const ids = Array.from(selected);
+    bulkDeleteOrders.mutate(ids, {
+      onSuccess: () => { toast.success(`${ids.length}টি অর্ডার মুছে ফেলা হয়েছে`); setSelected(new Set()); setBulkDeleteConfirm(false); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative max-w-sm">
@@ -203,7 +232,7 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
       </div>
 
       {selected.size > 0 && (
-        <BulkActionBar count={selected.size} onApply={handleBulkApply} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending} />
+        <BulkActionBar count={selected.size} onApply={handleBulkApply} onDelete={() => setBulkDeleteConfirm(true)} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending || bulkDeleteOrders.isPending} />
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -263,6 +292,9 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
                             বাতিল
                           </Button>
                         )}
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(order.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -273,6 +305,36 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
         )}
       </div>
       <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>অর্ডার মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete} disabled={deleteOrder.isPending}>
+              {deleteOrder.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selected.size}টি অর্ডার মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleteOrders.isPending}>
+              {bulkDeleteOrders.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -283,7 +345,11 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const bulkUpdate = useBulkUpdateOrderStatus();
+  const deleteOrder = useDeleteOrder();
+  const bulkDeleteOrders = useBulkDeleteOrders();
 
   const filtered = orders.filter((o) => {
     const q = search.trim().toLowerCase();
@@ -325,6 +391,22 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
     );
   }
 
+  function handleDelete() {
+    if (!deleteId) return;
+    deleteOrder.mutate(deleteId, {
+      onSuccess: () => { toast.success("অর্ডার মুছে ফেলা হয়েছে"); setDeleteId(null); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
+  function handleBulkDelete() {
+    const ids = Array.from(selected);
+    bulkDeleteOrders.mutate(ids, {
+      onSuccess: () => { toast.success(`${ids.length}টি অর্ডার মুছে ফেলা হয়েছে`); setSelected(new Set()); setBulkDeleteConfirm(false); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
   return (
     <div className="space-y-4">
       <div className="relative max-w-sm">
@@ -333,7 +415,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
       </div>
 
       {selected.size > 0 && (
-        <BulkActionBar count={selected.size} onApply={handleBulkApply} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending} />
+        <BulkActionBar count={selected.size} onApply={handleBulkApply} onDelete={() => setBulkDeleteConfirm(true)} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending || bulkDeleteOrders.isPending} />
       )}
 
       <div className="overflow-x-auto rounded-lg border border-border">
@@ -394,6 +476,9 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
                             বাতিল
                           </Button>
                         )}
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(order.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -404,6 +489,36 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
         )}
       </div>
       <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>অর্ডার মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete} disabled={deleteOrder.isPending}>
+              {deleteOrder.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selected.size}টি অর্ডার মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই অ্যাকশন পূর্বাবস্থায় ফেরানো যাবে না।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleteOrders.isPending}>
+              {bulkDeleteOrders.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

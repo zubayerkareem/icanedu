@@ -443,9 +443,7 @@ function PPDTSetCard({
         <span className="absolute top-2 left-2 flex items-center justify-center rounded px-2 py-0.5 bg-foreground text-background text-xs font-bold font-heading">
           Set {index + 1}
         </span>
-        <span className={["absolute top-2 right-2 rounded px-2 py-0.5 text-xs font-semibold", set.is_free ? "bg-green-500 text-white" : "bg-amber-500 text-white"].join(" ")}>
-          {set.is_free ? "ফ্রি" : "প্রিমিয়াম"}
-        </span>
+
         {!canAccess && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Lock className="h-8 w-8 text-white drop-shadow-lg" />

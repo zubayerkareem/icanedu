@@ -153,6 +153,8 @@ export interface Course {
 
   videos?: CourseVideo[];
   resources?: CourseResource[];
+
+  display_order?: number | null;
 }
 
-export type CourseSort = "newest" | "price_asc" | "price_desc";
+export type CourseSort = "newest" | "price_asc" | "price_desc" | "manual";

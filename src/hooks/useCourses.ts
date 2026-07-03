@@ -75,6 +75,14 @@ export function useCourses(params: UseCoursesParams = {}) {
         case "price_desc":
           list.sort((a, b) => priceOf(b) - priceOf(a));
           break;
+        case "manual":
+          list.sort((a, b) => {
+            const ao = a.display_order ?? 9999;
+            const bo = b.display_order ?? 9999;
+            if (ao !== bo) return ao - bo;
+            return new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime();
+          });
+          break;
         case "newest":
         default:
           list.sort(

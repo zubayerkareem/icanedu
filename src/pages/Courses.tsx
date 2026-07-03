@@ -24,7 +24,7 @@ function groupLabel(cat: string) {
 export default function Courses() {
   const [category, setCategory] = useState("all");
 
-  const { data, isLoading } = useCourses({ category, sort: "newest", pageSize: 100 });
+  const { data, isLoading } = useCourses({ category, sort: "manual", pageSize: 100 });
   const items      = data?.items      ?? [];
   const categories = data?.categories ?? [];
 

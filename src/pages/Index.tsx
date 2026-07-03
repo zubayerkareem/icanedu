@@ -25,6 +25,7 @@ function useHomeCourses(category: string) {
         .select("*")
         .eq("is_published", true)
         .eq("category", category)
+        .order("display_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false })
         .limit(8);
       if (error) throw error;

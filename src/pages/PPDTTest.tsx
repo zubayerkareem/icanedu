@@ -153,7 +153,8 @@ function PPDTModal({
     >
       <div
         key={phaseKey}
-        className="relative w-full max-w-3xl rounded-2xl bg-background shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-4xl rounded-2xl bg-background shadow-2xl overflow-hidden flex flex-col"
+        style={{ maxHeight: "95dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
@@ -166,11 +167,11 @@ function PPDTModal({
 
         {/* Picture — fills available space, controls always visible */}
         {phase === "observe" ? (
-          <div className="relative aspect-video w-full overflow-hidden bg-muted">
+          <div className="relative flex-1 min-h-0 bg-muted flex items-center justify-center overflow-hidden">
             <img
               src={picture.image_url}
               alt={picture.title}
-              className="h-full w-full object-cover"
+              className="max-h-full max-w-full object-contain"
               style={{ filter: "blur(8px)" }}
             />
             <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">

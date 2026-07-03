@@ -166,7 +166,7 @@ function PPDTModal({
 
         {/* Picture — blurred during observe, completely hidden after */}
         {phase === "observe" ? (
-          <div className="relative aspect-video w-full overflow-hidden bg-muted shrink-0">
+          <div className="relative w-full shrink-0 overflow-hidden bg-muted" style={{ height: "min(50vh, 56.25vw)" }}>
             <img
               src={picture.image_url}
               alt={picture.title}

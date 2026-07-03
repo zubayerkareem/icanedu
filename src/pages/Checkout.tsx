@@ -13,8 +13,8 @@ import { trackEvent } from "@/lib/meta";
 const BKASH_NUMBER = "01894734002";
 
 const SHIPPING = {
-  inside:  { label: "ঢাকার ভেতরে",  cost: 60  },
-  outside: { label: "ঢাকার বাইরে",  cost: 100 },
+  inside:  { label: "ঢাকার ভেতরে",  cost: 100 },
+  outside: { label: "ঢাকার বাইরে",  cost: 150 },
 } as const;
 type ShippingKey = keyof typeof SHIPPING;
 

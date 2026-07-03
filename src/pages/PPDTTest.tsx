@@ -316,11 +316,11 @@ function PPDTCard({
   return (
     <div className={["rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col", isLocked ? "opacity-60" : ""].join(" ")}>
       {/* Image — always blurred on card */}
-      <div className="relative">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         <img
           src={picture.image_url}
           alt={picture.title}
-          className="w-full object-contain bg-muted"
+          className="h-full w-full object-cover"
           style={isLocked
             ? { filter: "grayscale(1) brightness(0.7) blur(4px)" }
             : { filter: "blur(4px)" }}
@@ -427,16 +427,16 @@ function PPDTSetCard({
 
   return (
     <div className={["rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col", !canAccess ? "opacity-70" : ""].join(" ")}>
-      <div className="relative">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         {firstPic ? (
           <img
             src={firstPic.image_url}
             alt={set.title}
-            className="w-full object-contain bg-muted"
+            className="h-full w-full object-cover"
             style={{ filter: "blur(4px)" }}
           />
         ) : (
-          <div className="w-full h-32 bg-muted flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             <ImagePlus className="h-8 w-8 text-muted-foreground" />
           </div>
         )}

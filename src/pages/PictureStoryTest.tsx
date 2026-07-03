@@ -384,11 +384,11 @@ function PictureCard({
   return (
     <div className={["rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col", isLocked ? "opacity-60" : ""].join(" ")}>
       {/* Picture thumbnail */}
-      <div className="relative">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         <img
           src={picture.image_url}
           alt={picture.title}
-          className="w-full object-contain bg-muted"
+          className="h-full w-full object-cover"
           style={isLocked ? { filter: "grayscale(1) brightness(0.7) blur(4px)" } : { filter: "blur(4px)" }}
         />
         <span className="absolute top-2 left-2 flex items-center justify-center rounded px-2 py-0.5 bg-foreground text-background text-xs font-bold font-heading">
@@ -504,16 +504,16 @@ function SetCard({
 
   return (
     <div className={["rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col", !canAccess ? "opacity-70" : ""].join(" ")}>
-      <div className="relative">
+      <div className="relative aspect-video overflow-hidden bg-muted">
         {firstPic ? (
           <img
             src={firstPic.image_url}
             alt={set.title}
-            className="w-full object-contain bg-muted"
+            className="h-full w-full object-cover"
             style={{ filter: "blur(4px)" }}
           />
         ) : (
-          <div className="w-full h-32 bg-muted flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center">
             <ImagePlus className="h-8 w-8 text-muted-foreground" />
           </div>
         )}

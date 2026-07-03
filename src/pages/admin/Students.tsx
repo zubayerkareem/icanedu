@@ -29,7 +29,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, usePaidStudentIds } from "@/hooks/useStudents";
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
@@ -675,9 +675,11 @@ export default function AdminStudents() {
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
   const [filterSource, setFilterSource] = useState<"all" | "registered" | "admin_created">("all");
   const [filterCourse, setFilterCourse] = useState<string>("all");
+  const [filterPaid, setFilterPaid] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const { data: courses = [] } = useAllCoursesForSelect();
   const { data: enrolledIds } = useEnrolledStudentIds(filterCourse === "all" ? null : filterCourse);
+  const { data: paidIds } = usePaidStudentIds();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -715,8 +717,9 @@ export default function AdminStudents() {
     }
 
     const matchCourse = filterCourse === "all" || (enrolledIds ?? []).includes(s.id);
+    const matchPaid = !filterPaid || (paidIds ?? []).includes(s.id);
 
-    return matchSearch && matchRole && matchSource && matchDate && matchCourse;
+    return matchSearch && matchRole && matchSource && matchDate && matchCourse && matchPaid;
   });
 
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
@@ -962,6 +965,18 @@ export default function AdminStudents() {
               </button>
             ))}
           </div>
+          <div className="h-4 w-px bg-border" />
+          <button
+            onClick={() => { setFilterPaid((v) => !v); resetPage(); }}
+            className={[
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              filterPaid
+                ? "bg-green-600 text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80",
+            ].join(" ")}
+          >
+            💳 Paid
+          </button>
           <div className="h-4 w-px bg-border" />
           <Select value={filterCourse} onValueChange={(v) => { setFilterCourse(v); resetPage(); }}>
             <SelectTrigger className="h-8 w-56 text-xs">

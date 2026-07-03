@@ -43,6 +43,22 @@ export function useStudents() {
   });
 }
 
+export function usePaidStudentIds() {
+  return useQuery<string[]>({
+    queryKey: ["paid_student_ids"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("user_id")
+        .not("bkash_txn_id", "is", null)
+        .neq("bkash_txn_id", "");
+      if (error) throw error;
+      return [...new Set((data ?? []).map((r) => r.user_id as string))];
+    },
+  });
+}
+
 export function useMarkUserSource() {
   return useMutation({
     mutationFn: async ({ userId, source }: { userId: string; source: string }) => {

@@ -147,13 +147,13 @@ function PPDTModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
-      style={{ background: "rgba(0,0,0,0.75)" }}
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      style={{ background: "rgba(0,0,0,0.55)" }}
       onClick={onClose}
     >
       <div
         key={phaseKey}
-        className="relative w-full max-w-4xl rounded-2xl bg-background shadow-2xl overflow-hidden"
+        className="relative w-full max-w-2xl rounded-2xl bg-background shadow-2xl overflow-hidden my-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
@@ -164,31 +164,32 @@ function PPDTModal({
           <X className="h-4 w-4" />
         </button>
 
-        {/* Picture — fills available space, controls always visible */}
-        {phase === "observe" ? (
-          <div className="relative bg-muted flex items-center justify-center p-2">
-            <img
-              src={picture.image_url}
-              alt={picture.title}
-              className="object-contain w-auto mx-auto"
-              style={{ filter: "blur(8px)", maxHeight: "58dvh", aspectRatio: "4/3" }}
-            />
-            <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
-              #{picture.picture_number}
-            </span>
-          </div>
-        ) : (
-          <div className="w-full py-8 bg-muted/30 flex flex-col items-center justify-center gap-3 border-b border-border shrink-0">
-            <div className="text-4xl">🧠</div>
-            <p className="text-sm font-medium text-muted-foreground text-center px-6 leading-relaxed">
-              ছবি সরিয়ে দেওয়া হয়েছে।<br />
-              <span className="font-semibold text-foreground">গল্প লিখুন।</span>
-            </p>
-          </div>
-        )}
+        {/* Picture — blurred during observe, completely hidden after */}
+        <div className="relative">
+          {phase === "observe" ? (
+            <>
+              <img
+                src={picture.image_url}
+                alt={picture.title}
+                className="w-full object-contain bg-muted"
+                style={{ filter: "blur(8px)" }}
+              />
+              <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">
+                #{picture.picture_number}
+              </span>
+            </>
+          ) : (
+            <div className="w-full h-40 sm:h-52 bg-white dark:bg-zinc-950 flex flex-col items-center justify-center gap-3 border-b border-border">
+              <div className="text-4xl">🧠</div>
+              <p className="text-sm font-medium text-muted-foreground text-center px-6 leading-relaxed">
+                ছবি সরিয়ে দেওয়া হয়েছে।<br />
+                <span className="font-semibold text-foreground">গল্প লিখুন।</span>
+              </p>
+            </div>
+          )}
+        </div>
 
-        {/* Controls — always visible, never pushed off screen */}
-        <div className="shrink-0 p-4 space-y-3">
+        <div className="p-5 space-y-4">
           {/* Phase label */}
           <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 px-4 py-2 text-sm font-medium text-blue-800 dark:text-blue-300 text-center border border-blue-100 dark:border-blue-900/40">
             {phaseLabel}

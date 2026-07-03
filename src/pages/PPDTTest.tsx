@@ -171,7 +171,7 @@ function PPDTModal({
               <img
                 src={picture.image_url}
                 alt={picture.title}
-                className="w-full object-contain bg-muted"
+                className="w-full object-contain bg-muted max-h-[55vh]"
                 style={{ filter: "blur(8px)" }}
               />
               <span className="absolute top-3 left-3 flex items-center justify-center rounded px-2 py-1 bg-foreground text-background text-xs font-bold font-heading">

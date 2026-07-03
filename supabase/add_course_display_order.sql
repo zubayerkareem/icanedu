@@ -3,10 +3,20 @@
 
 ALTER TABLE courses ADD COLUMN IF NOT EXISTS display_order integer;
 
--- Allow authenticated (admin) users to update display_order.
--- If you already have an update policy for courses, this may already be covered.
-CREATE POLICY IF NOT EXISTS "Admin can update course order"
-  ON courses FOR UPDATE
-  TO authenticated
-  USING (true)
-  WITH CHECK (true);
+-- Safely create update policy only if it doesn't already exist.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE tablename = 'courses'
+      AND policyname = 'Admin can update course order'
+  ) THEN
+    EXECUTE $policy$
+      CREATE POLICY "Admin can update course order"
+        ON courses FOR UPDATE
+        TO authenticated
+        USING (true)
+        WITH CHECK (true)
+    $policy$;
+  END IF;
+END $$;

@@ -128,7 +128,9 @@ function SeeMoreModal({
         </button>
 
         {imageUrl && (
-          <img src={imageUrl} alt={heading} className="w-full rounded-t-2xl object-contain max-h-56 bg-muted" />
+          <div className="aspect-video overflow-hidden rounded-t-2xl bg-muted">
+            <img src={imageUrl} alt={heading} className="h-full w-full object-cover" />
+          </div>
         )}
 
         <div className="p-5 space-y-4">
@@ -196,15 +198,15 @@ function TaskCard({
 
       <div className="flex flex-col rounded-xl border border-border bg-card overflow-hidden shadow-sm">
         {/* Image with number badge */}
-        <div className="relative">
+        <div className="relative aspect-video overflow-hidden bg-muted">
           {task.image_url ? (
             <img
               src={task.image_url}
               alt={task.heading}
-              className="w-full object-contain bg-muted"
+              className="h-full w-full object-cover"
             />
           ) : (
-            <div className="w-full h-36 bg-muted flex items-center justify-center text-muted-foreground text-sm">
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
               No image
             </div>
           )}

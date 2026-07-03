@@ -358,7 +358,8 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
       o.customer_name.toLowerCase().includes(q) ||
       o.phone.includes(q) ||
       o.product_name.toLowerCase().includes(q) ||
-      (o.address ?? "").toLowerCase().includes(q)
+      (o.address ?? "").toLowerCase().includes(q) ||
+      (o.bkash_txn_id ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -431,7 +432,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
                 <th className="w-10 px-4 py-3">
                   <Checkbox checked={allChecked} data-state={someChecked && !allChecked ? "indeterminate" : undefined} onCheckedChange={toggleAll} />
                 </th>
-                {["তারিখ", "গ্রাহক", "পণ্য", "ঠিকানা", "ডেলিভারি", "মোট", "স্ট্যাটাস", "অ্যাকশন"].map((h) => (
+                {["তারিখ", "গ্রাহক", "পণ্য", "ঠিকানা", "bKash তথ্য", "ডেলিভারি", "মোট", "স্ট্যাটাস", "অ্যাকশন"].map((h) => (
                   <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -456,6 +457,14 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
                       {order.address
                         ? <span className="max-w-[160px] truncate block text-xs text-muted-foreground">{order.address}</span>
                         : <span className="text-xs italic text-muted-foreground">নেই</span>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.bkash_txn_id ? (
+                        <div className="space-y-0.5">
+                          <div className="text-[11px]"><span className="text-muted-foreground">TxnID: </span><span className="font-mono font-bold">{order.bkash_txn_id}</span></div>
+                          {order.bkash_number && <div className="text-[11px]"><span className="text-muted-foreground">নম্বর: </span><span className="font-mono">{order.bkash_number}</span></div>}
+                        </div>
+                      ) : <span className="text-xs italic text-muted-foreground">নেই</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {order.shipping_type

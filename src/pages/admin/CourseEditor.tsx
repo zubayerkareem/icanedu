@@ -41,6 +41,8 @@ type Form = {
   category: string;
   duration: string;
   total_lessons: string;
+  enrollment_count: string;
+  rating_average: string;
   thumbnail_url: string;
   short_description: string;
   long_description: string;
@@ -58,7 +60,7 @@ type Form = {
 };
 
 const emptyForm: Form = {
-  title: "", slug: "", category: "", duration: "", total_lessons: "",
+  title: "", slug: "", category: "", duration: "", total_lessons: "", enrollment_count: "", rating_average: "",
   thumbnail_url: "", short_description: "", long_description: "",
   teachers: [],
   price: "", discount_price: "", discount_ends_at: "", is_published: true,
@@ -81,6 +83,8 @@ function fromCourse(c: Course): Form {
     category: c.category ?? "",
     duration: c.duration ?? "",
     total_lessons: c.total_lessons != null ? String(c.total_lessons) : "",
+    enrollment_count: c.enrollment_count != null ? String(c.enrollment_count) : "",
+    rating_average: c.rating_average != null ? String(c.rating_average) : "",
     thumbnail_url: c.thumbnail_url ?? "",
     short_description: c.short_description ?? "",
     long_description: c.long_description ?? "",
@@ -212,6 +216,8 @@ export default function CourseEditor() {
         short_description: form.short_description.trim() || undefined,
         long_description: form.long_description || undefined,
         total_lessons: form.total_lessons ? Number(form.total_lessons) : lessonCount,
+        enrollment_count: form.enrollment_count ? Number(form.enrollment_count) : undefined,
+        rating_average: form.rating_average ? Number(form.rating_average) : undefined,
         teachers: form.teachers.filter((t) => t.name.trim()),
         teacher_name: form.teachers[0]?.name?.trim() || undefined,
         teacher_avatar: form.teachers[0]?.avatar || undefined,
@@ -282,10 +288,16 @@ export default function CourseEditor() {
               <Input value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="ISSB, Cadet..." />
             </Field>
             <Field label="সময়কাল">
-              <Input value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="৮ সপ্তাহ / ৪৮ দিন" />
+              <Input value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="৬ মাস / ৮ সপ্তাহ" />
             </Field>
             <Field label="মোট লেসন (খালি = স্বয়ংক্রিয়)">
               <Input type="number" value={form.total_lessons} onChange={(e) => set("total_lessons", e.target.value)} placeholder="104" />
+            </Field>
+            <Field label="শিক্ষার্থী সংখ্যা">
+              <Input type="number" value={form.enrollment_count} onChange={(e) => set("enrollment_count", e.target.value)} placeholder="0" min="0" />
+            </Field>
+            <Field label="রেটিং (0.0 – 5.0)">
+              <Input type="number" value={form.rating_average} onChange={(e) => set("rating_average", e.target.value)} placeholder="0.0" min="0" max="5" step="0.1" />
             </Field>
           </div>
           <Field label="কোর্স ইমেজ (সরাসরি আপলোড)">

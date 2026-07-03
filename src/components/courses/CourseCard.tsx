@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Clock, Users } from "lucide-react";
+import { BookOpen, Clock, Star, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -69,19 +69,29 @@ export function CourseCard({ course }: { course: Course }) {
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {course.duration && (
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{course.duration}</span>
             </div>
           )}
+          {typeof course.total_lessons === "number" && (
+            <div className="flex items-center gap-1">
+              <BookOpen className="h-3.5 w-3.5 shrink-0" />
+              <span>{formatBnNumber(course.total_lessons)}টি লেসন</span>
+            </div>
+          )}
           {typeof course.enrollment_count === "number" && course.enrollment_count > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              <span>
-                {formatBnNumber(course.enrollment_count)} {tr.home.cards.students}
-              </span>
+            <div className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              <span>{formatBnNumber(course.enrollment_count)} {tr.home.cards.students}</span>
+            </div>
+          )}
+          {typeof course.rating_average === "number" && course.rating_average > 0 && (
+            <div className="flex items-center gap-1">
+              <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" />
+              <span>{course.rating_average.toFixed(1)}</span>
             </div>
           )}
         </div>

@@ -147,13 +147,13 @@ function PPDTModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center p-3 sm:p-6 overflow-y-auto"
       style={{ background: "rgba(0,0,0,0.75)" }}
       onClick={onClose}
     >
       <div
         key={phaseKey}
-        className="relative w-full max-w-4xl rounded-2xl bg-background shadow-2xl overflow-hidden flex flex-col max-h-[95vh]"
+        className="relative w-full max-w-4xl rounded-2xl bg-background shadow-2xl overflow-hidden my-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
@@ -166,7 +166,7 @@ function PPDTModal({
 
         {/* Picture — blurred during observe, completely hidden after */}
         {phase === "observe" ? (
-          <div className="relative w-full shrink-0 overflow-hidden bg-muted" style={{ height: "min(50vh, 56.25vw)" }}>
+          <div className="relative aspect-video w-full overflow-hidden bg-muted">
             <img
               src={picture.image_url}
               alt={picture.title}
@@ -187,7 +187,7 @@ function PPDTModal({
           </div>
         )}
 
-        <div className="p-5 space-y-4 overflow-y-auto">
+        <div className="p-5 space-y-4">
           {/* Phase label */}
           <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 px-4 py-2 text-sm font-medium text-blue-800 dark:text-blue-300 text-center border border-blue-100 dark:border-blue-900/40">
             {phaseLabel}

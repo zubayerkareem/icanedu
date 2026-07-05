@@ -10,7 +10,6 @@ import {
   LogOut,
   Brain,
   Trophy,
-  ListOrdered,
 } from "lucide-react";
 import {
   Sidebar,
@@ -33,8 +32,7 @@ import { toast } from "sonner";
 const items = [
   { title: t.admin.dashboard, url: "/admin", icon: LayoutDashboard, end: true },
   { title: "কোর্স ম্যানেজমেন্ট", url: "/admin/courses", icon: BookOpen },
-  { title: "কোর্সের ক্রম", url: "/admin/course-order", icon: ListOrdered },
-  { title: "প্রোডাক্ট ম্যানেজমেন্ট", url: "/admin/products", icon: Package },
+{ title: "প্রোডাক্ট ম্যানেজমেন্ট", url: "/admin/products", icon: Package },
   { title: t.admin.orders, url: "/admin/orders", icon: ShoppingBag },
   { title: "ইউজার", url: "/admin/students", icon: Users },
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },

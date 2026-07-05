@@ -52,3 +52,18 @@ export function sendNoticeEmail(data: {
 }) {
   return post({ type: "notice", data });
 }
+
+export function sendWelcomeCredentialsEmail(data: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  return post({ type: "welcome_credentials", data });
+}
+
+export function sendCourseAssignedEmail(
+  recipient: { userId: string } | { email: string },
+  data: { name: string; courseName: string },
+) {
+  return post({ type: "course_assigned", ...recipient, data });
+}

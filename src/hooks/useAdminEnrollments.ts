@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { sendWelcomeCredentialsEmail, sendCourseAssignedEmail } from "@/lib/email";
 import type { Order } from "./useOrders";
 
 export function useStudentCourseOrders(userId: string | null) {
@@ -71,6 +72,10 @@ export function useAdminEnrollStudent() {
         throw new Error("এই ইমেইলে কোনো অ্যাকাউন্ট নেই। শিক্ষার্থীকে আগে রেজিস্ট্রেশন করতে বলুন।");
       if (data?.error === "already_enrolled")
         throw new Error("শিক্ষার্থী এই কোর্সে ইতিমধ্যে ভর্তি আছেন।");
+      sendCourseAssignedEmail(
+        { email: params.email.trim().toLowerCase() },
+        { name: params.email, courseName: params.courseName },
+      );
       return data;
     },
     onSuccess: () => {
@@ -144,6 +149,10 @@ export function useAdminDirectEnroll() {
         valid_until: params.validUntil || null,
       });
       if (error) throw error;
+      sendCourseAssignedEmail(
+        { userId: params.userId },
+        { name: "", courseName: params.courseName },
+      );
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["student_orders"] });
@@ -169,6 +178,11 @@ export function useAdminCreateStudent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "অ্যাকাউন্ট তৈরি করতে সমস্যা হয়েছে");
+      sendWelcomeCredentialsEmail({
+        name: full_name ?? "",
+        email: email.trim().toLowerCase(),
+        password,
+      });
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),

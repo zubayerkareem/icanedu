@@ -133,6 +133,39 @@ function noticeTemplate(data: { title: string; content: string }) {
   };
 }
 
+function welcomeCredentialsTemplate(data: { name: string; email: string; password: string }) {
+  return {
+    subject: `🎉 iCANBD Academy-তে আপনার অ্যাকাউন্ট তৈরি হয়েছে`,
+    html: baseLayout(`
+      <h2>স্বাগতম, ${data.name || "শিক্ষার্থী"}!</h2>
+      <p>iCANBD Academy-তে আপনার অ্যাকাউন্ট তৈরি করা হয়েছে। নিচের তথ্য দিয়ে লগইন করুন:</p>
+      <div class="info-box">
+        <p><strong>ইমেইল:</strong> ${data.email}</p>
+        <p><strong>পাসওয়ার্ড:</strong> ${data.password}</p>
+      </div>
+      <p>লগইন করার পর আপনি নিজের পাসওয়ার্ড পরিবর্তন করতে পারবেন।</p>
+      <a href="https://www.icanbd.com/login" class="btn">এখনই লগইন করুন</a>
+    `),
+  };
+}
+
+function courseAssignedTemplate(data: { name: string; courseName: string }) {
+  return {
+    subject: `📚 আপনাকে একটি কোর্সে ভর্তি করা হয়েছে — ${data.courseName}`,
+    html: baseLayout(`
+      <h2>কোর্সে ভর্তি সম্পন্ন হয়েছে!</h2>
+      <p>প্রিয় <strong>${data.name || "শিক্ষার্থী"}</strong>,</p>
+      <p>আপনাকে সফলভাবে নিচের কোর্সে ভর্তি করা হয়েছে:</p>
+      <div class="info-box">
+        <p><strong>কোর্স:</strong> ${data.courseName}</p>
+        <p><strong>স্ট্যাটাস:</strong> সক্রিয় ✅</p>
+      </div>
+      <p>এখনই আপনার ড্যাশবোর্ডে গিয়ে কোর্সটি শুরু করুন।</p>
+      <a href="https://www.icanbd.com/dashboard" class="btn">কোর্স শুরু করুন</a>
+    `),
+  };
+}
+
 // ─── Handler ──────────────────────────────────────────────────
 
 export default async function handler(req: any, res: any) {
@@ -224,6 +257,40 @@ export default async function handler(req: any, res: any) {
 
       console.log(`[send-email] Notice sent to ${sent}/${emails.length} users`);
       return res.status(200).json({ ok: true, sent });
+    }
+
+    if (type === "welcome_credentials") {
+      const toEmail = data?.email;
+      if (!toEmail) return res.status(400).json({ error: "Missing data.email" });
+
+      const template = welcomeCredentialsTemplate(data);
+      await transporter.sendMail({
+        from: `"iCANBD Academy" <${gmailUser}>`,
+        to: toEmail,
+        subject: template.subject,
+        html: template.html,
+      });
+
+      console.log(`[send-email] welcome_credentials sent to ${toEmail}`);
+      return res.status(200).json({ ok: true, sent: 1 });
+    }
+
+    if (type === "course_assigned") {
+      const toEmail = userId
+        ? await getUserEmail(userId)
+        : (req.body.email ?? null);
+      if (!toEmail) return res.status(404).json({ error: "Could not resolve recipient email" });
+
+      const template = courseAssignedTemplate(data);
+      await transporter.sendMail({
+        from: `"iCANBD Academy" <${gmailUser}>`,
+        to: toEmail,
+        subject: template.subject,
+        html: template.html,
+      });
+
+      console.log(`[send-email] course_assigned sent to ${toEmail}`);
+      return res.status(200).json({ ok: true, sent: 1 });
     }
 
     return res.status(400).json({ error: "Unknown type" });

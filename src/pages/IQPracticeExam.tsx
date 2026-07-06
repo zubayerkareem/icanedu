@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Clock, Send } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, Clock, Lightbulb, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { IQ_SETS, IQ_COURSE_ID } from "@/lib/iq-practice/mock";
+import { IQ_SETS } from "@/lib/iq-practice/mock";
 import type { IQQuestion, IQSet } from "@/lib/iq-practice/mock";
 import { loadProgress, saveProgress } from "@/hooks/useIQProgress";
 import { useIQSets } from "@/hooks/useISSBContent";
@@ -52,6 +52,10 @@ function QuestionCard({
   showResult: boolean;
   locked?: boolean;
 }) {
+  const [showExplanation, setShowExplanation] = useState(false);
+  const isNonVerbal = !!question.image_url;
+  const canShowExplanation = isNonVerbal && !!question.explanation && (showResult || !!locked);
+
   return (
     <div className="rounded-xl border border-border bg-card p-5 shadow-sm sm:p-7">
       <div className="mb-4 flex items-center justify-between text-xs text-muted-foreground">
@@ -63,16 +67,21 @@ function QuestionCard({
         )}
       </div>
 
-      <p className="font-heading text-base font-semibold leading-relaxed text-foreground sm:text-lg">
-        {question.text}
-      </p>
-
-      {question.hasImage && (
-        <div className="mt-4 flex aspect-video max-h-48 w-full items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-muted to-secondary">
-          <svg className="h-14 w-14 text-muted-foreground/30" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-          </svg>
+      {isNonVerbal ? (
+        <div className="mb-5 overflow-hidden rounded-lg bg-muted">
+          <img
+            src={question.image_url}
+            alt={`প্রশ্ন ${index + 1}`}
+            className="w-full max-h-72 object-contain"
+          />
+          {question.text && (
+            <p className="px-4 py-2 text-xs text-muted-foreground text-center">{question.text}</p>
+          )}
         </div>
+      ) : (
+        <p className="font-heading text-base font-semibold leading-relaxed text-foreground sm:text-lg">
+          {question.text}
+        </p>
       )}
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -109,6 +118,24 @@ function QuestionCard({
           );
         })}
       </ul>
+
+      {/* Explanation toggle — non-verbal only, shown after answering */}
+      {canShowExplanation && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowExplanation((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:text-amber-700 transition-colors"
+          >
+            <Lightbulb className="h-3.5 w-3.5" />
+            {showExplanation ? "ব্যাখ্যা লুকান" : "ব্যাখ্যা দেখুন"}
+          </button>
+          {showExplanation && (
+            <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300">
+              {question.explanation}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -211,12 +238,13 @@ function ResultScreen({
         </span>
       </div>
 
-      {/* Per-question review with full options */}
+      {/* Per-question review */}
       <div className="w-full space-y-5">
         {set.questions.map((q, i) => {
           const chosen = answers[q.id];
           const isCorrect = chosen === q.correct;
-          const skipped = !chosen;
+          const wasSkipped = !chosen;
+          const isNonVerbal = !!q.image_url;
 
           return (
             <div
@@ -225,7 +253,7 @@ function ResultScreen({
                 "rounded-xl border p-5 shadow-sm",
                 isCorrect
                   ? "border-green-200 bg-green-50/40 dark:border-green-800 dark:bg-green-900/10"
-                  : skipped
+                  : wasSkipped
                   ? "border-border bg-card"
                   : "border-red-200 bg-red-50/40 dark:border-red-800 dark:bg-red-900/10",
               ].join(" ")}
@@ -236,15 +264,30 @@ function ResultScreen({
                   "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                   isCorrect
                     ? "bg-green-500 text-white"
-                    : skipped
+                    : wasSkipped
                     ? "bg-muted text-muted-foreground"
                     : "bg-destructive text-white",
                 ].join(" ")}>
                   {i + 1}
                 </span>
-                <p className="font-heading text-sm font-semibold text-foreground leading-relaxed">
-                  {q.text}
-                </p>
+                {isNonVerbal ? (
+                  <div className="flex-1">
+                    <div className="overflow-hidden rounded-md bg-muted">
+                      <img
+                        src={q.image_url}
+                        alt={`প্রশ্ন ${i + 1}`}
+                        className="w-full max-h-20 object-contain"
+                      />
+                    </div>
+                    {q.text && (
+                      <p className="mt-1 text-xs text-muted-foreground">{q.text}</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="font-heading text-sm font-semibold text-foreground leading-relaxed">
+                    {q.text}
+                  </p>
+                )}
               </div>
 
               {/* Options */}
@@ -286,13 +329,23 @@ function ResultScreen({
               </ul>
 
               {/* Skipped label */}
-              {skipped && (
+              {wasSkipped && (
                 <p className="ml-8 mt-2 text-xs text-muted-foreground">
                   উত্তর দেওয়া হয়নি · সঠিক উত্তর:{" "}
                   <span className="font-semibold text-green-600">
                     {String.fromCharCode(65 + q.options.findIndex((o) => o.id === q.correct))}
                   </span>
                 </p>
+              )}
+
+              {/* Explanation — non-verbal only, always visible on results */}
+              {isNonVerbal && q.explanation && (
+                <div className="ml-8 mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold mb-1">
+                    <Lightbulb className="h-3.5 w-3.5" /> ব্যাখ্যা
+                  </p>
+                  {q.explanation}
+                </div>
               )}
             </div>
           );
@@ -315,7 +368,6 @@ function ResultScreen({
 
 export default function IQPracticeExam() {
   const { id: courseId = "", setId = "" } = useParams<{ id: string; setId: string }>();
-  const navigate = useNavigate();
   const saveResult = useSaveIQResult();
   const { data: course } = useCourse(courseId);
 
@@ -327,7 +379,15 @@ export default function IQPracticeExam() {
         title: dbSet.title,
         description: dbSet.description ?? "",
         timerSeconds: dbSet.timer_seconds,
-        questions: (dbSet.iq_questions ?? []) as IQQuestion[],
+        type: (dbSet.type ?? "verbal") as "verbal" | "non_verbal",
+        questions: (dbSet.iq_questions ?? []).map((q) => ({
+          id: q.id,
+          text: q.text ?? "",
+          image_url: q.image_url ?? undefined,
+          explanation: q.explanation ?? undefined,
+          options: q.options as IQQuestion["options"],
+          correct: q.correct,
+        })),
       }
     : IQ_SETS.find((s) => s.id === setId);
 
@@ -348,23 +408,11 @@ export default function IQPracticeExam() {
   const timeLeftRef    = useRef(timeLeft);
   const endTimeRef     = useRef<number>(Date.now() + timeLeft * 1000);
   const autoSubmitRef  = useRef(false);
-  // Updated synchronously on every render — cleanup reads this to avoid
-  // overwriting completed: true with completed: false after submission
   const submittedRef   = useRef(submitted);
   submittedRef.current = submitted;
 
-  // Keep refs in sync with state
   useEffect(() => { answersRef.current = answers; }, [answers]);
   useEffect(() => { timeLeftRef.current = timeLeft; }, [timeLeft]);
-
-  const persist = useCallback(() => {
-    if (!set) return;
-    saveProgress(courseId, setId, {
-      answers: answersRef.current,
-      timeLeft: timeLeftRef.current,
-      completed: false,
-    });
-  }, [courseId, setId, set]);
 
   const handleSubmit = useCallback(() => {
     if (!set) return;
@@ -388,11 +436,9 @@ export default function IQPracticeExam() {
     if (timerRef.current) clearInterval(timerRef.current);
   }, [courseId, setId, set, saveResult]);
 
-  // Store latest handleSubmit in a ref so the timer closure never goes stale
   const handleSubmitRef = useRef(handleSubmit);
   useEffect(() => { handleSubmitRef.current = handleSubmit; }, [handleSubmit]);
 
-  // Single stable timer effect — only [submitted] as dep so endTimeRef is NEVER reset mid-exam
   useEffect(() => {
     if (submitted) return;
 
@@ -424,8 +470,6 @@ export default function IQPracticeExam() {
     return () => {
       clearInterval(timerRef.current!);
       document.removeEventListener("visibilitychange", onVisible);
-      // Only persist mid-exam state — skip if already submitted so we don't
-      // overwrite completed: true with completed: false
       if (!submittedRef.current) {
         saveProgress(courseId, setId, {
           answers: answersRef.current,
@@ -435,17 +479,14 @@ export default function IQPracticeExam() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [submitted]); // ← ONLY submitted — endTimeRef is never reset mid-exam
+  }, [submitted]);
 
   const handleRetake = useCallback(() => {
     if (!set) return;
-    // Reset refs synchronously before submitted flips — timer effect reads these on next run
     timeLeftRef.current = set.timerSeconds;
     answersRef.current = {};
     autoSubmitRef.current = false;
-    // Clear persisted progress so next page load also starts fresh
     saveProgress(courseId, setId, { answers: {}, timeLeft: set.timerSeconds, completed: false });
-    // Reset state — setting submitted last triggers the useEffect to restart the timer
     setAnswers({});
     setCurrentQ(0);
     setSkipped(new Set());
@@ -533,7 +574,6 @@ export default function IQPracticeExam() {
 
             {/* Navigation */}
             <div className="mt-6 flex items-center justify-between gap-3">
-              {/* Back button */}
               <Button
                 variant="outline"
                 size="sm"
@@ -584,7 +624,6 @@ export default function IQPracticeExam() {
                 current={currentQ}
                 answers={answers}
                 skipped={(() => {
-                  // merge explicit skips + auto-skips (past questions with no answer)
                   const merged = new Set(skipped);
                   for (let i = 0; i < currentQ; i++) {
                     if (!answers[set.questions[i].id]) merged.add(String(i));

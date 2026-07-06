@@ -190,9 +190,10 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
   const [pub, setPub] = useState(set.is_published);
   const [free, setFree] = useState(set.is_free ?? false);
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [type, setType] = useState<"verbal" | "non_verbal">(set.type ?? "verbal");
 
   async function save() {
-    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, is_free: free, course_id: courseId || undefined });
+    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, is_free: free, course_id: courseId || undefined, type });
     toast.success("সেট আপডেট হয়েছে");
   }
 
@@ -204,7 +205,7 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
       { id: optId(), text: "অপশন ৩" },
       { id: optId(), text: "অপশন ৪" },
     ];
-    await upsertQ.mutateAsync({ set_id: set.id, text: "নতুন প্রশ্ন", options: opts, correct: opts[0].id, order_index: (set.iq_questions?.length ?? 0) });
+    await upsertQ.mutateAsync({ set_id: set.id, text: "", image_url: undefined, explanation: undefined, options: opts, correct: opts[0].id, order_index: (set.iq_questions?.length ?? 0) });
   }
 
   const questions = (set.iq_questions ?? []).sort((a, b) => a.order_index - b.order_index);
@@ -212,7 +213,7 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
   return (
     <div>
       <SetHeader expanded={expanded} onToggle={onToggle}
-        title={set.title} badge={`${questions.length} প্রশ্ন`}
+        title={set.title} badge={`${questions.length} প্রশ্ন · ${type === "non_verbal" ? "Non-Verbal" : "Verbal"}`}
         onDelete={onDelete} isPending={false} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
@@ -221,7 +222,19 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
             <Field label="সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 flex-wrap">
+            <Field label="ধরন">
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setType("verbal")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", type === "verbal" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}>
+                  Verbal
+                </button>
+                <button type="button" onClick={() => setType("non_verbal")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", type === "non_verbal" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}>
+                  Non-Verbal
+                </button>
+              </div>
+            </Field>
             <Field label="প্রকাশিত">
               <div className="flex items-center gap-2 pt-1"><Switch checked={pub} onCheckedChange={setPub} /><span className="text-sm">{pub ? "হ্যাঁ" : "না"}</span></div>
             </Field>
@@ -237,7 +250,7 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
               <Button size="sm" variant="outline" onClick={addQuestion}><Plus className="mr-1 h-3.5 w-3.5" /> প্রশ্ন</Button>
             </div>
             {questions.map((q, qi) => (
-              <IQQuestionCard key={q.id} question={q} index={qi}
+              <IQQuestionCard key={q.id} question={q} index={qi} setType={type}
                 upsertQ={upsertQ} onDelete={() => deleteQ.mutateAsync(q.id)} />
             ))}
           </div>
@@ -247,12 +260,15 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
   );
 }
 
-function IQQuestionCard({ question, index, upsertQ, onDelete }: {
+function IQQuestionCard({ question, index, setType, upsertQ, onDelete }: {
   question: IQQuestion; index: number;
+  setType: "verbal" | "non_verbal";
   upsertQ: ReturnType<typeof useUpsertIQQuestion>;
   onDelete: () => void;
 }) {
   const [text, setText] = useState(question.text);
+  const [imageUrl, setImageUrl] = useState(question.image_url ?? "");
+  const [explanation, setExplanation] = useState(question.explanation ?? "");
   const [options, setOptions] = useState<IQOption[]>(question.options);
   const [correct, setCorrect] = useState(question.correct);
   const [dirty, setDirty] = useState(false);
@@ -276,7 +292,13 @@ function IQQuestionCard({ question, index, upsertQ, onDelete }: {
   }
 
   async function save() {
-    await upsertQ.mutateAsync({ id: question.id, set_id: question.set_id, text, options, correct, order_index: index });
+    await upsertQ.mutateAsync({
+      id: question.id, set_id: question.set_id,
+      text: text ?? "",
+      image_url: imageUrl || undefined,
+      explanation: explanation || undefined,
+      options, correct, order_index: index,
+    });
     setDirty(false);
     toast.success("প্রশ্ন সংরক্ষিত");
   }
@@ -285,7 +307,16 @@ function IQQuestionCard({ question, index, upsertQ, onDelete }: {
     <div className="rounded-md border border-border bg-card p-3 space-y-2">
       <div className="flex items-start gap-2">
         <span className="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent/10 text-xs font-bold text-accent">{index + 1}</span>
-        <Input value={text} onChange={(e) => { setText(e.target.value); setDirty(true); }} placeholder="প্রশ্নের টেক্সট" className="flex-1" />
+        <div className="flex-1 space-y-1.5">
+          {setType === "non_verbal" ? (
+            <>
+              <Input value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setDirty(true); }} placeholder="প্রশ্নের ছবি URL (image URL)" className="flex-1" />
+              <Input value={text} onChange={(e) => { setText(e.target.value); setDirty(true); }} placeholder="ক্যাপশন (ঐচ্ছিক)" className="flex-1 text-xs" />
+            </>
+          ) : (
+            <Input value={text} onChange={(e) => { setText(e.target.value); setDirty(true); }} placeholder="প্রশ্নের টেক্সট" className="flex-1" />
+          )}
+        </div>
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive" onClick={onDelete}><X className="h-3.5 w-3.5" /></Button>
       </div>
       <div className="grid grid-cols-2 gap-2 pl-7">
@@ -304,6 +335,17 @@ function IQQuestionCard({ question, index, upsertQ, onDelete }: {
           </div>
         ))}
       </div>
+      {setType === "non_verbal" && (
+        <div className="pl-7">
+          <textarea
+            value={explanation}
+            onChange={(e) => { setExplanation(e.target.value); setDirty(true); }}
+            placeholder="ব্যাখ্যা (explanation) — ঐচ্ছিক"
+            rows={2}
+            className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+          />
+        </div>
+      )}
       <div className="pl-7 flex items-center gap-2">
         <Button size="sm" variant="outline" className="h-7 text-xs" onClick={addOption}>
           <Plus className="mr-1 h-3 w-3" /> অপশন যোগ

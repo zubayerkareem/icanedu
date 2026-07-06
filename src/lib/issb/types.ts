@@ -11,6 +11,7 @@ export interface IQQuestion {
   set_id: string;
   text: string;
   image_url?: string;
+  explanation?: string;
   options: IQOption[];
   correct: string; // option id
   order_index: number;
@@ -25,6 +26,7 @@ export interface IQSet {
   order_index: number;
   is_published: boolean;
   is_free: boolean;
+  type?: "verbal" | "non_verbal";
   created_at?: string;
   iq_questions?: IQQuestion[];
 }

@@ -151,13 +151,13 @@ function deleteMutation(table: string, queryKey: string) {
 // ─── IQ ──────────────────────────────────────────────────────
 export const useUpsertIQSet = upsertMutation<Partial<IQSet> & { course_id?: string }>(
   "iq_sets", "admin_iq_sets",
-  (s) => ({ title: s.title, description: s.description ?? "", timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, description: s.description ?? "", timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, type: s.type ?? "verbal" })
 );
 export const useDeleteIQSet = deleteMutation("iq_sets", "admin_iq_sets");
 
 export const useUpsertIQQuestion = upsertMutation<Partial<IQQuestion>>(
   "iq_questions", "admin_iq_sets",
-  (q) => ({ set_id: q.set_id, text: q.text, image_url: q.image_url ?? null, options: q.options ?? [], correct: q.correct ?? "", order_index: q.order_index ?? 0 })
+  (q) => ({ set_id: q.set_id, text: q.text ?? "", image_url: q.image_url ?? null, explanation: q.explanation ?? null, options: q.options ?? [], correct: q.correct ?? "", order_index: q.order_index ?? 0 })
 );
 export const useDeleteIQQuestion = deleteMutation("iq_questions", "admin_iq_sets");
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, Clock, Lock, PlayCircle, RotateCcw, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ export default function IQPracticeHome() {
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const isLoading = courseLoading || setsLoading;
+
   const sets = dbSets.map((s) => ({
     id: s.id,
     title: s.title,
@@ -28,7 +30,16 @@ export default function IQPracticeHome() {
     timerSeconds: s.timer_seconds,
     questions: s.iq_questions ?? [],
     is_free: s.is_free,
+    type: (s.type ?? "verbal") as "verbal" | "non_verbal",
   }));
+
+  const hasVerbal    = sets.some((s) => s.type === "verbal");
+  const hasNonVerbal = sets.some((s) => s.type === "non_verbal");
+  const showTabs     = hasVerbal && hasNonVerbal;
+
+  const [activeTab, setActiveTab] = useState<"verbal" | "non_verbal">("verbal");
+
+  const visibleSets = showTabs ? sets.filter((s) => s.type === activeTab) : sets;
 
   return (
     <>
@@ -45,124 +56,152 @@ export default function IQPracticeHome() {
 
       <section className="py-10 sm:py-14">
         <div className="container max-w-3xl">
+          {/* Verbal / Non-Verbal tabs — only shown when both types exist */}
+          {showTabs && (
+            <div className="mb-6 flex gap-1 rounded-full bg-muted p-1 w-fit">
+              <button
+                onClick={() => setActiveTab("verbal")}
+                className={[
+                  "rounded-full px-5 py-1.5 text-sm font-semibold transition-all",
+                  activeTab === "verbal"
+                    ? "bg-card text-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+              >
+                Verbal
+              </button>
+              <button
+                onClick={() => setActiveTab("non_verbal")}
+                className={[
+                  "rounded-full px-5 py-1.5 text-sm font-semibold transition-all",
+                  activeTab === "non_verbal"
+                    ? "bg-card text-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground",
+                ].join(" ")}
+              >
+                Non-Verbal
+              </button>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="grid gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="rounded-xl border bg-card p-5 h-24 animate-pulse bg-muted/40" />
               ))}
             </div>
-          ) : sets.length === 0 ? (
+          ) : visibleSets.length === 0 ? (
             <p className="py-16 text-center text-muted-foreground">কোনো সেট পাওয়া যায়নি।</p>
           ) : (
-          <div className="grid gap-4">
-            {sets.map((set, idx) => {
-              const canAccess = set.is_free || enrolled;
-              const saved = canAccess ? loadProgress(courseId, set.id) : null;
-              const isCompleted = saved?.completed ?? false;
-              const isInProgress = saved && !isCompleted;
-              const score = saved?.score;
-              const total = saved?.total ?? set.questions.length;
-              const answeredCount = saved ? Object.keys(saved.answers).length : 0;
+            <div className="grid gap-4">
+              {visibleSets.map((set, idx) => {
+                const canAccess = set.is_free || enrolled;
+                const saved = canAccess ? loadProgress(courseId, set.id) : null;
+                const isCompleted = saved?.completed ?? false;
+                const isInProgress = saved && !isCompleted;
+                const score = saved?.score;
+                const total = saved?.total ?? set.questions.length;
+                const answeredCount = saved ? Object.keys(saved.answers).length : 0;
 
-              return (
-                <div
-                  key={set.id}
-                  className={[
-                    "rounded-xl border bg-card p-5 shadow-sm transition-all",
-                    !canAccess ? "border-border opacity-70" : "border-border hover:shadow-md",
-                  ].join(" ")}
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className={[
-                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-heading text-base font-bold",
-                        isCompleted
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : !canAccess
-                          ? "bg-muted text-muted-foreground"
-                          : isInProgress
-                          ? "bg-accent/15 text-accent"
-                          : "bg-muted text-muted-foreground",
-                      ].join(" ")}>
-                        {isCompleted
-                          ? <CheckCircle2 className="h-5 w-5" />
-                          : !canAccess
-                          ? <Lock className="h-4 w-4" />
-                          : idx + 1}
+                return (
+                  <div
+                    key={set.id}
+                    className={[
+                      "rounded-xl border bg-card p-5 shadow-sm transition-all",
+                      !canAccess ? "border-border opacity-70" : "border-border hover:shadow-md",
+                    ].join(" ")}
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className={[
+                          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full font-heading text-base font-bold",
+                          isCompleted
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : !canAccess
+                            ? "bg-muted text-muted-foreground"
+                            : isInProgress
+                            ? "bg-accent/15 text-accent"
+                            : "bg-muted text-muted-foreground",
+                        ].join(" ")}>
+                          {isCompleted
+                            ? <CheckCircle2 className="h-5 w-5" />
+                            : !canAccess
+                            ? <Lock className="h-4 w-4" />
+                            : idx + 1}
+                        </div>
+
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="font-heading text-base font-semibold text-foreground">
+                              {set.title}
+                            </h2>
+                            {isCompleted && (
+                              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                সম্পন্ন
+                              </Badge>
+                            )}
+                            {isInProgress && <Badge variant="secondary">চলমান</Badge>}
+                          </div>
+                          <p className="mt-0.5 text-sm text-muted-foreground">{set.description}</p>
+                          <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {formatTime(set.timerSeconds)} মিনিট
+                            </span>
+                            <span>{set.questions.length}টি প্রশ্ন</span>
+                            {isInProgress && (
+                              <span className="text-accent">
+                                {answeredCount}/{set.questions.length} উত্তর দেওয়া হয়েছে
+                              </span>
+                            )}
+                            {isCompleted && score !== undefined && (
+                              <span className="font-medium text-green-600 dark:text-green-400">
+                                স্কোর: {score}/{total}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="font-heading text-base font-semibold text-foreground">
-                            {set.title}
-                          </h2>
-                          {isCompleted && (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                              সম্পন্ন
-                            </Badge>
-                          )}
-                          {isInProgress && <Badge variant="secondary">চলমান</Badge>}
-                        </div>
-                        <p className="mt-0.5 text-sm text-muted-foreground">{set.description}</p>
-                        <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {formatTime(set.timerSeconds)} মিনিট
-                          </span>
-                          <span>{set.questions.length}টি প্রশ্ন</span>
-                          {isInProgress && (
-                            <span className="text-accent">
-                              {answeredCount}/{set.questions.length} উত্তর দেওয়া হয়েছে
-                            </span>
-                          )}
-                          {isCompleted && score !== undefined && (
-                            <span className="font-medium text-green-600 dark:text-green-400">
-                              স্কোর: {score}/{total}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 gap-2">
-                      {!canAccess ? (
-                        <Button size="sm" variant="outline" asChild>
-                          <Link to={`/courses/${courseId}`}>
-                            <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
-                          </Link>
-                        </Button>
-                      ) : isCompleted ? (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              clearProgress(courseId, set.id);
-                              navigate(`/courses/${courseId}/iq-practice/${set.id}`);
-                            }}
-                          >
-                            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> আবার পরীক্ষা দিন
+                      <div className="flex shrink-0 gap-2">
+                        {!canAccess ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/courses/${courseId}`}>
+                              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
+                            </Link>
                           </Button>
-                        </div>
-                      ) : isInProgress ? (
-                        <Button size="sm" asChild>
-                          <Link to={`/courses/${courseId}/iq-practice/${set.id}`}>
-                            <PlayCircle className="mr-1.5 h-4 w-4" /> চালিয়ে যান
-                          </Link>
-                        </Button>
-                      ) : (
-                        <Button size="sm" asChild>
-                          <Link to={`/courses/${courseId}/iq-practice/${set.id}`}>
-                            <PlayCircle className="mr-1.5 h-4 w-4" /> শুরু করুন
-                          </Link>
-                        </Button>
-                      )}
+                        ) : isCompleted ? (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                clearProgress(courseId, set.id);
+                                navigate(`/courses/${courseId}/iq-practice/${set.id}`);
+                              }}
+                            >
+                              <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> আবার পরীক্ষা দিন
+                            </Button>
+                          </div>
+                        ) : isInProgress ? (
+                          <Button size="sm" asChild>
+                            <Link to={`/courses/${courseId}/iq-practice/${set.id}`}>
+                              <PlayCircle className="mr-1.5 h-4 w-4" /> চালিয়ে যান
+                            </Link>
+                          </Button>
+                        ) : (
+                          <Button size="sm" asChild>
+                            <Link to={`/courses/${courseId}/iq-practice/${set.id}`}>
+                              <PlayCircle className="mr-1.5 h-4 w-4" /> শুরু করুন
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </section>

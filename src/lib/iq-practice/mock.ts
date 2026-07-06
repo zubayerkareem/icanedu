@@ -6,7 +6,8 @@ export interface IQOption {
 export interface IQQuestion {
   id: string;
   text: string;
-  hasImage?: boolean;
+  image_url?: string;
+  explanation?: string;
   options: IQOption[];
   correct: string;
 }
@@ -16,6 +17,7 @@ export interface IQSet {
   title: string;
   description: string;
   timerSeconds: number;
+  type?: "verbal" | "non_verbal";
   questions: IQQuestion[];
 }
 

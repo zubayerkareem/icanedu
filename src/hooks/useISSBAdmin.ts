@@ -223,7 +223,7 @@ export const useDeletePictureStoryPicture = deleteMutation("picture_story_pictur
 // ─── Incomplete Story ─────────────────────────────────────────
 export const useUpsertIncompleteStorySet = upsertMutation<Partial<IncompleteStorySet>>(
   "incomplete_story_sets", "admin_incomplete_story_sets",
-  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, lang: s.lang ?? "bn" })
 );
 export const useDeleteIncompleteStorySet = deleteMutation("incomplete_story_sets", "admin_incomplete_story_sets");
 

@@ -519,7 +519,7 @@ export default function IncompleteStoryHome() {
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const isLoading = courseLoading || setsLoading;
-  type StoryWithAccess = IncompleteStory & { is_free: boolean };
+  type StoryWithAccess = IncompleteStory & { is_free: boolean; lang: "bn" | "en" };
 
   const stories: StoryWithAccess[] = dbSets.flatMap((set) =>
     (set.incomplete_stories ?? []).map((s) => ({
@@ -531,10 +531,13 @@ export default function IncompleteStoryHome() {
       timeGuide: `${s.time_guide_minutes} minutes`,
       idea: s.idea ?? "",
       is_free: set.is_free ?? false,
+      lang: (set.lang ?? "bn") as "bn" | "en",
     }))
   );
 
-  const submissions = stories.map((s) => loadSubmission(courseId, s.id));
+  const visibleStories = stories.filter((s) => s.lang === lang);
+
+  const submissions = visibleStories.map((s) => loadSubmission(courseId, s.id));
 
   return (
     <>
@@ -542,7 +545,7 @@ export default function IncompleteStoryHome() {
       {activeStory && (
         <StoryModal
           story={activeStory}
-          storyIndex={stories.findIndex((s) => s.id === activeStory.id)}
+          storyIndex={visibleStories.findIndex((s) => s.id === activeStory.id)}
           courseId={courseId}
           lang={lang}
           L={L}
@@ -581,11 +584,11 @@ export default function IncompleteStoryHome() {
               <div key={i} className="rounded-xl border bg-card h-48 animate-pulse bg-muted/40" />
             ))}
           </div>
-        ) : stories.length === 0 ? (
-          <p className="py-16 text-center text-muted-foreground">কোনো গল্প পাওয়া যায়নি।</p>
+        ) : visibleStories.length === 0 ? (
+          <p className="py-16 text-center text-muted-foreground">{lang === "bn" ? "কোনো বাংলা গল্প পাওয়া যায়নি।" : "No English stories found."}</p>
         ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {stories.map((story, idx) => {
+          {visibleStories.map((story, idx) => {
             const canAccess = story.is_free || enrolled;
             const isSubmitted = canAccess ? !!submissions[idx] : false;
             const isLocked = !canAccess;

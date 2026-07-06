@@ -984,28 +984,48 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
 }) {
   const [title, setTitle] = useState(set.title);
   const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [pub, setPub] = useState(set.is_published ?? true);
   const [free, setFree] = useState(set.is_free ?? false);
+  const [lang, setLang] = useState<"bn" | "en">(set.lang ?? "bn");
   const stories = (set.incomplete_stories ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedStory, setExpandedStory] = useState<string | null>(null);
 
   async function addStory() {
-    await upsertS.mutateAsync({ set_id: set.id, title: "নতুন গল্প", body: "গল্পটি শুরু হয়েছিল...", word_limit: 200, time_guide_minutes: 10, idea: "", order_index: stories.length });
+    const defaultBody = lang === "bn" ? "গল্পটি শুরু হয়েছিল..." : "The story began...";
+    await upsertS.mutateAsync({ set_id: set.id, title: lang === "bn" ? "নতুন গল্প" : "New Story", body: defaultBody, word_limit: 200, time_guide_minutes: 10, idea: "", order_index: stories.length });
   }
 
   return (
     <div>
       <SetHeader expanded={expanded} onToggle={onToggle}
-        title={set.title} badge={`${stories.length} গল্প`} onDelete={onDelete} />
+        title={set.title} badge={`${stories.length} গল্প · ${lang === "bn" ? "বাংলা" : "English"}`} onDelete={onDelete} />
       {expanded && (
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
           </div>
-          <Field label="ফ্রি প্রিভিউ">
-            <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
-          </Field>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <div className="flex items-center gap-6 flex-wrap">
+            <Field label="ভাষা">
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setLang("bn")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", lang === "bn" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}>
+                  বাংলা
+                </button>
+                <button type="button" onClick={() => setLang("en")}
+                  className={["px-4 py-1.5 rounded-full text-sm font-medium border transition-colors", lang === "en" ? "bg-foreground text-background border-foreground" : "bg-background text-foreground border-border hover:border-foreground/50"].join(" ")}>
+                  English
+                </button>
+              </div>
+            </Field>
+            <Field label="প্রকাশিত">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={pub} onCheckedChange={setPub} /><span className="text-sm">{pub ? "হ্যাঁ" : "না"}</span></div>
+            </Field>
+            <Field label="ফ্রি প্রিভিউ">
+              <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
+            </Field>
+          </div>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_published: pub, is_free: free, lang, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">

@@ -310,7 +310,7 @@ function IQQuestionCard({ question, index, setType, upsertQ, onDelete }: {
         <div className="flex-1 space-y-1.5">
           {setType === "non_verbal" ? (
             <>
-              <Input value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setDirty(true); }} placeholder="প্রশ্নের ছবি URL (image URL)" className="flex-1" />
+              <ImageUpload value={imageUrl} onChange={(url) => { setImageUrl(url); setDirty(true); }} folder="thumbnails" />
               <Input value={text} onChange={(e) => { setText(e.target.value); setDirty(true); }} placeholder="ক্যাপশন (ঐচ্ছিক)" className="flex-1 text-xs" />
             </>
           ) : (

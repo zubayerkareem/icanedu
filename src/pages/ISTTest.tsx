@@ -74,8 +74,7 @@ function Instructions({
 }) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundImage: "radial-gradient(circle, #d1d5db 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+      className="min-h-screen flex items-center justify-center p-4 [background-image:radial-gradient(circle,_#d1d5db_1px,_transparent_1px)] dark:[background-image:radial-gradient(circle,_#374151_1px,_transparent_1px)] [background-size:24px_24px]"
     >
       <div className="w-full max-w-lg rounded-2xl border bg-background shadow-lg p-8 sm:p-10 text-center space-y-6">
         <div className="flex flex-col items-center gap-1">
@@ -180,8 +179,7 @@ function TestScreen({
 
   return (
     <div
-      className="min-h-screen bg-[#f4f4f5]"
-      style={{ backgroundImage: "radial-gradient(circle, #d1d5db 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+      className="min-h-screen bg-background [background-image:radial-gradient(circle,_#d1d5db_1px,_transparent_1px)] dark:[background-image:radial-gradient(circle,_#374151_1px,_transparent_1px)] [background-size:24px_24px]"
     >
       <div className="container max-w-3xl py-10 px-4 pb-24">
         {/* Title */}
@@ -197,7 +195,7 @@ function TestScreen({
                 <span className="shrink-0 w-7 text-sm font-semibold text-foreground text-right">
                   {i + 1}.
                 </span>
-                <span className="shrink-0 text-sm font-semibold text-accent whitespace-nowrap">
+                <span className="shrink-0 text-sm font-semibold text-foreground whitespace-nowrap">
                   {s.stem}
                 </span>
                 <input
@@ -311,8 +309,7 @@ function ResultsScreen({
   const skipped = sentences.length - answered;
 
   return (
-    <div className="min-h-screen bg-background"
-      style={{ backgroundImage: "radial-gradient(circle, #e5e7eb 1px, transparent 1px)", backgroundSize: "24px 24px" }}
+    <div className="min-h-screen bg-background [background-image:radial-gradient(circle,_#e5e7eb_1px,_transparent_1px)] dark:[background-image:radial-gradient(circle,_#374151_1px,_transparent_1px)] [background-size:24px_24px]"
     >
       <div className="container max-w-2xl py-10 px-4">
         {/* Header */}

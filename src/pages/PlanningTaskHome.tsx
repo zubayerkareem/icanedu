@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ImagePlus, Lightbulb, Lock, ShoppingCart, X } from "lucide-react";
+import { ChevronDown, ImagePlus, Lightbulb, Lock, ShoppingCart, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlanningTaskSets } from "@/hooks/useISSBContent";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
@@ -114,52 +114,77 @@ function SeeMoreModal({
   const [showIdea, setShowIdea] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-8" onClick={onClose}>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black" onClick={onClose}>
+      {/* Close button — always visible */}
+      <button
+        onClick={onClose}
+        className="fixed right-4 top-4 z-50 rounded-full bg-black/60 p-2 text-white hover:bg-black/80 transition-colors backdrop-blur-sm"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {/* ── SECTION 1: Full-screen image ── */}
+      {imageUrl && (
+        <div
+          className="relative flex items-center justify-center bg-black"
+          style={{ minHeight: "100dvh" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <img
+            src={imageUrl}
+            alt={heading}
+            className="w-full h-full object-contain"
+            style={{ maxHeight: "100dvh" }}
+          />
+
+          {/* Bottom gradient overlay with title + scroll hint */}
+          <div
+            className="absolute bottom-0 left-0 right-0 px-6 pt-16 pb-6 flex flex-col items-center gap-2"
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)" }}
+          >
+            <h2 className="font-heading text-xl font-bold text-white text-center drop-shadow">
+              {heading}
+            </h2>
+            <div className="flex flex-col items-center gap-1 text-white/70 text-xs animate-bounce">
+              <ChevronDown className="h-5 w-5" />
+              <span>নিচে স্ক্রোল করুন</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECTION 2: Text content ── */}
       <div
-        className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl bg-background shadow-2xl"
+        className="relative bg-background rounded-t-3xl -mt-6 px-5 py-6 space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
-        <button
-          onClick={onClose}
-          className="absolute right-3 top-3 z-10 rounded-full bg-muted p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {!imageUrl && (
+          <h2 className="font-heading text-xl font-bold text-foreground">{heading}</h2>
+        )}
 
-        {imageUrl && (
-          <div className="aspect-video overflow-hidden rounded-t-2xl bg-muted">
-            <img src={imageUrl} alt={heading} className="h-full w-full object-cover" />
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{BN.scenario}</p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{body}</p>
+        </div>
+
+        {idea && (
+          <div>
+            <button
+              onClick={() => setShowIdea((v) => !v)}
+              className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:text-amber-700 transition-colors"
+            >
+              <Lightbulb className="h-3.5 w-3.5" />
+              {showIdea ? BN.hideIdea : BN.showIdea}
+            </button>
+            {showIdea && (
+              <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300">
+                {idea}
+              </div>
+            )}
           </div>
         )}
 
-        <div className="p-5 space-y-4">
-          <h2 className="font-heading text-xl font-bold text-foreground">{heading}</h2>
-
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{BN.scenario}</p>
-            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{body}</p>
-          </div>
-
-          {idea && (
-            <div>
-              <button
-                onClick={() => setShowIdea((v) => !v)}
-                className="flex items-center gap-1.5 text-xs text-amber-600 font-medium hover:text-amber-700 transition-colors"
-              >
-                <Lightbulb className="h-3.5 w-3.5" />
-                {showIdea ? BN.hideIdea : BN.showIdea}
-              </button>
-              {showIdea && (
-                <div className="mt-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-300">
-                  {idea}
-                </div>
-              )}
-            </div>
-          )}
-
-          <Button variant="outline" className="w-full" onClick={onClose}>{BN.close}</Button>
-        </div>
+        <Button variant="outline" className="w-full" onClick={onClose}>{BN.close}</Button>
       </div>
     </div>
   );

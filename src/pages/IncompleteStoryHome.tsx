@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, ImagePlus, Lightbulb, Lock, RotateCcw, ShoppingCart, Trash2, X } from "lucide-react";
+import type { IncompleteStorySet } from "@/lib/issb/types";
 import { Button } from "@/components/ui/button";
 import type { IncompleteStory } from "@/lib/incomplete-story/mock";
 import { loadSubmission, saveSubmission } from "@/hooks/useStorySubmission";
@@ -504,11 +505,95 @@ function StoryCard({
   );
 }
 
+// ─── Set Card ─────────────────────────────────────────────────────────────────
+
+function SetCard({
+  set,
+  index,
+  courseId,
+  enrolled,
+  onClick,
+}: {
+  set: IncompleteStorySet;
+  index: number;
+  courseId: string;
+  enrolled: boolean;
+  onClick: () => void;
+}) {
+  const canAccess = set.is_free || enrolled;
+  const storyCount = set.incomplete_stories?.length ?? 0;
+  const submittedCount = canAccess
+    ? (set.incomplete_stories ?? []).filter((s) => !!loadSubmission(courseId, s.id)).length
+    : 0;
+  const pct = storyCount > 0 ? (submittedCount / storyCount) * 100 : 0;
+
+  return (
+    <div className="relative rounded-xl border bg-card shadow-sm overflow-hidden flex flex-col">
+      {!canAccess && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
+          <Lock className="h-6 w-6 text-muted-foreground" />
+          <Button size="sm" variant="outline" asChild>
+            <Link to={`/courses/${courseId}`}>
+              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      <div className="flex flex-col flex-1 p-5 gap-3">
+        {/* Number badge */}
+        <span className="self-start rounded px-2 py-0.5 bg-foreground text-background text-xs font-bold font-heading">
+          #{index + 1}
+        </span>
+
+        {/* Title */}
+        <h3 className="font-heading font-semibold text-foreground leading-snug">
+          {set.title}
+        </h3>
+
+        {/* Story count */}
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <BookOpen className="h-3.5 w-3.5" />
+          {storyCount}টি গল্প
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-auto space-y-1">
+          <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-green-500 transition-all"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          {canAccess && storyCount > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              {submittedCount}/{storyCount} সম্পন্ন
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Button row */}
+      <div className="border-t px-5 py-3">
+        <Button
+          size="sm"
+          disabled={!canAccess}
+          onClick={onClick}
+          className="w-full gap-1.5"
+        >
+          <BookOpen className="h-3.5 w-3.5" /> গল্পগুলো দেখুন
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function IncompleteStoryHome() {
   const { id: courseId = "" } = useParams<{ id: string }>();
   const [lang, setLang] = useState<Lang>("bn");
+  const [selectedSet, setSelectedSet] = useState<IncompleteStorySet | null>(null);
   const [activeStory, setActiveStory] = useState<IncompleteStory | null>(null);
   const [, forceUpdate] = useState(0);
 
@@ -519,29 +604,34 @@ export default function IncompleteStoryHome() {
   const { enrolled } = useIsEnrolled(courseId, course?.id);
 
   const isLoading = courseLoading || setsLoading;
-  type StoryWithAccess = IncompleteStory & { is_free: boolean; lang: "bn" | "en" };
 
-  const stories: StoryWithAccess[] = dbSets.flatMap((set) =>
-    (set.incomplete_stories ?? []).map((s) => ({
-      id: s.id,
-      title: s.title,
-      instruction: s.instruction ?? "",
-      body: s.body,
-      wordLimit: String(s.word_limit),
-      timeGuide: `${s.time_guide_minutes} minutes`,
-      idea: s.idea ?? "",
-      is_free: set.is_free ?? false,
-      lang: (set.lang ?? "bn") as "bn" | "en",
-    }))
-  );
+  // Reset selected set when language changes
+  const handleLangChange = (newLang: Lang) => {
+    setLang(newLang);
+    setSelectedSet(null);
+  };
 
-  const visibleStories = stories.filter((s) => s.lang === lang);
+  // Sets filtered by current language
+  const visibleSets = dbSets.filter((s) => (s.lang ?? "bn") === lang);
 
-  const submissions = visibleStories.map((s) => loadSubmission(courseId, s.id));
+  // Stories in the selected set
+  type StoryWithAccess = IncompleteStory & { is_free: boolean };
+  const visibleStories: StoryWithAccess[] = selectedSet
+    ? (selectedSet.incomplete_stories ?? []).map((s) => ({
+        id: s.id,
+        title: s.title,
+        instruction: s.instruction ?? "",
+        body: s.body,
+        wordLimit: String(s.word_limit),
+        timeGuide: `${s.time_guide_minutes} minutes`,
+        idea: s.idea ?? "",
+        is_free: selectedSet.is_free ?? false,
+      }))
+    : [];
 
   return (
     <>
-      {/* Modal */}
+      {/* Story modal */}
       {activeStory && (
         <StoryModal
           story={activeStory}
@@ -563,13 +653,13 @@ export default function IncompleteStoryHome() {
           </h1>
           <div className="flex rounded-full border border-border overflow-hidden text-sm font-medium">
             <button
-              onClick={() => setLang("bn")}
+              onClick={() => handleLangChange("bn")}
               className={["px-6 py-2 transition-colors", lang === "bn" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-muted"].join(" ")}
             >
               বাংলা
             </button>
             <button
-              onClick={() => setLang("en")}
+              onClick={() => handleLangChange("en")}
               className={["px-6 py-2 transition-colors", lang === "en" ? "bg-foreground text-background" : "bg-background text-foreground hover:bg-muted"].join(" ")}
             >
               English
@@ -577,48 +667,90 @@ export default function IncompleteStoryHome() {
           </div>
         </div>
 
-        {/* 3-column grid */}
-        {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="rounded-xl border bg-card h-48 animate-pulse bg-muted/40" />
-            ))}
-          </div>
-        ) : visibleStories.length === 0 ? (
-          <p className="py-16 text-center text-muted-foreground">{lang === "bn" ? "কোনো বাংলা গল্প পাওয়া যায়নি।" : "No English stories found."}</p>
-        ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {visibleStories.map((story, idx) => {
-            const canAccess = story.is_free || enrolled;
-            const isSubmitted = canAccess ? !!submissions[idx] : false;
-            const isLocked = !canAccess;
-
-            return (
-              <div key={story.id} className="relative">
-                {!canAccess && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
-                    <Lock className="h-6 w-6 text-muted-foreground" />
-                    <Button size="sm" variant="outline" asChild>
-                      <Link to={`/courses/${courseId}`}>
-                        <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
-                      </Link>
-                    </Button>
-                  </div>
-                )}
-                <StoryCard
-                  story={story}
-                  index={idx}
-                  courseId={courseId}
-                  isLocked={isLocked}
-                  isSubmitted={isSubmitted}
-                  lang={lang}
-                  L={L}
-                  onTestStart={() => canAccess && setActiveStory(story)}
-                />
+        {/* ── SET LIST VIEW ── */}
+        {!selectedSet && (
+          <>
+            {isLoading ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border bg-card h-48 animate-pulse bg-muted/40" />
+                ))}
               </div>
-            );
-          })}
-        </div>
+            ) : visibleSets.length === 0 ? (
+              <p className="py-16 text-center text-muted-foreground">
+                {lang === "bn" ? "কোনো বাংলা সেট পাওয়া যায়নি।" : "No English sets found."}
+              </p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleSets.map((set, idx) => (
+                  <SetCard
+                    key={set.id}
+                    set={set}
+                    index={idx}
+                    courseId={courseId}
+                    enrolled={!!enrolled}
+                    onClick={() => setSelectedSet(set)}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── STORY LIST VIEW ── */}
+        {selectedSet && (
+          <>
+            {/* Back button + set title */}
+            <div className="mb-6 flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedSet(null)}
+                className="gap-1.5"
+              >
+                <ArrowLeft className="h-4 w-4" /> ফিরে যান
+              </Button>
+              <h2 className="font-heading font-semibold text-foreground text-lg">
+                {selectedSet.title}
+              </h2>
+            </div>
+
+            {visibleStories.length === 0 ? (
+              <p className="py-16 text-center text-muted-foreground">এই সেটে কোনো গল্প নেই।</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {visibleStories.map((story, idx) => {
+                  const canAccess = story.is_free || enrolled;
+                  const isSubmitted = canAccess ? !!loadSubmission(courseId, story.id) : false;
+
+                  return (
+                    <div key={story.id} className="relative">
+                      {!canAccess && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/80 backdrop-blur-sm">
+                          <Lock className="h-6 w-6 text-muted-foreground" />
+                          <Button size="sm" variant="outline" asChild>
+                            <Link to={`/courses/${courseId}`}>
+                              <ShoppingCart className="mr-1.5 h-3.5 w-3.5" /> কোর্সটি কিনুন
+                            </Link>
+                          </Button>
+                        </div>
+                      )}
+                      <StoryCard
+                        story={story}
+                        index={idx}
+                        courseId={courseId}
+                        isLocked={!canAccess}
+                        isSubmitted={isSubmitted}
+                        lang={lang}
+                        L={L}
+                        onTestStart={() => canAccess && setActiveStory(story)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
     </>

@@ -81,6 +81,7 @@ export function useAdminEnrollStudent() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["student_orders"] });
       qc.invalidateQueries({ queryKey: ["admin_students"] });
+      qc.invalidateQueries({ queryKey: ["enrollment"] });
     },
   });
 }
@@ -157,6 +158,7 @@ export function useAdminDirectEnroll() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["student_orders"] });
       qc.invalidateQueries({ queryKey: ["admin_students"] });
+      qc.invalidateQueries({ queryKey: ["enrollment"] });
     },
   });
 }

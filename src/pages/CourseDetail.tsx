@@ -180,6 +180,7 @@ function CourseHero({ course }: { course: Course }) {
   const countdown = useCountdown(pct ? course.discount_ends_at : undefined);
   const inc = course.includes ?? {};
   const { user } = useAuth();
+  const { enrolled, isLoading: enrollLoading } = useIsEnrolled(course.id, course.slug);
 
   const basePrice = course.discount_price ?? course.price ?? 0;
   const [couponInput, setCouponInput] = useState("");
@@ -356,29 +357,39 @@ function CourseHero({ course }: { course: Course }) {
                   )}
                 </div>
 
-                <Button
-                  size="lg"
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                  asChild
-                >
-                  <Link
-                    to={buyHref}
-                    onClick={() => trackEvent("AddToCart", {
-                      content_ids: [course.id],
-                      content_name: course.title,
-                      content_type: "product",
-                      currency: "BDT",
-                      value: finalPrice,
-                    })}
+                {enrolled ? (
+                  <Button size="lg" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+                    <Link to={`/dashboard/courses/${course.id}`}>
+                      কোর্সে যান →
+                    </Link>
+                  </Button>
+                ) : enrollLoading ? (
+                  <Button size="lg" className="w-full" disabled>লোড হচ্ছে...</Button>
+                ) : (
+                  <Button
+                    size="lg"
+                    className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                    asChild
                   >
-                    {course.price && course.price > 0
-                      ? t.courseDetail.buyNow
-                      : t.courseDetail.enroll}
-                  </Link>
-                </Button>
+                    <Link
+                      to={buyHref}
+                      onClick={() => trackEvent("AddToCart", {
+                        content_ids: [course.id],
+                        content_name: course.title,
+                        content_type: "product",
+                        currency: "BDT",
+                        value: finalPrice,
+                      })}
+                    >
+                      {course.price && course.price > 0
+                        ? t.courseDetail.buyNow
+                        : t.courseDetail.enroll}
+                    </Link>
+                  </Button>
+                )}
 
-                {/* Coupon input */}
-                {course.coupons && course.coupons.length > 0 && (
+                {/* Coupon input — hide for enrolled users */}
+                {!enrolled && course.coupons && course.coupons.length > 0 && (
                   <div className="space-y-1.5">
                     <div className="flex gap-2">
                       <input
@@ -402,7 +413,7 @@ function CourseHero({ course }: { course: Course }) {
                   </div>
                 )}
 
-                {!user && (
+                {!user && !enrolled && (
                   <p className="text-center text-xs text-muted-foreground">
                     কোর্স কিনতে{" "}
                     <Link to={`/login?redirect=${encodeURIComponent(checkoutUrl)}`} className="text-accent hover:underline">

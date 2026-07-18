@@ -1,5 +1,6 @@
+import { useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon, Camera, Upload } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -13,9 +14,12 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
+import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/strings";
 import { toast } from "sonner";
 
@@ -94,6 +98,150 @@ function ThemeToggle() {
   );
 }
 
+// ─── Mandatory profile photo popup ───────────────────────────────────────────
+
+function ProfilePhotoPopup() {
+  const { user, profile, refreshProfile } = useAuth();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const open = !!user && !profile?.avatar_url;
+
+  function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("শুধু ছবি আপলোড করা যাবে।");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("ছবির আকার সর্বোচ্চ ২ MB হতে হবে।");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => setPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  async function handleUpload() {
+    if (!preview || !user) return;
+    setUploading(true);
+    try {
+      // Convert data URL back to blob
+      const res = await fetch(preview);
+      const blob = await res.blob();
+      const ext = blob.type.split("/")[1] ?? "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, { upsert: true, contentType: blob.type });
+      if (uploadErr) throw uploadErr;
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+      if (updateErr) throw updateErr;
+
+      await refreshProfile();
+      toast.success("প্রোফাইল ছবি সেট হয়েছে!");
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message ?? "আপলোড ব্যর্থ হয়েছে।");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open}>
+      <DialogContent
+        className="max-w-sm gap-0 p-0 overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        // Remove the default Radix close button
+        hideClose
+      >
+        {/* Header */}
+        <div className="bg-accent/10 px-6 py-5 text-center border-b border-border">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-accent/20">
+            <Camera className="h-6 w-6 text-accent" />
+          </div>
+          <h2 className="font-heading text-lg font-bold text-foreground">প্রোফাইল ছবি যোগ করুন</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            ড্যাশবোর্ড ব্যবহার করতে প্রোফাইল ছবি আপলোড করা আবশ্যক।
+          </p>
+        </div>
+
+        {/* Body */}
+        <div className="flex flex-col items-center gap-4 px-6 py-6">
+          {/* Preview circle */}
+          <div
+            className="relative h-28 w-28 cursor-pointer overflow-hidden rounded-full border-4 border-dashed border-accent/40 bg-muted transition-colors hover:border-accent"
+            onClick={() => inputRef.current?.click()}
+          >
+            {preview ? (
+              <img src={preview} alt="preview" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-muted-foreground">
+                <Upload className="h-6 w-6" />
+                <span className="text-[11px]">ছবি বেছে নিন</span>
+              </div>
+            )}
+          </div>
+
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => { if (e.target.files?.[0]) handleFile(e.target.files[0]); }}
+          />
+
+          {/* Buttons */}
+          <div className="flex w-full flex-col gap-2">
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => inputRef.current?.click()}
+            >
+              <Upload className="h-4 w-4" /> গ্যালারি থেকে বেছে নিন
+            </Button>
+            {/* Camera capture (mobile) */}
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                if (inputRef.current) {
+                  inputRef.current.setAttribute("capture", "user");
+                  inputRef.current.click();
+                  inputRef.current.removeAttribute("capture");
+                }
+              }}
+            >
+              <Camera className="h-4 w-4" /> ক্যামেরা দিয়ে তুলুন
+            </Button>
+            <Button
+              className="w-full"
+              disabled={!preview || uploading}
+              onClick={handleUpload}
+            >
+              {uploading ? "আপলোড হচ্ছে…" : "সেভ করুন ও চালিয়ে যান"}
+            </Button>
+          </div>
+
+          <p className="text-center text-[11px] text-muted-foreground">
+            সর্বোচ্চ ২ MB · JPG, PNG বা WebP
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
+
 export default function DashboardLayout() {
   const location = useLocation();
   const onCourseLearn = /^\/dashboard\/courses\/[^/]+$/.test(location.pathname);
@@ -108,6 +256,7 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider>
+      <ProfilePhotoPopup />
       <div className="flex min-h-screen w-full bg-background">
         <StudentSidebar />
         <div className="flex flex-1 flex-col">

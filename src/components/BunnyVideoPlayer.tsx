@@ -67,18 +67,35 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
   const [error, setError]               = useState(false);
   const [retryCount, setRetryCount]     = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // 0 = warning layer, 1 = identity layer — alternates every 3 s
-  const [activeLayer, setActiveLayer]   = useState<0 | 1>(0);
+  // watermark: shows for 6 s every 60 s; first appearance at 60 s
+  const [showWatermark, setShowWatermark] = useState(false);
+  const [activeLayer, setActiveLayer]    = useState<0 | 1>(0);
 
   const sessionDate = new Date().toLocaleDateString("en-GB").replace(/\//g, "-");
   const idText = profile?.full_name
     ? `${profile.full_name} · ${user?.email ?? ""} · ${sessionDate}`
     : `${user?.email ?? ""} · ${sessionDate}`;
 
-  // ── Watermark layer alternation ───────────────────────────────────────────
+  // ── Watermark: flash for 6 s every 60 s ──────────────────────────────────
   useEffect(() => {
-    const id = setInterval(() => setActiveLayer((l) => (l === 0 ? 1 : 0)), 3000);
-    return () => clearInterval(id);
+    let layerTimer: ReturnType<typeof setTimeout>;
+    let hideTimer: ReturnType<typeof setTimeout>;
+
+    const flash = () => {
+      setShowWatermark(true);
+      setActiveLayer(0);
+      // switch to identity layer halfway through
+      layerTimer = setTimeout(() => setActiveLayer(1), 3000);
+      // hide after 6 s
+      hideTimer  = setTimeout(() => setShowWatermark(false), 6000);
+    };
+
+    const interval = setInterval(flash, 60_000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(layerTimer);
+      clearTimeout(hideTimer);
+    };
   }, []);
 
   // ── Signed URL fetch ──────────────────────────────────────────────────────
@@ -169,7 +186,7 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
           />
 
           {/* ── Layer A: iCAN Academy legal warning ── */}
-          <div style={{ ...OVERLAY, opacity: activeLayer === 0 ? 1 : 0 }}>
+          <div style={{ ...OVERLAY, opacity: showWatermark && activeLayer === 0 ? 1 : 0 }}>
             {WARN_POSITIONS.map(({ style }, i) => (
               <div key={i} style={{ ...WARN_BASE, ...style }}>
                 <p style={{
@@ -205,7 +222,7 @@ export function BunnyVideoPlayer({ videoId, courseId, courseSlug }: Props) {
           </div>
 
           {/* ── Layer B: user identity grid ── */}
-          <div style={{ ...OVERLAY, opacity: activeLayer === 1 ? 1 : 0 }}>
+          <div style={{ ...OVERLAY, opacity: showWatermark && activeLayer === 1 ? 1 : 0 }}>
             {ID_POSITIONS.map((pos, i) => (
               <span key={i} style={{ ...ID_MARK, ...pos }}>
                 {idText}

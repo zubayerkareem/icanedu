@@ -2,13 +2,15 @@ import { Link } from "react-router-dom";
 import {
   BookOpen, ShoppingBag, ClipboardList, ChevronRight,
   Bell, Package, BookMarked, ShoppingCart, Megaphone,
-  Sparkles, Star, UserCircle,
+  Sparkles, Star, UserCircle, MessageSquare, CheckCircle2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyOrders, type OrderStatus } from "@/hooks/useOrders";
 import { useNotices } from "@/hooks/useNotices";
 import { useCourses } from "@/hooks/useCourses";
+import { useMyMessages, useMarkMessageRead } from "@/hooks/useAdminMessages";
 import { t } from "@/lib/strings";
 
 // ── helpers ────────────────────────────────────────────────────────────────────
@@ -51,6 +53,58 @@ function Skeleton({ className = "" }) {
   return <div className={`animate-pulse rounded bg-muted ${className}`} />;
 }
 
+// ── admin messages section ─────────────────────────────────────────────────────
+function AdminMessagesSection() {
+  const { data: messages = [] } = useMyMessages();
+  const markRead = useMarkMessageRead();
+  const unread = messages.filter((m) => !m.read_at);
+  if (unread.length === 0) return null;
+
+  return (
+    <div className="animate-in slide-in-from-top-2 duration-500 rounded-xl border-2 border-accent bg-accent/5 p-4 space-y-3">
+      {/* Header */}
+      <div className="flex items-center gap-2.5">
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-40" />
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-accent/20">
+            <MessageSquare className="h-4 w-4 text-accent" />
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-foreground">নতুন বার্তা</p>
+          <p className="text-xs text-muted-foreground">{unread.length}টি অপঠিত বার্তা</p>
+        </div>
+      </div>
+
+      {/* Message cards */}
+      <div className="space-y-2">
+        {unread.map((msg) => (
+          <div
+            key={msg.id}
+            className="flex items-start gap-3 rounded-lg border border-accent/20 bg-background pl-4 pr-3 py-3"
+            style={{ borderLeft: "3px solid hsl(var(--accent))" }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-foreground whitespace-pre-wrap break-words">{msg.body}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground/60">{timeAgo(msg.created_at)}</p>
+            </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0 h-7 gap-1 text-xs text-accent hover:text-accent hover:bg-accent/10"
+              onClick={() => markRead.mutate(msg.id)}
+              disabled={markRead.isPending}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              পড়েছি
+            </Button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── main ───────────────────────────────────────────────────────────────────────
 export default function DashboardHome() {
   const { profile, user }        = useAuth();
@@ -72,6 +126,9 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-7">
+
+      {/* ── Admin messages ─────────────────────────────────────────────── */}
+      <AdminMessagesSection />
 
       {/* ── Welcome banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-accent/90 to-accent px-6 py-7 text-accent-foreground shadow-md">

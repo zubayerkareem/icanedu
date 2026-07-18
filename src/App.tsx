@@ -69,6 +69,7 @@ import AdminProducts from "./pages/admin/Products";
 import AdminOrders from "./pages/admin/Orders";
 import AdminStudents from "./pages/admin/Students";
 import AdminNotices from "./pages/admin/Notices";
+import AdminMessages from "./pages/admin/AdminMessages";
 import PageBuilder from "./pages/admin/PageBuilder";
 import ISSBAdmin from "./pages/admin/ISSBAdmin";
 import SuccessAdmin from "./pages/admin/SuccessAdmin";
@@ -174,6 +175,7 @@ const App = () => (
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />
                 <Route path="/admin/students" element={<AdminStudents />} />
+                <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />
                 <Route path="/admin/pages" element={<ComingSoon />} />
                 <Route path="/admin/page-builder" element={<PageBuilder />} />

@@ -10,6 +10,7 @@ import {
   LogOut,
   Brain,
   Trophy,
+  MessageSquare,
 } from "lucide-react";
 import {
   Sidebar,
@@ -35,6 +36,7 @@ const items = [
 { title: "প্রোডাক্ট ম্যানেজমেন্ট", url: "/admin/products", icon: Package },
   { title: t.admin.orders, url: "/admin/orders", icon: ShoppingBag },
   { title: "ইউজার", url: "/admin/students", icon: Users },
+  { title: "মেসেজ", url: "/admin/messages", icon: MessageSquare },
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },
   { title: "ISSB কন্টেন্ট", url: "/admin/issb", icon: Brain },
   { title: "সাক্সেস স্টোরি", url: "/admin/success", icon: Trophy },

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BookOpen, ShoppingBag, ClipboardList, ChevronRight,
@@ -54,31 +55,43 @@ function Skeleton({ className = "" }) {
 }
 
 // ── admin messages section ─────────────────────────────────────────────────────
+const MSG_PAGE_SIZE = 3;
+
 function AdminMessagesSection() {
   const { data: messages = [] } = useMyMessages();
   const markRead = useMarkMessageRead();
+  const [page, setPage] = useState(0);
+
   const unread = messages.filter((m) => !m.read_at);
+  const totalPages = Math.ceil(unread.length / MSG_PAGE_SIZE);
+  const visible = unread.slice(page * MSG_PAGE_SIZE, (page + 1) * MSG_PAGE_SIZE);
+
   if (unread.length === 0) return null;
 
   return (
     <div className="animate-in slide-in-from-top-2 duration-500 rounded-xl border-2 border-accent bg-accent/5 p-4 space-y-3">
       {/* Header */}
-      <div className="flex items-center gap-2.5">
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-40" />
-          <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-accent/20">
-            <MessageSquare className="h-4 w-4 text-accent" />
-          </span>
+      <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-40" />
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-accent/20">
+              <MessageSquare className="h-4 w-4 text-accent" />
+            </span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">নতুন বার্তা</p>
+            <p className="text-xs text-muted-foreground">{unread.length}টি অপঠিত বার্তা</p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground">নতুন বার্তা</p>
-          <p className="text-xs text-muted-foreground">{unread.length}টি অপঠিত বার্তা</p>
-        </div>
+        <Link to="/dashboard/messages" className="text-xs font-medium text-accent hover:underline flex items-center gap-1">
+          সব দেখুন <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
       {/* Message cards */}
       <div className="space-y-2">
-        {unread.map((msg) => (
+        {visible.map((msg) => (
           <div
             key={msg.id}
             className="flex items-start gap-3 rounded-lg border border-accent/20 bg-background pl-4 pr-3 py-3"
@@ -101,6 +114,31 @@ function AdminMessagesSection() {
           </div>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            disabled={page === 0}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            ← আগের
+          </Button>
+          <span className="text-xs text-muted-foreground">{page + 1} / {totalPages}</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            পরের →
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

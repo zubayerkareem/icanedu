@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { MessageSquare, Plus, Trash2, Send, Search, Users, CheckSquare, Square } from "lucide-react";
+import { MessageSquare, Plus, Trash2, Send, Search, Users, CheckSquare, Square, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +34,10 @@ export default function AdminMessages() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(messages.length / PAGE_SIZE);
+  const pagedMessages = messages.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   // Compose form state
   const [body, setBody] = useState("");
@@ -141,7 +145,7 @@ export default function AdminMessages() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
-              {messages.map((msg) => (
+              {pagedMessages.map((msg) => (
                 <tr key={msg.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                     {timeAgo(msg.created_at)}
@@ -171,6 +175,24 @@ export default function AdminMessages() {
           </table>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-3 flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, messages.length)} / {messages.length}টি
+          </p>
+          <div className="flex items-center gap-1">
+            <Button size="icon" variant="outline" className="h-7 w-7" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <span className="px-2 text-xs text-muted-foreground">{page + 1} / {totalPages}</span>
+            <Button size="icon" variant="outline" className="h-7 w-7" disabled={page >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Compose sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

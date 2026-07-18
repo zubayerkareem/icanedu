@@ -57,6 +57,7 @@ import DashboardHome from "./pages/dashboard/DashboardHome";
 import MyCourses from "./pages/dashboard/MyCourses";
 import MyOrders from "./pages/dashboard/MyOrders";
 import Profile from "./pages/dashboard/Profile";
+import Messages from "./pages/dashboard/Messages";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
@@ -156,6 +157,7 @@ const App = () => (
                 <Route path="/dashboard/courses" element={<MyCourses />} />
                 <Route path="/dashboard/courses/:id" element={<CourseLearn />} />
                 <Route path="/dashboard/orders" element={<MyOrders />} />
+                <Route path="/dashboard/messages" element={<Messages />} />
                 <Route path="/dashboard/profile" element={<Profile />} />
               </Route>
 

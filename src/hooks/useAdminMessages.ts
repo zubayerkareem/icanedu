@@ -82,19 +82,31 @@ export function useMyMessages() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // Step 1: get recipient rows for this user
+      const { data: recipients, error: recErr } = await supabase
         .from("admin_message_recipients")
-        .select("id, read_at, created_at, admin_messages!message_id(id, body, created_at)")
+        .select("id, message_id, read_at, created_at")
         .eq("user_id", user.id)
         .order("read_at", { ascending: true, nullsFirst: true })
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      if (recErr) throw recErr;
+      if (!recipients || recipients.length === 0) return [];
 
-      return (data ?? []).map((r) => {
-        const msg = r.admin_messages as unknown as { id: string; body: string; created_at: string };
+      // Step 2: fetch message bodies separately (avoids RLS circular-check on embedded join)
+      const messageIds = recipients.map((r) => r.message_id);
+      const { data: msgs, error: msgErr } = await supabase
+        .from("admin_messages")
+        .select("id, body, created_at")
+        .in("id", messageIds);
+      if (msgErr) throw msgErr;
+
+      const msgMap = new Map((msgs ?? []).map((m) => [m.id, m]));
+
+      return recipients.map((r) => {
+        const msg = msgMap.get(r.message_id);
         return {
           id: r.id,
-          message_id: msg?.id ?? "",
+          message_id: r.message_id,
           body: msg?.body ?? "",
           created_at: msg?.created_at ?? r.created_at,
           read_at: r.read_at,

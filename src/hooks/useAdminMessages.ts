@@ -84,7 +84,7 @@ export function useMyMessages() {
 
       const { data, error } = await supabase
         .from("admin_message_recipients")
-        .select("id, read_at, created_at, admin_messages(id, body, created_at)")
+        .select("id, read_at, created_at, admin_messages!message_id(id, body, created_at)")
         .eq("user_id", user.id)
         .order("read_at", { ascending: true, nullsFirst: true })
         .order("created_at", { ascending: false });

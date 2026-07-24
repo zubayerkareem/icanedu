@@ -29,7 +29,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, usePaidStudentIds } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, useAdminBulkClearDevices, usePaidStudentIds } from "@/hooks/useStudents";
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
@@ -670,6 +670,7 @@ export default function AdminStudents() {
   const deleteStudent = useDeleteStudent();
   const resetPassword = useResetStudentPassword();
   const clearDevices = useAdminClearDevices();
+  const bulkClearDevices = useAdminBulkClearDevices();
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
@@ -781,6 +782,16 @@ export default function AdminStudents() {
       try { await resetPassword.mutateAsync(id); ok++; } catch { fail++; }
     }
     toast.success(`${ok} জনকে রিসেট ইমেইল পাঠানো হয়েছে${fail ? `, ${fail} টি ব্যর্থ` : ""}`);
+  }
+
+  async function handleBulkClearDevices() {
+    try {
+      await bulkClearDevices.mutateAsync([...selectedIds]);
+      toast.success(`${selectedIds.size} জনের ডিভাইস ব্লক সরানো হয়েছে`);
+      setSelectedIds(new Set());
+    } catch {
+      toast.error("ডিভাইস ক্লিয়ার ব্যর্থ হয়েছে");
+    }
   }
 
   async function handleBulkDelete() {
@@ -1006,6 +1017,16 @@ export default function AdminStudents() {
             <BulkAssignDialog selectedIds={[...selectedIds]} onDone={() => setSelectedIds(new Set())} />
             <Button size="sm" variant="outline" onClick={handleBulkResetPassword} disabled={resetPassword.isPending}>
               <KeyRound className="mr-2 h-4 w-4" /> পাসওয়ার্ড রিসেট
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/20 hover:border-amber-500"
+              onClick={handleBulkClearDevices}
+              disabled={bulkClearDevices.isPending}
+            >
+              <MonitorX className="mr-2 h-4 w-4" />
+              {bulkClearDevices.isPending ? "ক্লিয়ার হচ্ছে..." : "ডিভাইস ব্লক সরান"}
             </Button>
             <Button size="sm" variant="destructive" onClick={() => setBulkDeleteConfirm(true)}>
               <Trash2 className="mr-2 h-4 w-4" /> মুছুন

@@ -93,6 +93,20 @@ export function useAdminClearDevices() {
   });
 }
 
+export function useAdminBulkClearDevices() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userIds: string[]) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ device_token: null })
+        .in("id", userIds);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),
+  });
+}
+
 export function useResetStudentPassword() {
   return useMutation({
     mutationFn: async (userId: string) => {

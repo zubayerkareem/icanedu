@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, RefreshCw, BookOpen, Package, Calendar, X, Trash2 } from "lucide-react";
+import { Search, RefreshCw, BookOpen, Package, Calendar, X, Trash2, UserCheck } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -532,6 +532,178 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
   );
 }
 
+// ─── Admin Assigned tab ────────────────────────────────────────────────────────
+
+function AdminAssignedTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const bulkUpdate = useBulkUpdateOrderStatus();
+  const deleteOrder = useDeleteOrder();
+  const bulkDeleteOrders = useBulkDeleteOrders();
+
+  const filtered = orders.filter((o) => {
+    const q = search.trim().toLowerCase();
+    return (
+      !q ||
+      o.customer_name.toLowerCase().includes(q) ||
+      o.phone.includes(q) ||
+      o.product_name.toLowerCase().includes(q)
+    );
+  });
+
+  const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
+  const someChecked = filtered.some((o) => selected.has(o.id));
+
+  function toggleAll() {
+    if (allChecked) {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.delete(o.id)); return n; });
+    } else {
+      setSelected((prev) => { const n = new Set(prev); filtered.forEach((o) => n.add(o.id)); return n; });
+    }
+  }
+
+  function toggleOne(id: string) {
+    setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+
+  function handleBulkApply(status: OrderStatus) {
+    const ids = Array.from(selected);
+    bulkUpdate.mutate(
+      { ids, status },
+      {
+        onSuccess: () => { toast.success(`${ids.length}টি অর্ডার → ${STATUS_LABELS[status]}`); setSelected(new Set()); },
+        onError:   () => toast.error("বাল্ক আপডেট ব্যর্থ"),
+      }
+    );
+  }
+
+  function handleDelete() {
+    if (!deleteId) return;
+    deleteOrder.mutate(deleteId, {
+      onSuccess: () => { toast.success("অর্ডার মুছে ফেলা হয়েছে"); setDeleteId(null); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
+  function handleBulkDelete() {
+    const ids = Array.from(selected);
+    bulkDeleteOrders.mutate(ids, {
+      onSuccess: () => { toast.success(`${ids.length}টি অর্ডার মুছে ফেলা হয়েছে`); setSelected(new Set()); setBulkDeleteConfirm(false); },
+      onError:   () => toast.error("মুছতে সমস্যা হয়েছে"),
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input placeholder="নাম, ফোন বা কোর্স..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-9" />
+      </div>
+
+      {selected.size > 0 && (
+        <BulkActionBar count={selected.size} onApply={handleBulkApply} onDelete={() => setBulkDeleteConfirm(true)} onClear={() => setSelected(new Set())} isPending={bulkUpdate.isPending || bulkDeleteOrders.isPending} />
+      )}
+
+      <div className="overflow-x-auto rounded-lg border border-border">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <UserCheck className="mb-3 h-10 w-10 opacity-30" />
+            <p>কোনো অ্যাডমিন অ্যাসাইন কোর্স নেই</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="border-b border-border bg-muted/50">
+              <tr>
+                <th className="w-10 px-4 py-3">
+                  <Checkbox checked={allChecked} data-state={someChecked && !allChecked ? "indeterminate" : undefined} onCheckedChange={toggleAll} />
+                </th>
+                {["তারিখ", "ছাত্র", "কোর্স", "স্ট্যাটাস", "মেয়াদ", "অ্যাকশন"].map((h) => (
+                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-card">
+              {paginated.map((order) => {
+                const nextStatus = COURSE_STATUS_NEXT[order.status];
+                const isSelected = selected.has(order.id);
+                return (
+                  <tr key={order.id} className={`transition-colors hover:bg-muted/30 ${isSelected ? "bg-accent/5" : ""}`}>
+                    <td className="px-4 py-3"><Checkbox checked={isSelected} onCheckedChange={() => toggleOne(order.id)} /></td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-muted-foreground">{formatDate(order.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{order.customer_name}</div>
+                      <div className="text-xs text-muted-foreground">{order.phone || "—"}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="max-w-[200px] truncate block">{order.product_name}</span>
+                    </td>
+                    <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge></td>
+                    <td className="px-4 py-3"><ValidityCell order={order} /></td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        {nextStatus && (
+                          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAdvance(order)}>
+                            {STATUS_LABELS[nextStatus]}
+                          </Button>
+                        )}
+                        {order.status !== "cancelled" && order.status !== "delivered" && (
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onCancel(order)}>
+                            বাতিল
+                          </Button>
+                        )}
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteId(order.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>অ্যাসাইনমেন্ট মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই ছাত্রের কোর্স অ্যাক্সেস সরিয়ে দেওয়া হবে।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDelete} disabled={deleteOrder.isPending}>
+              {deleteOrder.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteConfirm} onOpenChange={setBulkDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{selected.size}টি অ্যাসাইনমেন্ট মুছে ফেলবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই ছাত্রদের কোর্স অ্যাক্সেস সরিয়ে দেওয়া হবে।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleBulkDelete} disabled={bulkDeleteOrders.isPending}>
+              {bulkDeleteOrders.isPending ? "মুছছে..." : "মুছে ফেলুন"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
 // ─── Main ──────────────────────────────────────────────────────────────────────
 
 export default function AdminOrders() {
@@ -539,6 +711,8 @@ export default function AdminOrders() {
   const { mutate: updateStatus } = useUpdateOrderStatus();
 
   const courseOrders  = orders.filter((o) => o.order_type === "course");
+  const siteOrders    = courseOrders.filter((o) => o.bkash_txn_id !== null);
+  const adminOrders   = courseOrders.filter((o) => o.bkash_txn_id === null);
   const productOrders = orders.filter((o) => o.order_type === "product");
 
   function handleAdvance(order: Order) {
@@ -585,7 +759,7 @@ export default function AdminOrders() {
     return <div className="flex items-center justify-center py-20 text-muted-foreground">লোড হচ্ছে...</div>;
   }
 
-  const pendingCourse  = courseOrders.filter((o) => o.status === "pending").length;
+  const pendingCourse  = siteOrders.filter((o) => o.status === "pending").length;
   const pendingProduct = productOrders.filter((o) => o.status === "pending").length;
 
   return (
@@ -593,7 +767,7 @@ export default function AdminOrders() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground">অর্ডার ম্যানেজমেন্ট</h1>
-          <p className="mt-0.5 text-sm text-muted-foreground">কোর্স {courseOrders.length}টি · পণ্য {productOrders.length}টি</p>
+          <p className="mt-0.5 text-sm text-muted-foreground">কোর্স অর্ডার {siteOrders.length}টি · পণ্য {productOrders.length}টি · অ্যাডমিন অ্যাসাইন {adminOrders.length}টি</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => refetch()}>
           <RefreshCw className="mr-2 h-4 w-4" /> রিফ্রেশ
@@ -616,13 +790,23 @@ export default function AdminOrders() {
               <span className="ml-1 rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">{pendingProduct}</span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="admin" className="gap-2">
+            <UserCheck className="h-4 w-4" />
+            অ্যাডমিন অ্যাসাইন
+            {adminOrders.length > 0 && (
+              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">{adminOrders.length}</span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="course">
-          <CourseOrdersTab orders={courseOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
+          <CourseOrdersTab orders={siteOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
         </TabsContent>
         <TabsContent value="product">
           <ProductOrdersTab orders={productOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
+        </TabsContent>
+        <TabsContent value="admin">
+          <AdminAssignedTab orders={adminOrders} onAdvance={handleAdvance} onCancel={handleCancel} />
         </TabsContent>
       </Tabs>
     </div>

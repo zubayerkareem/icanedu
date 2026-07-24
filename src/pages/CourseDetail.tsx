@@ -299,7 +299,15 @@ function CourseHero({ course }: { course: Course }) {
           <div className="lg:sticky lg:top-20">
             <div className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-2xl">
               <div className="aspect-video w-full overflow-hidden bg-muted">
-                {course.thumbnail_url ? (
+                {course.youtube_url ? (
+                  <iframe
+                    src={getEmbedUrl(course.youtube_url)}
+                    title={course.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="h-full w-full"
+                  />
+                ) : course.thumbnail_url ? (
                   <img
                     src={course.thumbnail_url}
                     alt={course.title}

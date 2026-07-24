@@ -52,6 +52,7 @@ export function useUpsertCourse() {
         rating_average: course.rating_average ?? 0,
         rating_count: course.rating_count ?? 0,
         is_published: course.is_published ?? true,
+        youtube_url: course.youtube_url ?? null,
       };
 
       if (course.id) {

@@ -155,6 +155,7 @@ export interface Course {
   resources?: CourseResource[];
 
   display_order?: number | null;
+  youtube_url?: string;
 }
 
 export type CourseSort = "newest" | "price_asc" | "price_desc" | "manual";

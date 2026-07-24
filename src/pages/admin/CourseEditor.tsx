@@ -57,6 +57,7 @@ type Form = {
   modules: Module[];
   videos: CourseVideo[];
   resources: CourseResource[];
+  youtube_url: string;
 };
 
 const emptyForm: Form = {
@@ -65,6 +66,7 @@ const emptyForm: Form = {
   teachers: [],
   price: "", discount_price: "", discount_ends_at: "", is_published: true,
   highlight_items: [], feature_items: [], coupons: [], modules: [], videos: [], resources: [],
+  youtube_url: "",
 };
 
 function fromCourse(c: Course): Form {
@@ -99,6 +101,7 @@ function fromCourse(c: Course): Form {
     modules: c.modules ?? [],
     videos: c.videos ?? [],
     resources: c.resources ?? [],
+    youtube_url: c.youtube_url ?? "",
   };
 }
 
@@ -230,6 +233,7 @@ export default function CourseEditor() {
         videos: form.videos,
         resources: form.resources,
         is_published: form.is_published,
+        youtube_url: form.youtube_url.trim() || undefined,
       });
       toast.success(isEdit ? "কোর্স আপডেট হয়েছে" : "নতুন কোর্স যোগ হয়েছে");
       navigate("/admin/courses");
@@ -302,6 +306,13 @@ export default function CourseEditor() {
           </div>
           <Field label="কোর্স ইমেজ (সরাসরি আপলোড)">
             <ImageUpload value={form.thumbnail_url} onChange={(url) => set("thumbnail_url", url)} folder="thumbnails" />
+          </Field>
+          <Field label="ইউটিউব প্রিভিউ ভিডিও URL (ঐচ্ছিক)">
+            <Input
+              placeholder="https://www.youtube.com/watch?v=..."
+              value={form.youtube_url}
+              onChange={(e) => set("youtube_url", e.target.value)}
+            />
           </Field>
           <Field label="সংক্ষিপ্ত বিবরণ">
             <textarea

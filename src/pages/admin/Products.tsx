@@ -34,12 +34,13 @@ type FormData = {
   contact_info: string;
   in_stock: boolean;
   is_published: boolean;
+  images: string[];
 };
 
 const empty: FormData = {
   name: "", slug: "", category: "", image_url: "",
   price: "", discount_price: "", short_description: "", long_description: "",
-  delivery_info: "", contact_info: "", in_stock: true, is_published: true,
+  delivery_info: "", contact_info: "", in_stock: true, is_published: true, images: [],
 };
 
 function toForm(p: Product & { is_published?: boolean }): FormData {
@@ -57,6 +58,7 @@ function toForm(p: Product & { is_published?: boolean }): FormData {
     contact_info:      p.contact_info ?? "",
     in_stock:          p.in_stock ?? true,
     is_published:      p.is_published ?? true,
+    images:            Array.isArray(p.images) ? (p.images as string[]) : [],
   };
 }
 
@@ -96,7 +98,7 @@ export default function AdminProducts() {
 
   function openNew()             { setForm(empty); setSheetOpen(true); }
   function openEdit(p: Product)  { setForm(toForm(p as Product & { is_published?: boolean })); setSheetOpen(true); }
-  function set(field: keyof FormData, value: string | boolean) {
+  function set(field: keyof FormData, value: string | boolean | string[]) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -117,6 +119,7 @@ export default function AdminProducts() {
         contact_info:      form.contact_info.trim() || undefined,
         in_stock:          form.in_stock,
         is_published:      form.is_published,
+        images:            form.images,
       });
       toast.success(form.id ? "পণ্য আপডেট হয়েছে" : "নতুন পণ্য যোগ হয়েছে");
       setSheetOpen(false);
@@ -348,6 +351,12 @@ export default function AdminProducts() {
                   folder="products"
                 />
               </Field>
+              <Field label="গ্যালারি ছবি">
+                <GalleryUpload
+                  value={form.images}
+                  onChange={(urls) => set("images", urls)}
+                />
+              </Field>
             </Section>
 
             {/* Pricing */}
@@ -455,6 +464,31 @@ export default function AdminProducts() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function GalleryUpload({ value, onChange }: { value: string[]; onChange: (urls: string[]) => void }) {
+  return (
+    <div className="space-y-2">
+      {value.map((url, i) => (
+        <ImageUpload
+          key={i}
+          value={url}
+          onChange={(newUrl) => {
+            const next = [...value];
+            if (!newUrl) next.splice(i, 1);
+            else next[i] = newUrl;
+            onChange(next);
+          }}
+          folder="products"
+        />
+      ))}
+      <ImageUpload
+        value=""
+        onChange={(newUrl) => { if (newUrl) onChange([...value, newUrl]); }}
+        folder="products"
+      />
     </div>
   );
 }

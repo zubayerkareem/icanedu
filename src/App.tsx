@@ -75,6 +75,7 @@ import PageBuilder from "./pages/admin/PageBuilder";
 import ISSBAdmin from "./pages/admin/ISSBAdmin";
 import SuccessAdmin from "./pages/admin/SuccessAdmin";
 import CourseOrder from "./pages/admin/CourseOrder";
+import AdminRevenue from "./pages/admin/AdminRevenue";
 
 const queryClient = new QueryClient();
 
@@ -176,6 +177,7 @@ const App = () => (
                 <Route path="/admin/course-order" element={<CourseOrder />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/revenue" element={<AdminRevenue />} />
                 <Route path="/admin/students" element={<AdminStudents />} />
                 <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />

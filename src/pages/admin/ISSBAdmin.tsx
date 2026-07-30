@@ -233,7 +233,17 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
       { id: optId(), text: "অপশন ৩" },
       { id: optId(), text: "অপশন ৪" },
     ];
-    await upsertQ.mutateAsync({ set_id: set.id, text: "", image_url: undefined, explanation: undefined, options: opts, correct: opts[0].id, order_index: (set.iq_questions?.length ?? 0) });
+    await Promise.all(
+      questions.map((q) =>
+        upsertQ.mutateAsync({
+          id: q.id, set_id: q.set_id, text: q.text,
+          image_url: q.image_url ?? undefined, explanation: q.explanation ?? undefined,
+          options: q.options, correct: q.correct,
+          order_index: q.order_index + 1,
+        })
+      )
+    );
+    await upsertQ.mutateAsync({ set_id: set.id, text: "", image_url: undefined, explanation: undefined, options: opts, correct: opts[0].id, order_index: 0 });
   }
 
   const questions = (set.iq_questions ?? []).sort((a, b) => a.order_index - b.order_index);

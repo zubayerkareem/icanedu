@@ -17,7 +17,7 @@ export function useIQSets(courseId?: string) {
         .select("*, iq_questions(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -38,7 +38,7 @@ export function useWATSets(courseId?: string) {
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase.from("wat_sets").select("*").eq("is_published", true).order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
@@ -58,7 +58,7 @@ export function useISTSets(courseId?: string) {
         .select("*, ist_sentences(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -83,7 +83,7 @@ export function useExtemporeSets(courseId?: string) {
         .select("*, extempore_topics(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -108,7 +108,7 @@ export function usePPDTSets(courseId?: string) {
         .select("*, ppdt_pictures(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -133,7 +133,7 @@ export function usePictureStorySets(courseId?: string) {
         .select("*, picture_story_pictures(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -158,7 +158,7 @@ export function useIncompleteStorySets(courseId?: string) {
         .select("*, incomplete_stories(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -183,7 +183,7 @@ export function useGroupDiscussionSets(courseId?: string) {
         .select("*, group_discussion_tasks(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -208,7 +208,7 @@ export function usePlanningTaskSets(courseId?: string) {
         .select("*, planning_tasks(*)")
         .eq("is_published", true)
         .order("order_index");
-      if (courseId) q = q.eq("course_id", courseId);
+      if (courseId) q = q.filter("course_ids", "cs", `{${courseId}}`);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((s) => ({

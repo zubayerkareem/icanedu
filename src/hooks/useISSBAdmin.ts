@@ -149,9 +149,9 @@ function deleteMutation(table: string, queryKey: string) {
 }
 
 // ─── IQ ──────────────────────────────────────────────────────
-export const useUpsertIQSet = upsertMutation<Partial<IQSet> & { course_id?: string }>(
+export const useUpsertIQSet = upsertMutation<Partial<IQSet>>(
   "iq_sets", "admin_iq_sets",
-  (s) => ({ title: s.title, description: s.description ?? "", timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, type: s.type ?? "verbal" })
+  (s) => ({ title: s.title, description: s.description ?? "", timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null, type: s.type ?? "verbal" })
 );
 export const useDeleteIQSet = deleteMutation("iq_sets", "admin_iq_sets");
 
@@ -164,14 +164,14 @@ export const useDeleteIQQuestion = deleteMutation("iq_questions", "admin_iq_sets
 // ─── WAT ─────────────────────────────────────────────────────
 export const useUpsertWATSet = upsertMutation<Partial<WATSet>>(
   "wat_sets", "admin_wat_sets",
-  (s) => ({ title: s.title, words: s.words ?? [], word_seconds: s.word_seconds ?? 10, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, words: s.words ?? [], word_seconds: s.word_seconds ?? 10, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null })
 );
 export const useDeleteWATSet = deleteMutation("wat_sets", "admin_wat_sets");
 
 // ─── IST ─────────────────────────────────────────────────────
 export const useUpsertISTSet = upsertMutation<Partial<ISTSet>>(
   "ist_sets", "admin_ist_sets",
-  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, text_type: s.text_type ?? "Bangla" })
+  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 300, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null, text_type: s.text_type ?? "Bangla" })
 );
 export const useDeleteISTSet = deleteMutation("ist_sets", "admin_ist_sets");
 
@@ -184,7 +184,7 @@ export const useDeleteISTSentence = deleteMutation("ist_sentences", "admin_ist_s
 // ─── Extempore ───────────────────────────────────────────────
 export const useUpsertExtemporeSet = upsertMutation<Partial<ExtemporeSet>>(
   "extempore_sets", "admin_extempore_sets",
-  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 1500, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, timer_seconds: s.timer_seconds ?? 1500, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null })
 );
 export const useDeleteExtemporeSet = deleteMutation("extempore_sets", "admin_extempore_sets");
 
@@ -197,7 +197,7 @@ export const useDeleteExtemporeTopic = deleteMutation("extempore_topics", "admin
 // ─── PPDT ────────────────────────────────────────────────────
 export const useUpsertPPDTSet = upsertMutation<Partial<PPDTSet>>(
   "ppdt_sets", "admin_ppdt_sets",
-  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 270, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 270, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null })
 );
 export const useDeletePPDTSet = deleteMutation("ppdt_sets", "admin_ppdt_sets");
 
@@ -210,7 +210,7 @@ export const useDeletePPDTPicture = deleteMutation("ppdt_pictures", "admin_ppdt_
 // ─── Picture Story ────────────────────────────────────────────
 export const useUpsertPictureStorySet = upsertMutation<Partial<PictureStorySet>>(
   "picture_story_sets", "admin_picture_story_sets",
-  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 60, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, lang: s.lang ?? 'bn' })
+  (s) => ({ title: s.title, observe_seconds: s.observe_seconds ?? 30, write_seconds: s.write_seconds ?? 60, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null, lang: s.lang ?? 'bn' })
 );
 export const useDeletePictureStorySet = deleteMutation("picture_story_sets", "admin_picture_story_sets");
 
@@ -223,7 +223,7 @@ export const useDeletePictureStoryPicture = deleteMutation("picture_story_pictur
 // ─── Incomplete Story ─────────────────────────────────────────
 export const useUpsertIncompleteStorySet = upsertMutation<Partial<IncompleteStorySet>>(
   "incomplete_story_sets", "admin_incomplete_story_sets",
-  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null, lang: s.lang ?? "bn" })
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null, lang: s.lang ?? "bn" })
 );
 export const useDeleteIncompleteStorySet = deleteMutation("incomplete_story_sets", "admin_incomplete_story_sets");
 
@@ -250,7 +250,7 @@ export function useAdminPlanningTaskSets(courseId?: string) {
 
 export const useUpsertPlanningTaskSet = upsertMutation<Partial<PlanningTaskSet>>(
   "planning_sets", "admin_planning_sets",
-  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null })
 );
 export const useDeletePlanningTaskSet = deleteMutation("planning_sets", "admin_planning_sets");
 
@@ -271,7 +271,7 @@ export function useAdminGroupDiscussionSets(courseId?: string) {
 
 export const useUpsertGroupDiscussionSet = upsertMutation<Partial<GroupDiscussionSet>>(
   "group_discussion_sets", "admin_group_discussion_sets",
-  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_id: s.course_id ?? null })
+  (s) => ({ title: s.title, order_index: s.order_index ?? 0, is_published: s.is_published ?? true, is_free: s.is_free ?? false, course_ids: s.course_ids ?? [], course_id: (s.course_ids ?? [])[0] ?? null })
 );
 export const useDeleteGroupDiscussionSet = deleteMutation("group_discussion_sets", "admin_group_discussion_sets");
 

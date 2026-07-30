@@ -20,6 +20,7 @@ export interface IQQuestion {
 export interface IQSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   description: string;
   timer_seconds: number;
@@ -47,6 +48,7 @@ export interface IQResult {
 export interface WATSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   words: string[];
   word_seconds: number;
@@ -68,6 +70,7 @@ export interface ISTSentence {
 export interface ISTSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   timer_seconds: number;
   order_index: number;
@@ -93,6 +96,7 @@ export interface ExtemporeTopic {
 export interface ExtemporeSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   timer_seconds: number;
   order_index: number;
@@ -116,6 +120,7 @@ export interface PPDTPicture {
 export interface PPDTSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   observe_seconds: number;
   write_seconds: number;
@@ -140,6 +145,7 @@ export interface PictureStoryPicture {
 export interface PictureStorySet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   observe_seconds: number;
   write_seconds: number;
@@ -167,6 +173,7 @@ export interface IncompleteStory {
 export interface IncompleteStorySet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   order_index: number;
   is_published: boolean;
@@ -190,6 +197,7 @@ export interface GroupDiscussionTask {
 export interface GroupDiscussionSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   order_index: number;
   is_published: boolean;
@@ -212,6 +220,7 @@ export interface PlanningTask {
 export interface PlanningTaskSet {
   id: string;
   course_id?: string;
+  course_ids?: string[];
   title: string;
   order_index: number;
   is_published: boolean;

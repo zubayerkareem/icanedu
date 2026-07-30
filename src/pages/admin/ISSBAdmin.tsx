@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { toast } from "sonner";
@@ -99,20 +100,47 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function CourseSelect({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+function MultiCourseSelect({ value, onChange }: { value: string[]; onChange: (ids: string[]) => void }) {
   const { data: courses = [] } = useAdminCourses();
+  const [open, setOpen] = useState(false);
+
+  function toggle(id: string) {
+    onChange(value.includes(id) ? value.filter((x) => x !== id) : [...value, id]);
+  }
+
   return (
-    <Select value={value ?? "none"} onValueChange={(v) => onChange(v === "none" ? "" : v)}>
-      <SelectTrigger className="h-8 text-xs">
-        <SelectValue placeholder="কোর্স নির্বাচন করুন" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">— কোনো কোর্স নয় (গ্লোবাল) —</SelectItem>
-        {courses.map((c) => (
-          <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 w-full justify-start text-xs font-normal truncate">
+          {value.length === 0
+            ? "— গ্লোবাল (কোনো কোর্স নয়) —"
+            : `${value.length}টি কোর্স নির্বাচিত`}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-2" align="start">
+        <div className="max-h-56 overflow-y-auto space-y-0.5">
+          {courses.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-accent">
+              <input
+                type="checkbox"
+                checked={value.includes(c.id)}
+                onChange={() => toggle(c.id)}
+                className="h-3.5 w-3.5 shrink-0"
+              />
+              <span className="truncate">{c.title}</span>
+            </label>
+          ))}
+        </div>
+        {value.length > 0 && (
+          <button
+            onClick={() => onChange([])}
+            className="mt-2 w-full text-left px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            সব সরান
+          </button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -189,11 +217,11 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
   const [timer, setTimer] = useState(String(set.timer_seconds));
   const [pub, setPub] = useState(set.is_published);
   const [free, setFree] = useState(set.is_free ?? false);
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [type, setType] = useState<"verbal" | "non_verbal">(set.type ?? "verbal");
 
   async function save() {
-    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, is_free: free, course_id: courseId || undefined, type });
+    await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_published: pub, is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined, type });
     toast.success("সেট আপডেট হয়েছে");
   }
 
@@ -220,7 +248,7 @@ function IQSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertQ, dele
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <div className="flex items-center gap-6 flex-wrap">
             <Field label="ধরন">
@@ -402,12 +430,12 @@ function WATSetCard({ set, expanded, onToggle, onDelete, upsert }: {
   const [wordSec, setWordSec] = useState(String(set.word_seconds));
   const [pub, setPub] = useState(set.is_published);
   const [free, setFree] = useState(set.is_free ?? false);
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [wordsText, setWordsText] = useState((set.words ?? []).join("\n"));
 
   async function save() {
     const words = wordsText.split("\n").map((w) => w.trim()).filter(Boolean);
-    await upsert.mutateAsync({ id: set.id, title, words, word_seconds: Number(wordSec), is_published: pub, is_free: free, course_id: courseId || undefined });
+    await upsert.mutateAsync({ id: set.id, title, words, word_seconds: Number(wordSec), is_published: pub, is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined });
     toast.success("WAT সেট সংরক্ষিত");
   }
 
@@ -423,7 +451,7 @@ function WATSetCard({ set, expanded, onToggle, onDelete, upsert }: {
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="প্রতি শব্দ (সেকেন্ড)"><Input type="number" value={wordSec} onChange={(e) => setWordSec(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <div className="flex items-center gap-6">
             <Field label="প্রকাশিত">
@@ -493,7 +521,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
 }) {
   const [title, setTitle] = useState(set.title);
   const [timer, setTimer] = useState(String(set.timer_seconds));
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [free, setFree] = useState(set.is_free ?? false);
   const [textType, setTextType] = useState<"Bangla" | "English">(set.text_type ?? "Bangla");
   const sentences = (set.ist_sentences ?? []).sort((a, b) => a.order_index - b.order_index);
@@ -511,7 +539,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="মোট সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <div className="flex items-center gap-6 flex-wrap">
             <Field label="ভাষা">
@@ -532,7 +560,7 @@ function ISTSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertS, del
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined, text_type: textType }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined, text_type: textType }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -620,7 +648,7 @@ function ExtemporeSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsert
 }) {
   const [title, setTitle] = useState(set.title);
   const [timer, setTimer] = useState(String(set.timer_seconds));
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [free, setFree] = useState(set.is_free ?? false);
   const topics = (set.extempore_topics ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
@@ -638,14 +666,14 @@ function ExtemporeSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsert
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
             <Field label="সময় (সেকেন্ড)"><Input type="number" value={timer} onChange={(e) => setTimer(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <div className="flex items-center gap-6">
             <Field label="ফ্রি প্রিভিউ">
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, timer_seconds: Number(timer), is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -825,7 +853,7 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
   const [title, setTitle] = useState(set.title);
   const [obsS, setObsS] = useState(String(set.observe_seconds));
   const [wrS, setWrS] = useState(String(set.write_seconds));
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [free, setFree] = useState(set.is_free ?? false);
   const [lang, setLang] = useState<'bn' | 'en'>(tablePrefix === "picture_story" ? ((set as PictureStorySet).lang ?? 'bn') : 'bn');
 
@@ -852,7 +880,7 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
             <Field label="লেখার সময় (সেকেন্ড)"><Input type="number" value={wrS} onChange={(e) => setWrS(e.target.value)} /></Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
             <Field label="ফ্রি প্রিভিউ">
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
@@ -878,7 +906,7 @@ function PictureSetCard({ set, expanded, onToggle, onDelete, tablePrefix, upsert
             </Field>
           )}
           <Button size="sm" onClick={async () => {
-            const payload: Record<string, unknown> = { id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), is_free: free, course_id: courseId || undefined };
+            const payload: Record<string, unknown> = { id: set.id, title, observe_seconds: Number(obsS), write_seconds: Number(wrS), is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined };
             if (tablePrefix === "picture_story") payload.lang = lang;
             await (upsertSet as ReturnType<typeof useUpsertPPDTSet>).mutateAsync(payload as Parameters<ReturnType<typeof useUpsertPPDTSet>['mutateAsync']>[0]);
             toast.success("সংরক্ষিত");
@@ -983,7 +1011,7 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
   deleteS: ReturnType<typeof useDeleteIncompleteStory>;
 }) {
   const [title, setTitle] = useState(set.title);
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [pub, setPub] = useState(set.is_published ?? true);
   const [free, setFree] = useState(set.is_free ?? false);
   const [lang, setLang] = useState<"bn" | "en">(set.lang ?? "bn");
@@ -1003,7 +1031,7 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <div className="flex items-center gap-6 flex-wrap">
             <Field label="ভাষা">
@@ -1025,7 +1053,7 @@ function IncompleteStorySetCard({ set, expanded, onToggle, onDelete, upsertSet, 
               <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
             </Field>
           </div>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_published: pub, is_free: free, lang, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_published: pub, is_free: free, lang, course_ids: courseIds, course_id: courseIds[0] || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -1143,7 +1171,7 @@ function GroupDiscussionSetCard({ set, expanded, onToggle, onDelete, upsertSet, 
   deleteT: ReturnType<typeof useDeleteGroupDiscussionTask>;
 }) {
   const [title, setTitle] = useState(set.title);
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [free, setFree] = useState(set.is_free ?? false);
   const tasks = (set.group_discussion_tasks ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
@@ -1160,12 +1188,12 @@ function GroupDiscussionSetCard({ set, expanded, onToggle, onDelete, upsertSet, 
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <Field label="ফ্রি প্রিভিউ">
             <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
           </Field>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">
@@ -1279,7 +1307,7 @@ function PlanningSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertT
   deleteT: ReturnType<typeof useDeletePlanningTask>;
 }) {
   const [title, setTitle] = useState(set.title);
-  const [courseId, setCourseId] = useState(set.course_id ?? "");
+  const [courseIds, setCourseIds] = useState<string[]>(set.course_ids ?? []);
   const [free, setFree] = useState(set.is_free ?? false);
   const tasks = (set.planning_tasks ?? []).sort((a, b) => a.order_index - b.order_index);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
@@ -1296,12 +1324,12 @@ function PlanningSetCard({ set, expanded, onToggle, onDelete, upsertSet, upsertT
         <div className="mt-1 rounded-lg border border-border bg-muted/20 p-4 space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="শিরোনাম"><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
-            <Field label="কোর্স"><CourseSelect value={courseId} onChange={setCourseId} /></Field>
+            <Field label="কোর্স"><MultiCourseSelect value={courseIds} onChange={setCourseIds} /></Field>
           </div>
           <Field label="ফ্রি প্রিভিউ">
             <div className="flex items-center gap-2 pt-1"><Switch checked={free} onCheckedChange={setFree} /><span className="text-sm text-green-600">{free ? "ফ্রি" : "প্রিমিয়াম"}</span></div>
           </Field>
-          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_id: courseId || undefined }); toast.success("সংরক্ষিত"); }}>
+          <Button size="sm" onClick={async () => { await upsertSet.mutateAsync({ id: set.id, title, is_free: free, course_ids: courseIds, course_id: courseIds[0] || undefined }); toast.success("সংরক্ষিত"); }}>
             <Save className="mr-2 h-3.5 w-3.5" /> সেট সংরক্ষণ
           </Button>
           <div className="border-t border-border pt-3 space-y-2">

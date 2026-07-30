@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { TrendingUp, BookOpen, Package } from "lucide-react";
+import { useState, useMemo } from "react";
+import { TrendingUp, BookOpen, Package, Calendar } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { useAllCoursesForSelect } from "@/hooks/useAdminEnrollments";
 import { useAdminProducts } from "@/hooks/useAdminProducts";
@@ -12,6 +12,10 @@ function bnNum(n: number) {
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("bn-BD", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function formatMonth(ym: string) {
+  return new Date(ym + "-01").toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
 }
 
 const REVENUE_STATUSES = new Set(["confirmed", "shipped", "delivered"]);
@@ -44,18 +48,22 @@ function StatCard({ label, value, prefix = "", color }: { label: string; value: 
 
 // ── course tab ────────────────────────────────────────────────────────────────
 
-function CourseRevenueTab() {
+function CourseRevenueTab({ selectedMonth }: { selectedMonth: string }) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: courses = [] } = useAllCoursesForSelect();
   const [selectedCourse, setSelectedCourse] = useState("");
 
-  const courseOrders = orders.filter((o) => o.order_type === "course");
+  const monthOrders = selectedMonth === "all"
+    ? orders
+    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+
+  const courseOrders = monthOrders.filter((o) => o.order_type === "course");
   const filtered = selectedCourse
     ? courseOrders.filter((o) => o.product_id === selectedCourse)
     : courseOrders;
 
-  const revenue = filtered.filter((o) => REVENUE_STATUSES.has(o.status)).reduce((s, o) => s + o.total_price, 0);
-  const pending = filtered.filter((o) => o.status === "pending").length;
+  const revenue   = filtered.filter((o) => REVENUE_STATUSES.has(o.status)).reduce((s, o) => s + o.total_price, 0);
+  const pending   = filtered.filter((o) => o.status === "pending").length;
   const confirmed = filtered.filter((o) => o.status === "confirmed").length;
 
   return (
@@ -84,10 +92,10 @@ function CourseRevenueTab() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="মোট আয়" value={revenue} prefix="৳" color="text-emerald-600 dark:text-emerald-400" />
-        <StatCard label="মোট অর্ডার" value={filtered.length} color="text-foreground" />
-        <StatCard label="পেন্ডিং" value={pending} color="text-amber-600 dark:text-amber-400" />
-        <StatCard label="কনফার্মড" value={confirmed} color="text-blue-600 dark:text-blue-400" />
+        <StatCard label="মোট আয়"    value={revenue}         prefix="৳" color="text-emerald-600 dark:text-emerald-400" />
+        <StatCard label="মোট অর্ডার" value={filtered.length}            color="text-foreground" />
+        <StatCard label="পেন্ডিং"    value={pending}                     color="text-amber-600 dark:text-amber-400" />
+        <StatCard label="কনফার্মড"   value={confirmed}                   color="text-blue-600 dark:text-blue-400" />
       </div>
 
       {/* Table */}
@@ -140,12 +148,16 @@ function CourseRevenueTab() {
 
 // ── product tab ───────────────────────────────────────────────────────────────
 
-function ProductRevenueTab() {
+function ProductRevenueTab({ selectedMonth }: { selectedMonth: string }) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: products = [] } = useAdminProducts();
   const [selectedProduct, setSelectedProduct] = useState("");
 
-  const productOrders = orders.filter((o) => o.order_type === "product");
+  const monthOrders = selectedMonth === "all"
+    ? orders
+    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+
+  const productOrders = monthOrders.filter((o) => o.order_type === "product");
   const filtered = selectedProduct
     ? productOrders.filter((o) => o.product_id === selectedProduct)
     : productOrders;
@@ -180,10 +192,10 @@ function ProductRevenueTab() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="মোট আয়" value={revenue} prefix="৳" color="text-emerald-600 dark:text-emerald-400" />
-        <StatCard label="মোট অর্ডার" value={filtered.length} color="text-foreground" />
-        <StatCard label="পেন্ডিং" value={pending} color="text-amber-600 dark:text-amber-400" />
-        <StatCard label="পাঠানো হয়েছে" value={shipped} color="text-purple-600 dark:text-purple-400" />
+        <StatCard label="মোট আয়"        value={revenue}         prefix="৳" color="text-emerald-600 dark:text-emerald-400" />
+        <StatCard label="মোট অর্ডার"     value={filtered.length}            color="text-foreground" />
+        <StatCard label="পেন্ডিং"         value={pending}                    color="text-amber-600 dark:text-amber-400" />
+        <StatCard label="পাঠানো হয়েছে"   value={shipped}                    color="text-purple-600 dark:text-purple-400" />
       </div>
 
       {/* Table */}
@@ -239,10 +251,21 @@ function ProductRevenueTab() {
 type Tab = "course" | "product";
 
 export default function AdminRevenue() {
-  const [tab, setTab] = useState<Tab>("course");
-  const { data: orders = [] } = useOrders();
+  const [tab, setTab]                     = useState<Tab>("course");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const { data: orders = [] }             = useOrders();
 
-  const totalRevenue = orders
+  // Derive unique months from all orders, newest first
+  const months = useMemo(() => {
+    const set = new Set(orders.map((o) => o.created_at.slice(0, 7)));
+    return [...set].sort().reverse();
+  }, [orders]);
+
+  const filteredOrders = selectedMonth === "all"
+    ? orders
+    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+
+  const totalRevenue = filteredOrders
     .filter((o) => REVENUE_STATUSES.has(o.status))
     .reduce((s, o) => s + o.total_price, 0);
 
@@ -254,12 +277,33 @@ export default function AdminRevenue() {
           <h1 className="font-heading text-2xl font-bold text-foreground">রেভেনিউ</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">কোর্স ও পণ্য অনুযায়ী আয়ের বিবরণ</p>
         </div>
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 px-4 py-2">
-          <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-xs text-muted-foreground">সর্বমোট আয়</span>
-          <span className="font-heading text-lg font-bold text-emerald-600 dark:text-emerald-400">
-            ৳{bnNum(totalRevenue)}
-          </span>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Month selector */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="bg-transparent text-sm text-foreground focus:outline-none"
+            >
+              <option value="all">সব সময়</option>
+              {months.map((m) => (
+                <option key={m} value={m}>{formatMonth(m)}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Grand total badge */}
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 px-4 py-2">
+            <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs text-muted-foreground">
+              {selectedMonth === "all" ? "সর্বমোট আয়" : formatMonth(selectedMonth)}
+            </span>
+            <span className="font-heading text-lg font-bold text-emerald-600 dark:text-emerald-400">
+              ৳{bnNum(totalRevenue)}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -292,7 +336,10 @@ export default function AdminRevenue() {
       </div>
 
       {/* Tab content */}
-      {tab === "course" ? <CourseRevenueTab /> : <ProductRevenueTab />}
+      {tab === "course"
+        ? <CourseRevenueTab selectedMonth={selectedMonth} />
+        : <ProductRevenueTab selectedMonth={selectedMonth} />
+      }
     </div>
   );
 }

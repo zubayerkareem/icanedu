@@ -69,6 +69,7 @@ export interface ImportRow {
   password: string;
   course_id?: string;
   valid_until?: string;
+  tag?: string;
 }
 
 export interface ImportResult {
@@ -97,7 +98,7 @@ export default async function handler(req: any, res: any) {
   const results: ImportResult[] = [];
 
   for (const row of rows as ImportRow[]) {
-    const { full_name, email, phone, password, course_id, valid_until } = row;
+    const { full_name, email, phone, password, course_id, valid_until, tag } = row;
 
     if (!email?.trim() || !password?.trim()) {
       results.push({ email: email || "(missing)", success: false, error: "Email and password are required" });
@@ -120,13 +121,14 @@ export default async function handler(req: any, res: any) {
 
       const userId = authData.user.id;
 
-      // 2. Update profile with full_name, phone, and mark as admin_created
+      // 2. Update profile with full_name, phone, tag and mark as admin_created
       await db
         .from("profiles")
         .update({
           full_name: full_name?.trim() || null,
           phone: phone?.trim() || null,
           source: "admin_created",
+          tag: tag?.trim() || null,
         })
         .eq("id", userId);
 

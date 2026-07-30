@@ -3,6 +3,7 @@ import { TrendingUp, BookOpen, Package, Calendar } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { useAllCoursesForSelect } from "@/hooks/useAdminEnrollments";
 import { useAdminProducts } from "@/hooks/useAdminProducts";
+import { useOfflineStudentIds } from "@/hooks/useStudents";
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,14 +49,15 @@ function StatCard({ label, value, prefix = "", color }: { label: string; value: 
 
 // ── course tab ────────────────────────────────────────────────────────────────
 
-function CourseRevenueTab({ selectedMonth }: { selectedMonth: string }) {
+function CourseRevenueTab({ selectedMonth, offlineIds }: { selectedMonth: string; offlineIds: Set<string> }) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: courses = [] } = useAllCoursesForSelect();
   const [selectedCourse, setSelectedCourse] = useState("");
 
+  const onlineOrders = orders.filter((o) => !offlineIds.has(o.user_id ?? ""));
   const monthOrders = selectedMonth === "all"
-    ? orders
-    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+    ? onlineOrders
+    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
 
   const courseOrders = monthOrders.filter((o) => o.order_type === "course");
   const filtered = selectedCourse
@@ -148,14 +150,15 @@ function CourseRevenueTab({ selectedMonth }: { selectedMonth: string }) {
 
 // ── product tab ───────────────────────────────────────────────────────────────
 
-function ProductRevenueTab({ selectedMonth }: { selectedMonth: string }) {
+function ProductRevenueTab({ selectedMonth, offlineIds }: { selectedMonth: string; offlineIds: Set<string> }) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: products = [] } = useAdminProducts();
   const [selectedProduct, setSelectedProduct] = useState("");
 
+  const onlineOrders = orders.filter((o) => !offlineIds.has(o.user_id ?? ""));
   const monthOrders = selectedMonth === "all"
-    ? orders
-    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+    ? onlineOrders
+    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
 
   const productOrders = monthOrders.filter((o) => o.order_type === "product");
   const filtered = selectedProduct
@@ -254,16 +257,23 @@ export default function AdminRevenue() {
   const [tab, setTab]                     = useState<Tab>("course");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const { data: orders = [] }             = useOrders();
+  const offlineIds                        = useOfflineStudentIds();
 
-  // Derive unique months from all orders, newest first
+  // Exclude offline students' orders from all revenue calculations
+  const onlineOrders = useMemo(
+    () => orders.filter((o) => !offlineIds.has(o.user_id ?? "")),
+    [orders, offlineIds],
+  );
+
+  // Derive unique months from online orders only, newest first
   const months = useMemo(() => {
-    const set = new Set(orders.map((o) => o.created_at.slice(0, 7)));
+    const set = new Set(onlineOrders.map((o) => o.created_at.slice(0, 7)));
     return [...set].sort().reverse();
-  }, [orders]);
+  }, [onlineOrders]);
 
   const filteredOrders = selectedMonth === "all"
-    ? orders
-    : orders.filter((o) => o.created_at.startsWith(selectedMonth));
+    ? onlineOrders
+    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
 
   const totalRevenue = filteredOrders
     .filter((o) => REVENUE_STATUSES.has(o.status))
@@ -337,8 +347,8 @@ export default function AdminRevenue() {
 
       {/* Tab content */}
       {tab === "course"
-        ? <CourseRevenueTab selectedMonth={selectedMonth} />
-        : <ProductRevenueTab selectedMonth={selectedMonth} />
+        ? <CourseRevenueTab selectedMonth={selectedMonth} offlineIds={offlineIds} />
+        : <ProductRevenueTab selectedMonth={selectedMonth} offlineIds={offlineIds} />
       }
     </div>
   );

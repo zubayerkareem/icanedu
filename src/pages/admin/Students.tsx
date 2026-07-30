@@ -29,7 +29,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, useAdminBulkClearDevices, usePaidStudentIds } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, useAdminBulkClearDevices, usePaidStudentIds, useSetStudentTag } from "@/hooks/useStudents";
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
@@ -671,12 +671,14 @@ export default function AdminStudents() {
   const resetPassword = useResetStudentPassword();
   const clearDevices = useAdminClearDevices();
   const bulkClearDevices = useAdminBulkClearDevices();
+  const setTag = useSetStudentTag();
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
   const [filterSource, setFilterSource] = useState<"all" | "registered" | "admin_created">("all");
   const [filterCourse, setFilterCourse] = useState<string>("all");
   const [filterPaid, setFilterPaid] = useState(false);
+  const [filterTag, setFilterTag] = useState<"all" | "offline" | "paid" | "none">("all");
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const { data: courses = [] } = useAllCoursesForSelect();
   const { data: enrolledIds } = useEnrolledStudentIds(filterCourse === "all" ? null : filterCourse);
@@ -719,8 +721,12 @@ export default function AdminStudents() {
 
     const matchCourse = filterCourse === "all" || (enrolledIds ?? []).includes(s.id);
     const matchPaid = !filterPaid || (paidIds ?? []).includes(s.id);
+    const matchTag =
+      filterTag === "all" ? true :
+      filterTag === "none" ? !s.tag :
+      s.tag === filterTag;
 
-    return matchSearch && matchRole && matchSource && matchDate && matchCourse && matchPaid;
+    return matchSearch && matchRole && matchSource && matchDate && matchCourse && matchPaid && matchTag;
   });
 
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
@@ -828,7 +834,7 @@ export default function AdminStudents() {
         delivered: "পৌঁছেছে", cancelled: "বাতিল",
       };
 
-      const headers = ["Name", "Phone", "Email", "Registered At", "Role", "Courses", "Products", "Profile Image URL"];
+      const headers = ["Name", "Phone", "Email", "Registered At", "Role", "Tag", "Courses", "Products", "Profile Image URL"];
       const rows = filtered.map((s) => {
         const userOrders = ordersByUser[s.id] ?? [];
         const courses = userOrders
@@ -846,6 +852,7 @@ export default function AdminStudents() {
           s.email ?? "",
           s.created_at ? new Date(s.created_at).toLocaleDateString("en-GB") : "",
           s.role === "admin" ? "Admin" : "Student",
+          s.tag ?? "",
           courses,
           products,
           s.avatar_url ?? "",
@@ -989,6 +996,32 @@ export default function AdminStudents() {
             💳 Paid
           </button>
           <div className="h-4 w-px bg-border" />
+          <div className="flex gap-1.5">
+            {([
+              { value: "all",     label: "সব ট্যাগ" },
+              { value: "offline", label: "অফলাইন" },
+              { value: "paid",    label: "পেইড" },
+              { value: "none",    label: "ট্যাগ নেই" },
+            ] as const).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setFilterTag(opt.value); resetPage(); }}
+                className={[
+                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                  filterTag === opt.value
+                    ? opt.value === "offline"
+                      ? "bg-amber-500 text-white"
+                      : opt.value === "paid"
+                        ? "bg-blue-600 text-white"
+                        : "bg-foreground text-background"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                ].join(" ")}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <div className="h-4 w-px bg-border" />
           <Select value={filterCourse} onValueChange={(v) => { setFilterCourse(v); resetPage(); }}>
             <SelectTrigger className="h-8 w-56 text-xs">
               <BookOpenCheck className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -1114,8 +1147,29 @@ export default function AdminStudents() {
                     )}
                   </div>
 
+                  {s.tag === "offline" && (
+                    <Badge className="shrink-0 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 text-[10px]">
+                      অফলাইন
+                    </Badge>
+                  )}
+                  {s.tag === "paid" && (
+                    <Badge className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 text-[10px]">
+                      পেইড
+                    </Badge>
+                  )}
+
                   {/* Actions — stop propagation so clicks don't toggle expand */}
                   <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={s.tag ?? ""}
+                      title="ট্যাগ সেট করুন"
+                      onChange={(e) => setTag.mutate({ userId: s.id, tag: e.target.value || null })}
+                      className="rounded border border-border bg-background px-1.5 py-1 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/40 cursor-pointer"
+                    >
+                      <option value="">ট্যাগ নেই</option>
+                      <option value="offline">অফলাইন</option>
+                      <option value="paid">পেইড</option>
+                    </select>
                     <SetPasswordDialog userId={s.id} name={s.full_name} />
                     <Button
                       variant="ghost" size="icon" className="h-8 w-8 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20"

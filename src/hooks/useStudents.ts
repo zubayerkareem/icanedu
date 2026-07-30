@@ -10,6 +10,7 @@ export interface StudentProfile {
   role: string;
   created_at: string | null;
   source: string | null;
+  tag: string | null;
 }
 
 export function useStudents() {
@@ -18,7 +19,7 @@ export function useStudents() {
     queryFn: async () => {
       const [{ data: profiles, error: pErr }, { data: roles, error: rErr }, { data: users, error: uErr }] =
         await Promise.all([
-          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at, source"),
+          supabase.from("profiles").select("id, full_name, phone, avatar_url, created_at, source, tag"),
           supabase.from("user_roles").select("user_id, role"),
           supabase.rpc("admin_list_users"),
         ]);
@@ -38,6 +39,7 @@ export function useStudents() {
         role: roleMap[p.id] ?? "student",
         created_at: p.created_at ?? null,
         source: p.source ?? null,
+        tag: p.tag ?? null,
       }));
     },
   });
@@ -120,4 +122,28 @@ export function useResetStudentPassword() {
       if (error) throw error;
     },
   });
+}
+
+export function useSetStudentTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ userId, tag }: { userId: string; tag: string | null }) => {
+      const { error } = await supabase.from("profiles").update({ tag }).eq("id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_students"] }),
+  });
+}
+
+export function useOfflineStudentIds() {
+  const { data = [] } = useQuery<string[]>({
+    queryKey: ["offline_student_ids"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id").eq("tag", "offline");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.id);
+    },
+  });
+  return new Set(data);
 }

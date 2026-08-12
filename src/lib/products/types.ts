@@ -16,4 +16,7 @@ export interface Product {
   contact_info?: string;
   sales_count?: number;
   created_at?: string;
+  product_type?: "physical" | "ebook";
+  pdf_url?: string;
+  allow_download?: boolean;
 }

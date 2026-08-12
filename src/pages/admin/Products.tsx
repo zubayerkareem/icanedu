@@ -35,12 +35,16 @@ type FormData = {
   in_stock: boolean;
   is_published: boolean;
   images: string[];
+  product_type: "physical" | "ebook";
+  pdf_url: string;
+  allow_download: boolean;
 };
 
 const empty: FormData = {
   name: "", slug: "", category: "", image_url: "",
   price: "", discount_price: "", short_description: "", long_description: "",
   delivery_info: "", contact_info: "", in_stock: true, is_published: true, images: [],
+  product_type: "physical", pdf_url: "", allow_download: false,
 };
 
 function toForm(p: Product & { is_published?: boolean }): FormData {
@@ -59,6 +63,9 @@ function toForm(p: Product & { is_published?: boolean }): FormData {
     in_stock:          p.in_stock ?? true,
     is_published:      p.is_published ?? true,
     images:            Array.isArray(p.images) ? (p.images as string[]) : [],
+    product_type:      (p.product_type as "physical" | "ebook") ?? "physical",
+    pdf_url:           p.pdf_url ?? "",
+    allow_download:    p.allow_download ?? false,
   };
 }
 
@@ -105,6 +112,7 @@ export default function AdminProducts() {
   async function handleSave() {
     if (!form.name.trim()) { toast.error("পণ্যের নাম প্রয়োজন"); return; }
     try {
+      const isEbook = form.product_type === "ebook";
       await upsert.mutateAsync({
         ...(form.id ? { id: form.id } : {}),
         name:              form.name.trim(),
@@ -115,11 +123,14 @@ export default function AdminProducts() {
         discount_price:    form.discount_price ? Number(form.discount_price) : undefined,
         short_description: form.short_description.trim() || undefined,
         long_description:  form.long_description.trim() || undefined,
-        delivery_info:     form.delivery_info.trim() || undefined,
-        contact_info:      form.contact_info.trim() || undefined,
+        delivery_info:     !isEbook ? (form.delivery_info.trim() || undefined) : undefined,
+        contact_info:      !isEbook ? (form.contact_info.trim() || undefined) : undefined,
         in_stock:          form.in_stock,
         is_published:      form.is_published,
         images:            form.images,
+        product_type:      form.product_type,
+        pdf_url:           isEbook ? (form.pdf_url.trim() || undefined) : undefined,
+        allow_download:    isEbook ? form.allow_download : false,
       });
       toast.success(form.id ? "পণ্য আপডেট হয়েছে" : "নতুন পণ্য যোগ হয়েছে");
       setSheetOpen(false);
@@ -325,6 +336,24 @@ export default function AdminProducts() {
               <Field label="Slug (URL)">
                 <Input value={form.slug} onChange={(e) => set("slug", e.target.value)} placeholder="auto-generated if empty" />
               </Field>
+              <Field label="পণ্যের ধরন">
+                <div className="flex gap-2">
+                  {(["physical", "ebook"] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => set("product_type", t)}
+                      className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
+                        form.product_type === t
+                          ? "border-accent bg-accent text-accent-foreground"
+                          : "border-input bg-background text-muted-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {t === "physical" ? "📦 পণ্য" : "📄 ইবুক"}
+                    </button>
+                  ))}
+                </div>
+              </Field>
               <Field label="ক্যাটাগরি">
                 <div className="space-y-2">
                   <select
@@ -359,6 +388,30 @@ export default function AdminProducts() {
               </Field>
             </Section>
 
+            {/* Ebook section */}
+            {form.product_type === "ebook" && (
+              <Section label="ইবুক সেটিংস">
+                <Field label="পিডিএফ ফাইল *">
+                  <ImageUpload
+                    value={form.pdf_url}
+                    onChange={(url) => set("pdf_url", url)}
+                    folder="ebooks"
+                    accept="application/pdf"
+                    kind="file"
+                  />
+                </Field>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={form.allow_download}
+                    onChange={(e) => set("allow_download", e.target.checked)}
+                    className="h-4 w-4 rounded border-input accent-accent"
+                  />
+                  <span className="text-sm">ডাউনলোড করতে দেওয়া হবে</span>
+                </label>
+              </Section>
+            )}
+
             {/* Pricing */}
             <Section label="মূল্য">
               <div className="grid grid-cols-2 gap-3">
@@ -381,15 +434,17 @@ export default function AdminProducts() {
               </Field>
             </Section>
 
-            {/* Delivery */}
-            <Section label="ডেলিভারি ও যোগাযোগ">
-              <Field label="ডেলিভারি তথ্য">
-                <Input value={form.delivery_info} onChange={(e) => set("delivery_info", e.target.value)} placeholder="৩-৫ কর্মদিবসে সারাদেশে হোম ডেলিভারি।" />
-              </Field>
-              <Field label="যোগাযোগ নম্বর">
-                <Input value={form.contact_info} onChange={(e) => set("contact_info", e.target.value)} placeholder="০১৭০০-০০০০০০" />
-              </Field>
-            </Section>
+            {/* Delivery — physical only */}
+            {form.product_type === "physical" && (
+              <Section label="ডেলিভারি ও যোগাযোগ">
+                <Field label="ডেলিভারি তথ্য">
+                  <Input value={form.delivery_info} onChange={(e) => set("delivery_info", e.target.value)} placeholder="৩-৫ কর্মদিবসে সারাদেশে হোম ডেলিভারি।" />
+                </Field>
+                <Field label="যোগাযোগ নম্বর">
+                  <Input value={form.contact_info} onChange={(e) => set("contact_info", e.target.value)} placeholder="০১৭০০-০০০০০০" />
+                </Field>
+              </Section>
+            )}
 
             {/* Settings */}
             <Section label="সেটিংস">

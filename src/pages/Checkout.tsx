@@ -45,6 +45,7 @@ export default function Checkout() {
 
   const orderType   = (params.get("type") ?? "product") as "product" | "course";
   const isCourse    = orderType === "course";
+  const isEbook     = !isCourse && params.get("productType") === "ebook";
   const itemId      = params.get(isCourse ? "courseId"   : "productId") ?? "";
   const itemName    = params.get(isCourse ? "courseName" : "productName") ?? (isCourse ? "কোর্স" : "পণ্য");
   const itemPrice   = Number(params.get("price") ?? 0);
@@ -71,7 +72,7 @@ export default function Checkout() {
   const [loading,    setLoading]    = useState(false);
   const [errors,     setErrors]     = useState<Record<string, string>>({});
 
-  const shippingCost = isCourse ? 0 : SHIPPING[shipping].cost;
+  const shippingCost = (isCourse || isEbook) ? 0 : SHIPPING[shipping].cost;
   const total        = itemPrice + shippingCost;
 
   function validate() {
@@ -79,7 +80,7 @@ export default function Checkout() {
     if (!name.trim())  e.name  = "নাম প্রয়োজন";
     if (!phone.trim()) e.phone = "ফোন নম্বর প্রয়োজন";
     else if (!/^01[0-9]\d{8}$/.test(phone.trim())) e.phone = "সঠিক ফোন নম্বর দিন";
-    if (!isCourse && !address.trim()) e.address = "সম্পূর্ণ ঠিকানা প্রয়োজন";
+    if (!isCourse && !isEbook && !address.trim()) e.address = "সম্পূর্ণ ঠিকানা প্রয়োজন";
     if (!bkashTxnId.trim()) e.bkashTxnId = "ট্রানজেকশন আইডি লিখুন";
     if (!bkashPhone.trim()) e.bkashPhone = "bKash নম্বর লিখুন";
     else if (!/^01[0-9]\d{8}$/.test(bkashPhone.trim())) e.bkashPhone = "সঠিক bKash নম্বর দিন";
@@ -101,8 +102,8 @@ export default function Checkout() {
       product_price: itemPrice,
       customer_name: name.trim(),
       phone:         phone.trim(),
-      address:       isCourse ? null : address.trim(),
-      shipping_type: isCourse ? null  : shipping,
+      address:       (isCourse || isEbook) ? null : address.trim(),
+      shipping_type: (isCourse || isEbook) ? null : shipping,
       shipping_cost: shippingCost,
       total_price:   total,
       coupon_code:   couponCode,
@@ -219,8 +220,8 @@ export default function Checkout() {
                 {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
               </div>
 
-              {/* Address + Shipping — product only */}
-              {!isCourse && (
+              {/* Address + Shipping — physical product only */}
+              {!isCourse && !isEbook && (
                 <>
                   <div className="space-y-1.5">
                     <Label htmlFor="address">সম্পূর্ণ ঠিকানা <span className="text-destructive">*</span></Label>
@@ -393,7 +394,7 @@ export default function Checkout() {
                     <span className="font-medium">প্রয়োগ হয়েছে</span>
                   </div>
                 )}
-                {!isCourse && (
+                {!isCourse && !isEbook && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">ডেলিভারি চার্জ</span>
                     <span className="font-medium text-foreground">৳{shippingCost}</span>

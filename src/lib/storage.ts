@@ -9,7 +9,7 @@ const BUCKET = "course-media";
  */
 export async function uploadCourseMedia(
   file: File,
-  folder: "thumbnails" | "resources" | "products"
+  folder: "thumbnails" | "resources" | "products" | "ebooks"
 ): Promise<string> {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "bin";
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;

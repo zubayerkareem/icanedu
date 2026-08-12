@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ShoppingBag, Truck, Phone, ChevronLeft, PackageX, ZoomIn } from "lucide-react";
+import { ShoppingBag, Truck, Phone, ChevronLeft, PackageX, ZoomIn, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -166,6 +166,35 @@ export default function ProductDetail() {
                 ))}
               </div>
             )}
+
+            {/* PDF viewer — ebook only */}
+            {(product as { product_type?: string }).product_type === "ebook" &&
+              (product as { pdf_url?: string }).pdf_url && (() => {
+                const pdfUrl = (product as { pdf_url?: string }).pdf_url!;
+                const canDownload = (product as { allow_download?: boolean }).allow_download;
+                return (
+                  <div className="mt-2 space-y-3">
+                    <p className="text-sm font-semibold text-foreground">পিডিএফ পূর্বদর্শন</p>
+                    <div className="overflow-hidden rounded-xl border border-border" style={{ height: "560px" }}>
+                      <iframe
+                        src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                        className="h-full w-full"
+                        title={product.name}
+                      />
+                    </div>
+                    {canDownload && (
+                      <a
+                        href={pdfUrl}
+                        download
+                        className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                      >
+                        <Download className="h-4 w-4" /> ডাউনলোড করুন
+                      </a>
+                    )}
+                  </div>
+                );
+              })()
+            }
           </div>
 
           {/* RIGHT — product info */}
@@ -226,7 +255,8 @@ export default function ProductDetail() {
                       currency: "BDT",
                       value: price,
                     });
-                    navigate(`/checkout?productId=${encodeURIComponent(product.id)}&productName=${encodeURIComponent(product.name)}&price=${price}`);
+                    const isEbook = (product as { product_type?: string }).product_type === "ebook";
+                    navigate(`/checkout?productId=${encodeURIComponent(product.id)}&productName=${encodeURIComponent(product.name)}&price=${price}${isEbook ? "&productType=ebook" : ""}`);
                   }}
                 >
                   <ShoppingBag className="mr-2 h-5 w-5" />
@@ -234,7 +264,8 @@ export default function ProductDetail() {
                 </Button>
               </div>
 
-              {/* Delivery & contact */}
+              {/* Delivery & contact — physical only */}
+              {(product as { product_type?: string }).product_type !== "ebook" && (
               <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4 space-y-3">
                 <div className="flex items-start gap-3 text-sm">
                   <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent/10">
@@ -255,6 +286,7 @@ export default function ProductDetail() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </div>

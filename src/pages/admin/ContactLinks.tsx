@@ -1,0 +1,160 @@
+import { useState, useEffect } from "react";
+import { Link2, Save, CheckCircle2, MessageCircle, Facebook, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
+
+const FIELDS = [
+  {
+    key: "whatsapp_number",
+    label: "WhatsApp নম্বর",
+    placeholder: "01XXXXXXXXX",
+    hint: "বাংলাদেশের নম্বর — শুধু ডিজিট, যেমন: 01642571744",
+    icon: MessageCircle,
+    iconBg: "bg-green-100 dark:bg-green-900/30",
+    iconColor: "text-green-600",
+  },
+  {
+    key: "facebook_group_url",
+    label: "Facebook গ্রুপ লিংক",
+    placeholder: "https://facebook.com/groups/...",
+    hint: "Facebook গ্রুপ বা পেজের পূর্ণ URL",
+    icon: Facebook,
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+    iconColor: "text-blue-600",
+  },
+  {
+    key: "playstore_url",
+    label: "Play Store লিংক",
+    placeholder: "https://play.google.com/store/apps/details?id=...",
+    hint: "Android অ্যাপের Google Play Store লিংক",
+    icon: Smartphone,
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
+    iconColor: "text-emerald-600",
+  },
+  {
+    key: "appstore_url",
+    label: "App Store লিংক",
+    placeholder: "https://apps.apple.com/app/...",
+    hint: "iOS অ্যাপের Apple App Store লিংক",
+    icon: Smartphone,
+    iconBg: "bg-gray-100 dark:bg-gray-800",
+    iconColor: "text-gray-600",
+  },
+] as const;
+
+type SettingKey = (typeof FIELDS)[number]["key"];
+
+export default function ContactLinks() {
+  const { data: settings = [], isLoading } = useSiteSettings();
+  const update = useUpdateSetting();
+
+  const [values, setValues] = useState<Record<SettingKey, string>>({
+    whatsapp_number: "",
+    facebook_group_url: "",
+    playstore_url: "",
+    appstore_url: "",
+  });
+  const [saved, setSaved] = useState<Record<SettingKey, boolean>>({
+    whatsapp_number: false,
+    facebook_group_url: false,
+    playstore_url: false,
+    appstore_url: false,
+  });
+
+  useEffect(() => {
+    const find = (key: string) => settings.find((s) => s.key === key)?.value ?? "";
+    setValues({
+      whatsapp_number: find("whatsapp_number"),
+      facebook_group_url: find("facebook_group_url"),
+      playstore_url: find("playstore_url"),
+      appstore_url: find("appstore_url"),
+    });
+  }, [settings]);
+
+  async function handleSave(key: SettingKey) {
+    try {
+      await update.mutateAsync({ key, value: values[key].trim() });
+      toast.success("সংরক্ষিত হয়েছে");
+      setSaved((p) => ({ ...p, [key]: true }));
+      setTimeout(() => setSaved((p) => ({ ...p, [key]: false })), 3000);
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");
+    }
+  }
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      <div>
+        <h1 className="font-heading text-2xl font-bold text-foreground">সোশ্যাল লিংক</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          ফ্রন্টেন্ডের ফ্লোটিং বার ও অ্যাপ লিংকগুলো এখান থেকে নিয়ন্ত্রণ করুন
+        </p>
+      </div>
+
+      {FIELDS.map((field) => {
+        const Icon = field.icon;
+        const currentVal = values[field.key];
+        const isSaved = saved[field.key];
+
+        return (
+          <div key={field.key} className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${field.iconBg}`}>
+                <Icon className={`h-5 w-5 ${field.iconColor}`} />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">{field.label}</h2>
+                <p className="text-xs text-muted-foreground">{field.hint}</p>
+              </div>
+              {currentVal && (
+                <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> সেট করা আছে
+                </span>
+              )}
+            </div>
+
+            {isLoading ? (
+              <div className="h-10 animate-pulse rounded-md bg-muted" />
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">{field.label}</Label>
+                  <Input
+                    value={currentVal}
+                    onChange={(e) =>
+                      setValues((p) => ({ ...p, [field.key]: e.target.value }))
+                    }
+                    placeholder={field.placeholder}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => handleSave(field.key)}
+                  disabled={update.isPending}
+                  className="gap-2"
+                >
+                  {isSaved ? (
+                    <><CheckCircle2 className="h-4 w-4" /> সেভ হয়েছে</>
+                  ) : (
+                    <><Save className="h-4 w-4" /> সেভ করুন</>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Preview note */}
+      <div className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground flex items-start gap-2">
+        <Link2 className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+        <span>
+          খালি রাখলে সেই বাটনটি ফ্রন্টেন্ডে দেখাবে না। WhatsApp নম্বর দিলে নিচের ডানে সবুজ বাটন দেখাবে।
+        </span>
+      </div>
+    </div>
+  );
+}

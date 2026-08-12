@@ -13,6 +13,7 @@ import {
   Trophy,
   MessageSquare,
   CalendarCheck,
+  Link2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,6 +41,7 @@ const items = [
   { title: "রেভেনিউ", url: "/admin/revenue", icon: TrendingUp },
   { title: "ইউজার", url: "/admin/students", icon: Users },
   { title: "মেয়াদ ফিল্টার", url: "/admin/course-validity", icon: CalendarCheck },
+  { title: "সোশ্যাল লিংক", url: "/admin/contact-links", icon: Link2 },
   { title: "মেসেজ", url: "/admin/messages", icon: MessageSquare },
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },
   { title: "ISSB কন্টেন্ট", url: "/admin/issb", icon: Brain },

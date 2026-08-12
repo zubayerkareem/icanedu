@@ -77,6 +77,7 @@ import SuccessAdmin from "./pages/admin/SuccessAdmin";
 import CourseOrder from "./pages/admin/CourseOrder";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import CourseValidity from "./pages/admin/CourseValidity";
+import ContactLinks from "./pages/admin/ContactLinks";
 
 const queryClient = new QueryClient();
 
@@ -181,6 +182,7 @@ const App = () => (
                 <Route path="/admin/revenue" element={<AdminRevenue />} />
                 <Route path="/admin/course-validity" element={<CourseValidity />} />
                 <Route path="/admin/students" element={<AdminStudents />} />
+                <Route path="/admin/contact-links" element={<ContactLinks />} />
                 <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />
                 <Route path="/admin/pages" element={<ComingSoon />} />

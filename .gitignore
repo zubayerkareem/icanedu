@@ -6,3 +6,5 @@ dist.zip
 .env.*.local
 .vercel/output
 .vercel/README.txt
+
+.vercel

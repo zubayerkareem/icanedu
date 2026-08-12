@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon, Camera, Upload, MessageSquare } from "lucide-react";
+import { LayoutDashboard, BookOpen, ShoppingBag, User, LogOut, Sun, Moon, Camera, Upload, MessageSquare, Bell } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,6 +20,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import { useMyMessages } from "@/hooks/useAdminMessages";
+import { useMyCadetNotifications } from "@/hooks/useCadetNotifications";
 import { supabase } from "@/lib/supabase";
 import { t } from "@/lib/strings";
 import { toast } from "sonner";
@@ -35,10 +36,12 @@ const items = [
 function StudentSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { signOut } = useAuth();
+  const { signOut, isCadetStudent } = useAuth();
   const navigate = useNavigate();
   const { data: msgs = [] } = useMyMessages();
   const unreadCount = msgs.filter((m) => !m.read_at).length;
+  const { data: cadetNotifs = [] } = useMyCadetNotifications();
+  const cadetUnread = cadetNotifs.filter((n) => !n.is_read).length;
 
   const handleLogout = async () => {
     await signOut();
@@ -87,6 +90,34 @@ function StudentSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {/* Cadet notifications — only for cadet-enrolled students */}
+              {isCadetStudent && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/dashboard/cadet"
+                      className="hover:bg-sidebar-accent relative"
+                      activeClassName="bg-sidebar-accent text-accent font-medium"
+                    >
+                      <Bell className="mr-2 h-4 w-4 shrink-0 text-cyan-600" />
+                      {!collapsed && (
+                        <span className="flex flex-1 items-center justify-between">
+                          <span className="text-cyan-700 dark:text-cyan-400 font-medium">ক্যাডেট নোটিফিকেশন</span>
+                          {cadetUnread > 0 && (
+                            <span className="ml-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-600 px-1 text-[10px] font-bold text-white">
+                              {cadetUnread}
+                            </span>
+                          )}
+                        </span>
+                      )}
+                      {collapsed && cadetUnread > 0 && (
+                        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-cyan-500" />
+                      )}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />

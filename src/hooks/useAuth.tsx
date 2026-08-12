@@ -16,7 +16,8 @@ type AuthContextValue = {
   profile: Profile | null;
   role: AppRole | null;
   loading: boolean;
-  blocked: boolean;        // true when login was rejected due to another active device
+  blocked: boolean;           // true when login was rejected due to another active device
+  isCadetStudent: boolean;    // true when user is enrolled in at least one cadet course
   clearBlocked: () => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -33,10 +34,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole]       = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [blocked, setBlocked] = useState(false);
+  const [isCadetStudent, setIsCadetStudent] = useState(false);
 
   // Always-current refs for use inside async callbacks / Realtime
-  const roleRef = useRef<AppRole | null>(null);
-  const userRef = useRef<User | null>(null);   // needed for signOut inside kickOut
+  const roleRef           = useRef<AppRole | null>(null);
+  const userRef           = useRef<User | null>(null);   // needed for signOut inside kickOut
+  const isCadetRef        = useRef(false);
+
+  // ── Cadet enrollment helper ────────────────────────────────────────────────
+  // Returns true if the user is enrolled in at least one cadet course.
+  const checkCadetEnrollment = async (uid: string): Promise<{ data: boolean }> => {
+    try {
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("product_id")
+        .eq("user_id", uid)
+        .eq("order_type", "course")
+        .in("status", ["confirmed", "shipped", "delivered"]);
+
+      const courseIds = (orders ?? []).map((o: { product_id: string }) => o.product_id);
+      if (courseIds.length === 0) return { data: false };
+
+      const { data: cadetCourses } = await supabase
+        .from("courses")
+        .select("id")
+        .in("id", courseIds)
+        .eq("course_type", "cadet")
+        .limit(1);
+
+      return { data: (cadetCourses?.length ?? 0) > 0 };
+    } catch {
+      return { data: false };
+    }
+  };
 
   const loadProfileAndRole = async (uid: string) => {
     const [{ data: p, error: pErr }, { data: r }] = await Promise.all([
@@ -51,8 +81,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const roles   = (r as { role: AppRole }[] | null) ?? [];
     const isAdmin = roles.some((x) => x.role === "admin");
 
-    // ── Single-device enforcement (skipped for admins and if column not yet migrated) ──
-    if (!isAdmin && !pErr) {
+    // ── Cadet enrollment check (cadet students bypass device blocking) ──
+    let cadet = false;
+    if (!isAdmin) {
+      const { data: cadetOrders } = await checkCadetEnrollment(uid);
+      cadet = cadetOrders;
+    }
+    setIsCadetStudent(cadet);
+    isCadetRef.current = cadet;
+
+    // ── Single-device enforcement (skipped for admins, cadet students, and if column not yet migrated) ──
+    if (!isAdmin && !cadet && !pErr) {
       const localToken = localStorage.getItem(DT_KEY);
       const dbToken    = (p as { device_token?: string | null } | null)?.device_token;
 
@@ -102,7 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const isAdmin = (r as { role: string }[] | null)?.some((x) => x.role === "admin") ?? false;
 
-            if (!isAdmin && !pErr) {
+            // Cadet students bypass device blocking entirely
+            const { data: isCadet } = isAdmin ? { data: false } : await checkCadetEnrollment(newSession.user.id);
+
+            if (!isAdmin && !isCadet && !pErr) {
               const existingToken = (p as { device_token?: string | null } | null)?.device_token;
               const myLocalToken  = localStorage.getItem(DT_KEY);
 
@@ -123,6 +165,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await loadProfileAndRole(newSession.user.id);
                 return;
               }
+            }
+
+            // If cadet student already owns token → just load profile
+            if (!isAdmin && isCadet) {
+              await loadProfileAndRole(newSession.user.id);
+              return;
             }
 
             // Admin OR no active device → claim the session with a new token
@@ -187,7 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          if (roleRef.current === "admin") return; // admins are exempt
+          if (roleRef.current === "admin" || isCadetRef.current) return; // admins and cadet students are exempt
 
           const newDbToken = (payload.new as { device_token?: string | null })?.device_token;
           const localToken = localStorage.getItem(DT_KEY);
@@ -238,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role,
     loading,
     blocked,
+    isCadetStudent,
     clearBlocked: () => setBlocked(false),
     signOut: async () => {
       const uid = user?.id;

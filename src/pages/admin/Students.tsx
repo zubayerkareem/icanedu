@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useStudents, useDeleteStudent, useResetStudentPassword, useAdminClearDevices, useAdminBulkClearDevices, usePaidStudentIds, useSetStudentTag } from "@/hooks/useStudents";
+import { useAdminCadetStudentIds } from "@/hooks/useCadetNotifications";
 import {
   useStudentCourseOrders,
   useAllCoursesForSelect,
@@ -672,6 +673,7 @@ export default function AdminStudents() {
   const clearDevices = useAdminClearDevices();
   const bulkClearDevices = useAdminBulkClearDevices();
   const setTag = useSetStudentTag();
+  const { data: cadetIds = new Set<string>() } = useAdminCadetStudentIds();
 
   const [search, setSearch] = useState("");
   const [filterRole, setFilterRole] = useState<"all" | "admin" | "student">("all");
@@ -679,6 +681,7 @@ export default function AdminStudents() {
   const [filterCourse, setFilterCourse] = useState<string>("all");
   const [filterPaid, setFilterPaid] = useState(false);
   const [filterTag, setFilterTag] = useState<"all" | "offline" | "paid" | "none">("all");
+  const [filterCadet, setFilterCadet] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const { data: courses = [] } = useAllCoursesForSelect();
   const { data: enrolledIds } = useEnrolledStudentIds(filterCourse === "all" ? null : filterCourse);
@@ -725,8 +728,9 @@ export default function AdminStudents() {
       filterTag === "all" ? true :
       filterTag === "none" ? !s.tag :
       s.tag === filterTag;
+    const matchCadet = !filterCadet || cadetIds.has(s.id);
 
-    return matchSearch && matchRole && matchSource && matchDate && matchCourse && matchPaid && matchTag;
+    return matchSearch && matchRole && matchSource && matchDate && matchCourse && matchPaid && matchTag && matchCadet;
   });
 
   const safePage = Math.min(page, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
@@ -995,6 +999,17 @@ export default function AdminStudents() {
           >
             💳 Paid
           </button>
+          <button
+            onClick={() => { setFilterCadet((v) => !v); resetPage(); }}
+            className={[
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+              filterCadet
+                ? "bg-cyan-600 text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80",
+            ].join(" ")}
+          >
+            🎖️ ক্যাডেট
+          </button>
           <div className="h-4 w-px bg-border" />
           <div className="flex gap-1.5">
             {([
@@ -1103,7 +1118,11 @@ export default function AdminStudents() {
               <div key={s.id}>
                 {/* Row */}
                 <div
-                  className={["flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30", selectedIds.has(s.id) ? "bg-primary/5" : ""].join(" ")}
+                  className={[
+                    "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-muted/30",
+                    selectedIds.has(s.id) ? "bg-primary/5" : "",
+                    cadetIds.has(s.id) ? "border-l-2 border-cyan-400 bg-cyan-50/30 dark:bg-cyan-950/20" : "",
+                  ].join(" ")}
                   onClick={() => toggleExpand(s.id)}
                 >
                   {/* Checkbox — stop expand on click */}
@@ -1155,6 +1174,11 @@ export default function AdminStudents() {
                   {s.tag === "paid" && (
                     <Badge className="shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-0 text-[10px]">
                       পেইড
+                    </Badge>
+                  )}
+                  {cadetIds.has(s.id) && (
+                    <Badge className="shrink-0 bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 border-0 text-[10px] gap-1">
+                      🎖️ ক্যাডেট
                     </Badge>
                   )}
 

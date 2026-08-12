@@ -31,7 +31,14 @@
       "Bash(ls \"c:\\\\Users\\\\Zubayer\\\\Documents\\\\projects\\\\\")",
       "Read(//c/Users/Zubayer/Documents/**)",
       "Bash(vercel ls *)",
-      "Bash(vercel --prod --force --token=vcp_7k5MDeChCYHYIVsvAgIBli9IJ1LpTRTl0IPsP23qOJPUGGAQnB0iOxrW)"
+      "Bash(vercel --prod --force --token=vcp_7k5MDeChCYHYIVsvAgIBli9IJ1LpTRTl0IPsP23qOJPUGGAQnB0iOxrW)",
+      "Bash(git init *)",
+      "Bash(git fetch *)",
+      "Bash(git rm *)",
+      "Bash(git pull *)",
+      "Bash(git log *)",
+      "PowerShell(cd \"c:\\\\Users\\\\User\\\\Documents\\\\Projects\\\\workingprojects\\\\icanedu\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"^npm notice\" } | Select-Object -First 20)",
+      "Bash(git commit -m 'fix: use .contains\\(\\) for course_ids array filter in ISSB student hooks *)"
     ]
   }
 }

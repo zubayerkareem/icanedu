@@ -14,6 +14,7 @@ import {
   MessageSquare,
   CalendarCheck,
   Link2,
+  GraduationCap,
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,6 +43,7 @@ const items = [
   { title: "ইউজার", url: "/admin/students", icon: Users },
   { title: "মেয়াদ ফিল্টার", url: "/admin/course-validity", icon: CalendarCheck },
   { title: "সোশ্যাল লিংক", url: "/admin/contact-links", icon: Link2 },
+  { title: "ক্যাডেট কোর্স", url: "/admin/cadet", icon: GraduationCap },
   { title: "মেসেজ", url: "/admin/messages", icon: MessageSquare },
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },
   { title: "ISSB কন্টেন্ট", url: "/admin/issb", icon: Brain },

@@ -39,6 +39,10 @@ type Form = {
   title: string;
   slug: string;
   category: string;
+  course_type: "standard" | "cadet" | "issb";
+  cadet_assignment_url: string;
+  cadet_homework_url: string;
+  cadet_attendance_url: string;
   duration: string;
   total_lessons: string;
   enrollment_count: string;
@@ -61,7 +65,9 @@ type Form = {
 };
 
 const emptyForm: Form = {
-  title: "", slug: "", category: "", duration: "", total_lessons: "", enrollment_count: "", rating_average: "",
+  title: "", slug: "", category: "", course_type: "standard",
+  cadet_assignment_url: "", cadet_homework_url: "", cadet_attendance_url: "",
+  duration: "", total_lessons: "", enrollment_count: "", rating_average: "",
   thumbnail_url: "", short_description: "", long_description: "",
   teachers: [],
   price: "", discount_price: "", discount_ends_at: "", is_published: true,
@@ -83,6 +89,10 @@ function fromCourse(c: Course): Form {
     title: c.title ?? "",
     slug: c.slug ?? "",
     category: c.category ?? "",
+    course_type: (c.course_type as "standard" | "cadet" | "issb") ?? "standard",
+    cadet_assignment_url: c.cadet_assignment_url ?? "",
+    cadet_homework_url: c.cadet_homework_url ?? "",
+    cadet_attendance_url: c.cadet_attendance_url ?? "",
     duration: c.duration ?? "",
     total_lessons: c.total_lessons != null ? String(c.total_lessons) : "",
     enrollment_count: c.enrollment_count != null ? String(c.enrollment_count) : "",
@@ -234,6 +244,10 @@ export default function CourseEditor() {
         resources: form.resources,
         is_published: form.is_published,
         youtube_url: form.youtube_url.trim() || undefined,
+        course_type: form.course_type,
+        cadet_assignment_url: form.cadet_assignment_url.trim() || undefined,
+        cadet_homework_url: form.cadet_homework_url.trim() || undefined,
+        cadet_attendance_url: form.cadet_attendance_url.trim() || undefined,
       });
       toast.success(isEdit ? "কোর্স আপডেট হয়েছে" : "নতুন কোর্স যোগ হয়েছে");
       navigate("/admin/courses");
@@ -291,6 +305,16 @@ export default function CourseEditor() {
             <Field label="ক্যাটাগরি">
               <Input value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="ISSB, Cadet..." />
             </Field>
+            <Field label="কোর্স টাইপ">
+              <Select value={form.course_type} onValueChange={(v) => set("course_type", v as "standard" | "cadet" | "issb")}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">📚 সাধারণ কোর্স</SelectItem>
+                  <SelectItem value="cadet">🎖️ ক্যাডেট কোর্স</SelectItem>
+                  <SelectItem value="issb">🧠 ISSB কোর্স</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="সময়কাল">
               <Input value={form.duration} onChange={(e) => set("duration", e.target.value)} placeholder="৬ মাস / ৮ সপ্তাহ" />
             </Field>
@@ -314,6 +338,37 @@ export default function CourseEditor() {
               onChange={(e) => set("youtube_url", e.target.value)}
             />
           </Field>
+
+          {/* Cadet URL config — only shown for cadet courses */}
+          {form.course_type === "cadet" && (
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-950/30 p-4 space-y-3">
+              <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5">
+                🎖️ ক্যাডেট বাটন লিংক
+                <span className="text-xs font-normal text-cyan-500">(ঐচ্ছিক — শিক্ষার্থীর ড্যাশবোর্ডে দেখাবে)</span>
+              </p>
+              <Field label="এসাইনমেন্ট লিংক">
+                <Input
+                  placeholder="https://..."
+                  value={form.cadet_assignment_url}
+                  onChange={(e) => set("cadet_assignment_url", e.target.value)}
+                />
+              </Field>
+              <Field label="হোম ওয়ার্ক লিংক">
+                <Input
+                  placeholder="https://..."
+                  value={form.cadet_homework_url}
+                  onChange={(e) => set("cadet_homework_url", e.target.value)}
+                />
+              </Field>
+              <Field label="এটেন্ডেন্স লিংক">
+                <Input
+                  placeholder="https://..."
+                  value={form.cadet_attendance_url}
+                  onChange={(e) => set("cadet_attendance_url", e.target.value)}
+                />
+              </Field>
+            </div>
+          )}
           <Field label="সংক্ষিপ্ত বিবরণ">
             <textarea
               value={form.short_description}

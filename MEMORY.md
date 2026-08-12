@@ -3,9 +3,9 @@
 ## Links
 | | |
 |---|---|
-| **GitHub** | https://github.com/zubayerkareem/iCANBD |
+| **GitHub** | https://github.com/zubayerkareem/icanedu |
 | **Vercel (Production)** | https://icanbd.com |
-| **Vercel (Alias)** | https://icanbd.vercel.app |
+| **Vercel (Alias)** | https://icanedu.vercel.app |
 | **Supabase Project** | Dashboard → supabase.com |
 
 ---

@@ -53,6 +53,10 @@ export function useUpsertCourse() {
         rating_count: course.rating_count ?? 0,
         is_published: course.is_published ?? true,
         youtube_url: course.youtube_url ?? null,
+        course_type: course.course_type ?? "standard",
+        cadet_assignment_url: course.cadet_assignment_url ?? null,
+        cadet_homework_url: course.cadet_homework_url ?? null,
+        cadet_attendance_url: course.cadet_attendance_url ?? null,
       };
 
       if (course.id) {

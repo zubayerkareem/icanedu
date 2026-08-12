@@ -156,6 +156,12 @@ export interface Course {
 
   display_order?: number | null;
   youtube_url?: string;
+
+  // Cadet course fields
+  course_type?: "standard" | "cadet" | "issb";
+  cadet_assignment_url?: string;
+  cadet_homework_url?: string;
+  cadet_attendance_url?: string;
 }
 
 export type CourseSort = "newest" | "price_asc" | "price_desc" | "manual";

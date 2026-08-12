@@ -78,6 +78,8 @@ import CourseOrder from "./pages/admin/CourseOrder";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import CourseValidity from "./pages/admin/CourseValidity";
 import ContactLinks from "./pages/admin/ContactLinks";
+import CadetAdmin from "./pages/admin/CadetAdmin";
+import CadetNotifications from "./pages/dashboard/CadetNotifications";
 
 const queryClient = new QueryClient();
 
@@ -161,6 +163,7 @@ const App = () => (
                 <Route path="/dashboard/courses/:id" element={<CourseLearn />} />
                 <Route path="/dashboard/orders" element={<MyOrders />} />
                 <Route path="/dashboard/messages" element={<Messages />} />
+                <Route path="/dashboard/cadet" element={<CadetNotifications />} />
                 <Route path="/dashboard/profile" element={<Profile />} />
               </Route>
 
@@ -183,6 +186,7 @@ const App = () => (
                 <Route path="/admin/course-validity" element={<CourseValidity />} />
                 <Route path="/admin/students" element={<AdminStudents />} />
                 <Route path="/admin/contact-links" element={<ContactLinks />} />
+                <Route path="/admin/cadet" element={<CadetAdmin />} />
                 <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />
                 <Route path="/admin/pages" element={<ComingSoon />} />

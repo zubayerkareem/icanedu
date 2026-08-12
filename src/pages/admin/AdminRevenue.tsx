@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { TrendingUp, BookOpen, Package, Calendar } from "lucide-react";
+import { TrendingUp, BookOpen, Package, Calendar, CalendarRange } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
 import { useAllCoursesForSelect } from "@/hooks/useAdminEnrollments";
 import { useAdminProducts } from "@/hooks/useAdminProducts";
@@ -49,15 +49,26 @@ function StatCard({ label, value, prefix = "", color }: { label: string; value: 
 
 // ── course tab ────────────────────────────────────────────────────────────────
 
-function CourseRevenueTab({ selectedMonth, offlineIds }: { selectedMonth: string; offlineIds: Set<string> }) {
+function CourseRevenueTab({ selectedMonth, dateFrom, dateTo, offlineIds }: {
+  selectedMonth: string; dateFrom: string; dateTo: string; offlineIds: Set<string>;
+}) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: courses = [] } = useAllCoursesForSelect();
   const [selectedCourse, setSelectedCourse] = useState("");
 
   const onlineOrders = orders.filter((o) => !offlineIds.has(o.user_id ?? ""));
-  const monthOrders = selectedMonth === "all"
-    ? onlineOrders
-    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  const monthOrders = (() => {
+    if (dateFrom || dateTo) {
+      return onlineOrders.filter((o) => {
+        const d = o.created_at.slice(0, 10);
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo   && d > dateTo)   return false;
+        return true;
+      });
+    }
+    if (selectedMonth === "all") return onlineOrders;
+    return onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  })();
 
   const courseOrders = monthOrders.filter((o) => o.order_type === "course");
   const filtered = selectedCourse
@@ -150,15 +161,26 @@ function CourseRevenueTab({ selectedMonth, offlineIds }: { selectedMonth: string
 
 // ── product tab ───────────────────────────────────────────────────────────────
 
-function ProductRevenueTab({ selectedMonth, offlineIds }: { selectedMonth: string; offlineIds: Set<string> }) {
+function ProductRevenueTab({ selectedMonth, dateFrom, dateTo, offlineIds }: {
+  selectedMonth: string; dateFrom: string; dateTo: string; offlineIds: Set<string>;
+}) {
   const { data: orders = [], isLoading } = useOrders();
   const { data: products = [] } = useAdminProducts();
   const [selectedProduct, setSelectedProduct] = useState("");
 
   const onlineOrders = orders.filter((o) => !offlineIds.has(o.user_id ?? ""));
-  const monthOrders = selectedMonth === "all"
-    ? onlineOrders
-    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  const monthOrders = (() => {
+    if (dateFrom || dateTo) {
+      return onlineOrders.filter((o) => {
+        const d = o.created_at.slice(0, 10);
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo   && d > dateTo)   return false;
+        return true;
+      });
+    }
+    if (selectedMonth === "all") return onlineOrders;
+    return onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  })();
 
   const productOrders = monthOrders.filter((o) => o.order_type === "product");
   const filtered = selectedProduct
@@ -256,6 +278,8 @@ type Tab = "course" | "product";
 export default function AdminRevenue() {
   const [tab, setTab]                     = useState<Tab>("course");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [dateFrom, setDateFrom]           = useState("");
+  const [dateTo,   setDateTo]             = useState("");
   const { data: orders = [] }             = useOrders();
   const offlineIds                        = useOfflineStudentIds();
 
@@ -271,9 +295,18 @@ export default function AdminRevenue() {
     return [...set].sort().reverse();
   }, [onlineOrders]);
 
-  const filteredOrders = selectedMonth === "all"
-    ? onlineOrders
-    : onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  const filteredOrders = useMemo(() => {
+    if (dateFrom || dateTo) {
+      return onlineOrders.filter((o) => {
+        const d = o.created_at.slice(0, 10);
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo   && d > dateTo)   return false;
+        return true;
+      });
+    }
+    if (selectedMonth === "all") return onlineOrders;
+    return onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
+  }, [onlineOrders, selectedMonth, dateFrom, dateTo]);
 
   const totalRevenue = filteredOrders
     .filter((o) => REVENUE_STATUSES.has(o.status))
@@ -294,7 +327,7 @@ export default function AdminRevenue() {
             <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             <select
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => { setSelectedMonth(e.target.value); setDateFrom(""); setDateTo(""); }}
               className="bg-transparent text-sm text-foreground focus:outline-none"
             >
               <option value="all">সব সময়</option>
@@ -304,11 +337,40 @@ export default function AdminRevenue() {
             </select>
           </div>
 
+          {/* Custom date range */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <CalendarRange className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => { setDateFrom(e.target.value); setSelectedMonth("all"); }}
+              className="bg-transparent text-foreground focus:outline-none w-[130px]"
+            />
+            <span className="text-muted-foreground select-none">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => { setDateTo(e.target.value); setSelectedMonth("all"); }}
+              className="bg-transparent text-foreground focus:outline-none w-[130px]"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(""); setDateTo(""); }}
+                className="ml-1 text-muted-foreground hover:text-foreground transition-colors text-xs"
+                aria-label="তারিখ রেঞ্জ মুছুন"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
           {/* Grand total badge */}
           <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30 px-4 py-2">
             <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <span className="text-xs text-muted-foreground">
-              {selectedMonth === "all" ? "সর্বমোট আয়" : formatMonth(selectedMonth)}
+              {(dateFrom || dateTo)
+                ? `${dateFrom || "শুরু"} — ${dateTo || "আজ"}`
+                : selectedMonth === "all" ? "সর্বমোট আয়" : formatMonth(selectedMonth)}
             </span>
             <span className="font-heading text-lg font-bold text-emerald-600 dark:text-emerald-400">
               ৳{bnNum(totalRevenue)}
@@ -347,8 +409,8 @@ export default function AdminRevenue() {
 
       {/* Tab content */}
       {tab === "course"
-        ? <CourseRevenueTab selectedMonth={selectedMonth} offlineIds={offlineIds} />
-        : <ProductRevenueTab selectedMonth={selectedMonth} offlineIds={offlineIds} />
+        ? <CourseRevenueTab selectedMonth={selectedMonth} dateFrom={dateFrom} dateTo={dateTo} offlineIds={offlineIds} />
+        : <ProductRevenueTab selectedMonth={selectedMonth} dateFrom={dateFrom} dateTo={dateTo} offlineIds={offlineIds} />
       }
     </div>
   );

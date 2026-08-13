@@ -38,7 +38,9 @@
       "Bash(git pull *)",
       "Bash(git log *)",
       "PowerShell(cd \"c:\\\\Users\\\\User\\\\Documents\\\\Projects\\\\workingprojects\\\\icanedu\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -notmatch \"^npm notice\" } | Select-Object -First 20)",
-      "Bash(git commit -m 'fix: use .contains\\(\\) for course_ids array filter in ISSB student hooks *)"
+      "Bash(git commit -m 'fix: use .contains\\(\\) for course_ids array filter in ISSB student hooks *)",
+      "Bash(git commit -m 'feat: cadet course system with notifications, device bypass, and admin panel *)",
+      "Bash(git commit -m 'feat: anti-bot registration & login — email whitelist, math captcha, Cloudflare Turnstile *)"
     ]
   }
 }

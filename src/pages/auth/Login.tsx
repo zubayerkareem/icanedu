@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { t } from "@/lib/strings";
+import { TurnstileWidget, type TurnstileInstance } from "@/components/TurnstileWidget";
 
 const schema = z.object({
-  email: z.string().trim().email({ message: t.toast.invalidEmail }).max(255),
+  email:    z.string().trim().email({ message: t.toast.invalidEmail }).max(255),
   password: z.string().min(6, { message: t.toast.weakPassword }).max(72),
 });
 
@@ -27,18 +28,29 @@ export default function Login() {
 
   const { blocked, clearBlocked } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [loading,  setLoading]  = useState(false);
+  const [errors,   setErrors]   = useState<{ email?: string; password?: string }>({});
+
+  // Cloudflare Turnstile
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
+  function resetTurnstile() {
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Zod validation
     const parsed = schema.safeParse({ email, password });
     if (!parsed.success) {
       const errs: typeof errors = {};
       parsed.error.issues.forEach((i) => {
-        if (i.path[0] === "email") errs.email = i.message;
+        if (i.path[0] === "email")    errs.email    = i.message;
         if (i.path[0] === "password") errs.password = i.message;
       });
       setErrors(errs);
@@ -46,28 +58,58 @@ export default function Login() {
     }
     setErrors({});
     clearBlocked();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password,
-    });
-    setLoading(false);
-    if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        toast.error("ইমেইল যাচাই করা হয়নি।", {
-          description: "নিবন্ধনের সময় পাঠানো OTP দিয়ে অ্যাকাউন্ট নিশ্চিত করুন।",
-          action: {
-            label: "যাচাই করুন",
-            onClick: () => navigate(`/register`),
-          },
-        });
-      } else {
-        toast.error(t.toast.loginFailed, { description: error.message });
-      }
+
+    // 2. Turnstile check
+    if (!turnstileToken) {
+      toast.error("যাচাইকরণ সম্পন্ন হয়নি, একটু অপেক্ষা করুন");
       return;
     }
-    toast.success(t.toast.loginSuccess);
-    navigate(from, { replace: true });
+
+    setLoading(true);
+    try {
+      // 3. Server-side Turnstile verification
+      const vRes = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+      const vData = await vRes.json();
+      if (!vData.success) {
+        toast.error("বট যাচাই ব্যর্থ হয়েছে, পুনরায় চেষ্টা করুন");
+        resetTurnstile();
+        return;
+      }
+
+      // 4. Supabase sign-in
+      const { error } = await supabase.auth.signInWithPassword({
+        email:    parsed.data.email,
+        password: parsed.data.password,
+      });
+
+      if (error) {
+        resetTurnstile();
+        if (error.message.toLowerCase().includes("email not confirmed")) {
+          toast.error("ইমেইল যাচাই করা হয়নি।", {
+            description: "নিবন্ধনের সময় পাঠানো OTP দিয়ে অ্যাকাউন্ট নিশ্চিত করুন।",
+            action: {
+              label: "যাচাই করুন",
+              onClick: () => navigate(`/register`),
+            },
+          });
+        } else {
+          toast.error(t.toast.loginFailed, { description: error.message });
+        }
+        return;
+      }
+
+      toast.success(t.toast.loginSuccess);
+      navigate(from, { replace: true });
+    } catch {
+      toast.error("একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      resetTurnstile();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -83,6 +125,7 @@ export default function Login() {
         </>
       }
     >
+      {/* Device-blocked banner — completely unchanged */}
       {blocked && (
         <div className="mb-4 flex gap-3 rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -136,6 +179,17 @@ export default function Login() {
           />
           {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
         </div>
+
+        {/* Cloudflare Turnstile */}
+        <div className="flex justify-center">
+          <TurnstileWidget
+            ref={turnstileRef}
+            onSuccess={setTurnstileToken}
+            onError={resetTurnstile}
+            onExpire={resetTurnstile}
+          />
+        </div>
+
         <Button
           type="submit"
           disabled={loading}

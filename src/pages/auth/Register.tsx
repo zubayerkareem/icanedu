@@ -9,14 +9,41 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { t } from "@/lib/strings";
+import { TurnstileWidget, type TurnstileInstance } from "@/components/TurnstileWidget";
+
+// ── Email domain whitelist ────────────────────────────────────────────────────
+const ALLOWED_DOMAINS = new Set([
+  // Google
+  "gmail.com", "googlemail.com",
+  // Yahoo
+  "yahoo.com", "yahoo.co.uk", "yahoo.co.in", "yahoo.com.bd",
+  // Microsoft
+  "outlook.com", "hotmail.com", "hotmail.co.uk", "live.com",
+  // Apple
+  "icloud.com", "me.com", "mac.com",
+  // Protonmail
+  "protonmail.com", "proton.me",
+  // Zoho
+  "zoho.com",
+  // Yandex
+  "yandex.com", "yandex.ru",
+]);
 
 const schema = z
   .object({
     full_name: z.string().trim().min(2, { message: t.toast.requiredField }).max(100),
-    email:     z.string().trim().email({ message: t.toast.invalidEmail }).max(255),
-    phone:     z.string().trim().min(6,  { message: t.toast.requiredField }).max(20),
-    password:  z.string().min(6, { message: t.toast.weakPassword }).max(72),
-    confirm:   z.string(),
+    email: z
+      .string()
+      .trim()
+      .email({ message: t.toast.invalidEmail })
+      .max(255)
+      .refine(
+        (e) => ALLOWED_DOMAINS.has(e.split("@")[1]?.toLowerCase() ?? ""),
+        { message: "শুধু Gmail, Yahoo, Outlook, iCloud, Protonmail, Zoho বা Yandex ইমেইল ব্যবহার করুন" },
+      ),
+    phone:    z.string().trim().min(6,  { message: t.toast.requiredField }).max(20),
+    password: z.string().min(6, { message: t.toast.weakPassword }).max(72),
+    confirm:  z.string(),
   })
   .refine((d) => d.password === d.confirm, {
     message: t.toast.passwordMismatch, path: ["confirm"],
@@ -26,7 +53,7 @@ type Step = "form" | "otp";
 
 export default function Register() {
   const navigate = useNavigate();
-  const [step,    setStep]    = useState<Step>("form");
+  const [step,     setStep]     = useState<Step>("form");
   const [regEmail, setRegEmail] = useState("");
 
   /* ── Step 1: registration form ──────────────────────── */
@@ -34,11 +61,28 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
+  // Math CAPTCHA — two random 1-9 numbers, reset on wrong answer
+  const [captchaA] = useState(() => Math.floor(Math.random() * 9) + 1);
+  const [captchaB] = useState(() => Math.floor(Math.random() * 9) + 1);
+  const [captchaInput, setCaptchaInput] = useState("");
+  const [captchaError, setCaptchaError] = useState(false);
+
+  // Cloudflare Turnstile
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
   const setField = (k: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, [k]: e.target.value }));
 
+  function resetTurnstile() {
+    turnstileRef.current?.reset();
+    setTurnstileToken(null);
+  }
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Zod validation (incl. email domain check)
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
       const errs: Record<string, string> = {};
@@ -47,9 +91,38 @@ export default function Register() {
       return;
     }
     setErrors({});
-    setLoading(true);
 
+    // 2. Math CAPTCHA
+    if (parseInt(captchaInput, 10) !== captchaA + captchaB) {
+      setCaptchaError(true);
+      setCaptchaInput("");
+      toast.error("গণিতের উত্তর সঠিক নয়, আবার চেষ্টা করুন");
+      return;
+    }
+    setCaptchaError(false);
+
+    // 3. Turnstile — must have a token from the widget
+    if (!turnstileToken) {
+      toast.error("যাচাইকরণ সম্পন্ন হয়নি, একটু অপেক্ষা করুন");
+      return;
+    }
+
+    setLoading(true);
     try {
+      // 4. Server-side Turnstile verification
+      const vRes = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+      const vData = await vRes.json();
+      if (!vData.success) {
+        toast.error("বট যাচাই ব্যর্থ হয়েছে, পুনরায় চেষ্টা করুন");
+        resetTurnstile();
+        return;
+      }
+
+      // 5. Supabase sign-up
       const { data, error } = await supabase.auth.signUp({
         email:    parsed.data.email,
         password: parsed.data.password,
@@ -58,30 +131,32 @@ export default function Register() {
 
       if (error) {
         toast.error(t.toast.registerFailed, { description: error.message });
+        resetTurnstile();
         return;
       }
 
-      // If Supabase returned a session the account was auto-confirmed (email confirmation disabled)
+      // Email confirmation disabled → session returned immediately
       if (data.session) {
         toast.success("নিবন্ধন সফল হয়েছে! স্বাগতম 🎉");
         navigate("/dashboard", { replace: true });
         return;
       }
 
-      // email_confirmed_at is null → OTP sent → show OTP step
+      // OTP flow
       setRegEmail(parsed.data.email);
       setStep("otp");
       toast.success("OTP পাঠানো হয়েছে! আপনার ইমেইল চেক করুন।");
-    } catch (err) {
+    } catch {
       toast.error("একটি সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
   };
 
   /* ── Step 2: OTP verification ────────────────────────── */
-  const [otp,        setOtp]        = useState(["", "", "", "", "", ""]);
-  const [otpLoading, setOtpLoading] = useState(false);
+  const [otp,           setOtp]           = useState(["", "", "", "", "", ""]);
+  const [otpLoading,    setOtpLoading]    = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -231,7 +306,7 @@ export default function Register() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">{t.auth.email}</Label>
-          <Input id="email" type="email" value={form.email} onChange={setField("email")} placeholder="name@example.com" />
+          <Input id="email" type="email" value={form.email} onChange={setField("email")} placeholder="name@gmail.com" />
           {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
         </div>
         <div className="space-y-1.5">
@@ -253,7 +328,45 @@ export default function Register() {
             {errors.confirm && <p className="text-xs text-destructive">{errors.confirm}</p>}
           </div>
         </div>
-        <Button type="submit" disabled={loading} className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+
+        {/* Math CAPTCHA */}
+        <div className="space-y-1.5">
+          <Label htmlFor="captcha" className="flex items-center gap-1.5">
+            <span>যাচাইকরণ:</span>
+            <span className="font-bold text-foreground">
+              {captchaA} + {captchaB} = ?
+            </span>
+          </Label>
+          <Input
+            id="captcha"
+            type="number"
+            inputMode="numeric"
+            placeholder="উত্তর লিখুন"
+            value={captchaInput}
+            onChange={(e) => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
+            className={captchaError ? "border-destructive focus-visible:ring-destructive" : ""}
+            autoComplete="off"
+          />
+          {captchaError && (
+            <p className="text-xs text-destructive">উত্তর সঠিক নয়, আবার চেষ্টা করুন</p>
+          )}
+        </div>
+
+        {/* Cloudflare Turnstile */}
+        <div className="flex justify-center">
+          <TurnstileWidget
+            ref={turnstileRef}
+            onSuccess={setTurnstileToken}
+            onError={resetTurnstile}
+            onExpire={resetTurnstile}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+        >
           {loading ? t.auth.registering : t.auth.registerButton}
         </Button>
       </form>

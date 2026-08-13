@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Search, RefreshCw, BookOpen, Package, Calendar, X, Trash2, UserCheck } from "lucide-react";
+import { Search, RefreshCw, BookOpen, Package, Calendar, X, Trash2, UserCheck, Truck } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabase";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -339,6 +346,119 @@ function CourseOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onA
   );
 }
 
+// ─── Courier dialog ────────────────────────────────────────────────────────────
+
+function CourierDialog({ order, open, onClose }: { order: Order | null; open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+  const [note, setNote] = useState("");
+  const [deliveryType, setDeliveryType] = useState<"0" | "1">("0");
+  const [loading, setLoading] = useState(false);
+
+  if (!order) return null;
+
+  async function handleSend() {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { toast.error("সেশন মেয়াদ শেষ — পুনরায় লগইন করুন"); return; }
+
+      const res = await fetch("/api/send-to-courier", {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          orderId:       order.id,
+          note:          note.trim(),
+          delivery_type: Number(deliveryType),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "কুরিয়ারে পাঠাতে ব্যর্থ হয়েছে");
+        return;
+      }
+      toast.success(`কুরিয়ারে পাঠানো হয়েছে! Tracking: ${data.tracking_code}`);
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message ?? "একটি সমস্যা হয়েছে");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Truck className="h-5 w-5 text-green-600" /> কুরিয়ারে পাঠান
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Order summary — read-only */}
+        <div className="space-y-2 rounded-lg bg-muted/50 p-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">প্রাপক</span>
+            <span className="font-medium">{order.customer_name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">ফোন</span>
+            <span className="font-mono">{order.phone}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground shrink-0">ঠিকানা</span>
+            <span className="text-right">{order.address ?? "—"}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">COD পরিমাণ</span>
+            <span className="font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">পণ্য</span>
+            <span className="max-w-[200px] truncate text-right">{order.product_name}</span>
+          </div>
+        </div>
+
+        {/* Editable fields */}
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">ডেলিভারি ধরন</label>
+            <Select value={deliveryType} onValueChange={(v) => setDeliveryType(v as "0" | "1")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">🏠 Home Delivery</SelectItem>
+                <SelectItem value="1">📦 Hub Pickup</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">নোট (ঐচ্ছিক)</label>
+            <Textarea
+              placeholder="ডেলিভারি নির্দেশনা..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="resize-none"
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>বাতিল</Button>
+          <Button onClick={handleSend} disabled={loading} className="gap-2 bg-green-600 hover:bg-green-700 text-white">
+            {loading ? "পাঠানো হচ্ছে..." : <><Truck className="h-4 w-4" /> পাঠান</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Product orders tab ────────────────────────────────────────────────────────
 
 function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; onAdvance: (o: Order) => void; onCancel: (o: Order) => void }) {
@@ -347,6 +467,7 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
   const [page, setPage] = useState(1);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [courierOrder, setCourierOrder] = useState<Order | null>(null);
   const bulkUpdate = useBulkUpdateOrderStatus();
   const deleteOrder = useDeleteOrder();
   const bulkDeleteOrders = useBulkDeleteOrders();
@@ -474,11 +595,28 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
                     <td className="px-4 py-3 font-heading font-bold text-accent">৳{order.total_price.toLocaleString()}</td>
                     <td className="px-4 py-3"><Badge variant={STATUS_VARIANTS[order.status]}>{STATUS_LABELS[order.status]}</Badge></td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {nextStatus && (
                           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onAdvance(order)}>
                             {STATUS_LABELS[nextStatus]}
                           </Button>
+                        )}
+                        {/* Courier button / tracking badge */}
+                        {(order.status === "confirmed" || order.status === "shipped") && (
+                          order.courier_tracking_code ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                              <Truck className="h-3 w-3" /> {order.courier_tracking_code}
+                            </span>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 text-xs border-green-400 text-green-700 hover:bg-green-50 dark:border-green-600 dark:text-green-400 dark:hover:bg-green-900/20"
+                              onClick={() => setCourierOrder(order)}
+                            >
+                              <Truck className="mr-1 h-3 w-3" /> কুরিয়ার
+                            </Button>
+                          )
                         )}
                         {order.status !== "cancelled" && order.status !== "delivered" && (
                           <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => onCancel(order)}>
@@ -498,6 +636,9 @@ function ProductOrdersTab({ orders, onAdvance, onCancel }: { orders: Order[]; on
         )}
       </div>
       <DataPagination page={safePage} total={filtered.length} pageSize={PAGE_SIZE} onChange={setPage} />
+
+      {/* Courier dialog */}
+      <CourierDialog order={courierOrder} open={!!courierOrder} onClose={() => setCourierOrder(null)} />
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>

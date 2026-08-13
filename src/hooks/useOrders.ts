@@ -22,6 +22,9 @@ export interface Order {
   coupon_code: string | null;
   valid_until: string | null;
   created_at: string;
+  courier_consignment_id?: string | null;
+  courier_tracking_code?:  string | null;
+  courier_status?:         string | null;
 }
 
 export function useOrders() {

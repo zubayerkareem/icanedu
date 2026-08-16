@@ -1,11 +1,12 @@
 import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft, Lock, PlayCircle, FileText, HelpCircle, ClipboardList,
-  Download, CheckCircle2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichContent } from "@/components/RichEditor";
+import { PdfViewer } from "@/components/PdfViewer";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
@@ -97,7 +98,7 @@ export default function LessonView() {
                 <VideoPlayer url={current.video_url} />
               )
             ) : current.type === "pdf" ? (
-              <PdfViewer url={current.pdf_url} />
+              <PdfViewer url={current.pdf_url} allowDownload={current.allow_download} />
             ) : (
               <article className="rounded-xl border border-border bg-card p-6">
                 {current.content ? (
@@ -219,22 +220,6 @@ function VideoPlayer({ url }: { url?: string }) {
       ) : (
         <div className="flex h-full items-center justify-center text-sm text-white/60">ভিডিও পাওয়া যায়নি</div>
       )}
-    </div>
-  );
-}
-
-function PdfViewer({ url }: { url?: string }) {
-  if (!url) {
-    return <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">PDF পাওয়া যায়নি</div>;
-  }
-  return (
-    <div className="space-y-3">
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-muted sm:aspect-video">
-        <iframe src={url} className="h-full w-full" title="lesson pdf" />
-      </div>
-      <Button asChild variant="outline" size="sm">
-        <a href={url} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" /> ডাউনলোড করুন</a>
-      </Button>
     </div>
   );
 }

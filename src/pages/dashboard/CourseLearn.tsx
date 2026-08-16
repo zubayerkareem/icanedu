@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, BookOpen, ClipboardList,
   FileText, HelpCircle, Lock, PlayCircle,
-  Brain, Download, CheckCircle2, Menu, X, ListVideo,
+  Brain, CheckCircle2, Menu, X, ListVideo,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import { RichContent } from "@/components/RichEditor";
+import { PdfViewer } from "@/components/PdfViewer";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
@@ -273,20 +274,6 @@ function VideoPlayer({ url }: { url?: string }) {
   );
 }
 
-function PdfViewer({ url }: { url?: string }) {
-  if (!url) return <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">PDF পাওয়া যায়নি</div>;
-  return (
-    <div className="space-y-3">
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-muted sm:aspect-video">
-        <iframe src={url} className="h-full w-full" title="lesson pdf" />
-      </div>
-      <Button asChild variant="outline" size="sm">
-        <a href={url} target="_blank" rel="noreferrer"><Download className="mr-2 h-4 w-4" /> ডাউনলোড করুন</a>
-      </Button>
-    </div>
-  );
-}
-
 // ─── Main content area ────────────────────────────────────────────────────────
 
 function LearnContent({
@@ -372,7 +359,7 @@ function LearnContent({
               <VideoPlayer url={lesson.video_url} />
             )
           ) : lesson.type === "pdf" ? (
-            <PdfViewer url={lesson.pdf_url} />
+            <PdfViewer url={lesson.pdf_url} allowDownload={lesson.allow_download} />
           ) : (
             <article className="rounded-xl border border-border bg-card p-6">
               {lesson.content ? (

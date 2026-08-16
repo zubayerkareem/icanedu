@@ -12,6 +12,7 @@ export interface Lesson {
   video_url?: string; // YouTube/Vimeo link (type: video)
   bunny_video_id?: string; // Bunny Stream video GUID (type: video)
   pdf_url?: string; // uploaded PDF public URL (type: pdf)
+  allow_download?: boolean; // if false, PDF is view-only (no download button, no toolbar)
   content?: string; // TipTap HTML (type: text / quiz / assignment)
 }
 

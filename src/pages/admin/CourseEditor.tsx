@@ -627,7 +627,13 @@ export default function CourseEditor() {
                         </div>
                       )}
                       {l.type === "pdf" && (
-                        <FileUpload value={l.pdf_url} onChange={(url) => setLesson(mi, li, { pdf_url: url })} />
+                        <div className="space-y-2">
+                          <FileUpload value={l.pdf_url} onChange={(url) => setLesson(mi, li, { pdf_url: url })} />
+                          <label className="flex items-center gap-1.5 text-xs">
+                            <Switch checked={!!l.allow_download} onCheckedChange={(v) => setLesson(mi, li, { allow_download: v })} />
+                            ডাউনলোড করতে দেওয়া হবে
+                          </label>
+                        </div>
                       )}
                       {(l.type === "text" || l.type === "quiz" || l.type === "assignment") && (
                         <RichEditor

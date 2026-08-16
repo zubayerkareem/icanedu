@@ -15,6 +15,7 @@ import {
   CalendarCheck,
   Link2,
   GraduationCap,
+  MapPin,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,7 @@ const items = [
   { title: "নোটিশ", url: "/admin/notices", icon: Bell },
   { title: "ISSB কন্টেন্ট", url: "/admin/issb", icon: Brain },
   { title: "সাক্সেস স্টোরি", url: "/admin/success", icon: Trophy },
+  { title: "শাখা / লোকেশন", url: "/admin/branches", icon: MapPin },
   { title: t.admin.settings, url: "/admin/settings", icon: Settings },
 ];
 

@@ -78,6 +78,7 @@ import CourseOrder from "./pages/admin/CourseOrder";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import CourseValidity from "./pages/admin/CourseValidity";
 import ContactLinks from "./pages/admin/ContactLinks";
+import BranchesAdmin from "./pages/admin/BranchesAdmin";
 import CadetAdmin from "./pages/admin/CadetAdmin";
 import CadetNotifications from "./pages/dashboard/CadetNotifications";
 
@@ -186,6 +187,7 @@ const App = () => (
                 <Route path="/admin/course-validity" element={<CourseValidity />} />
                 <Route path="/admin/students" element={<AdminStudents />} />
                 <Route path="/admin/contact-links" element={<ContactLinks />} />
+                <Route path="/admin/branches" element={<BranchesAdmin />} />
                 <Route path="/admin/cadet" element={<CadetAdmin />} />
                 <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />

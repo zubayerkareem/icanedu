@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { BRANCHES } from "@/lib/branches";
+import { useBranches } from "@/hooks/useBranches";
 import { useTranslation, useLanguage } from "@/lib/i18n";
 
 export default function Contact() {
   const tr = useTranslation();
   const { lang } = useLanguage();
+  const { data: branches = [] } = useBranches();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -73,10 +74,10 @@ export default function Contact() {
                   </h2>
                 </div>
                 <ul className="space-y-3">
-                  {BRANCHES.map((b) => (
-                    <li key={b.name.en} className="text-sm">
+                  {branches.map((b) => (
+                    <li key={b.id} className="text-sm">
                       <p className="font-medium text-foreground">
-                        {b.name[lang]}:{" "}
+                        {lang === "en" ? b.name_en : b.name_bn}:{" "}
                         <a href={`tel:${b.phone}`} className="text-muted-foreground hover:text-accent transition-colors font-normal">
                           {b.phone}
                         </a>
@@ -115,30 +116,32 @@ export default function Contact() {
                   </h2>
                 </div>
                 <div className="grid gap-4">
-                  {BRANCHES.map((b) => (
+                  {branches.map((b) => (
                     <div
-                      key={b.name.en}
+                      key={b.id}
                       className="rounded-lg border border-border bg-card p-4 shadow-sm"
                     >
                       <p className="font-heading font-semibold text-foreground text-sm">
-                        {b.name[lang]}
+                        {lang === "en" ? b.name_en : b.name_bn}
                       </p>
-                      <p className="mt-1 text-sm text-muted-foreground">{b.address[lang]}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{lang === "en" ? b.address_en : b.address_bn}</p>
                       <a
                         href={`tel:${b.phone}`}
                         className="mt-1 block text-sm text-accent hover:underline"
                       >
                         {b.phone}
                       </a>
-                      <a
-                        href={b.mapUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-accent"
-                      >
-                        <Navigation className="h-3.5 w-3.5" />
-                        {tr.home.branches.viewOnMap}
-                      </a>
+                      {b.map_url && (
+                        <a
+                          href={b.map_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-accent"
+                        >
+                          <Navigation className="h-3.5 w-3.5" />
+                          {tr.home.branches.viewOnMap}
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>

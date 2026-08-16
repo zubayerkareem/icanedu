@@ -47,6 +47,93 @@ const FIELDS = [
 
 type SettingKey = (typeof FIELDS)[number]["key"];
 
+const FB_GROUP_SLOTS = [
+  { titleKey: "fb_group_1_title", urlKey: "fb_group_1_url", label: "ফেসবুক গ্রুপ ১" },
+  { titleKey: "fb_group_2_title", urlKey: "fb_group_2_url", label: "ফেসবুক গ্রুপ ২" },
+] as const;
+
+function FacebookGroupSlot({ titleKey, urlKey, label }: { titleKey: string; urlKey: string; label: string }) {
+  const { data: settings = [], isLoading } = useSiteSettings();
+  const update = useUpdateSetting();
+  const find = (key: string) => settings.find((s) => s.key === key)?.value ?? "";
+
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setTitle(find(titleKey));
+    setUrl(find(urlKey));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings]);
+
+  async function handleSave() {
+    try {
+      await Promise.all([
+        update.mutateAsync({ key: titleKey, value: title.trim() }),
+        update.mutateAsync({ key: urlKey, value: url.trim() }),
+      ]);
+      toast.success("সংরক্ষিত হয়েছে");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");
+    }
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+          <Facebook className="h-5 w-5 text-blue-600" />
+        </div>
+        <div>
+          <h2 className="font-semibold text-foreground">{label}</h2>
+          <p className="text-xs text-muted-foreground">ফুটারে দেখানো ফেসবুক গ্রুপ উইজেট</p>
+        </div>
+        {url && (
+          <span className="ml-auto flex items-center gap-1 text-xs text-green-600 font-medium">
+            <CheckCircle2 className="h-3.5 w-3.5" /> সেট করা আছে
+          </span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="h-20 animate-pulse rounded-md bg-muted" />
+      ) : (
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs">টাইটেল</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="যেমন: Helpline Group" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">লিংক</Label>
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://facebook.com/groups/..." />
+          </div>
+          <Button size="sm" onClick={handleSave} disabled={update.isPending} className="gap-2">
+            {saved ? (
+              <><CheckCircle2 className="h-4 w-4" /> সেভ হয়েছে</>
+            ) : (
+              <><Save className="h-4 w-4" /> সেভ করুন</>
+            )}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FooterFacebookGroups() {
+  return (
+    <div className="space-y-4">
+      <h2 className="font-heading text-lg font-semibold text-foreground">ফুটার ফেসবুক গ্রুপ</h2>
+      {FB_GROUP_SLOTS.map((slot) => (
+        <FacebookGroupSlot key={slot.titleKey} {...slot} />
+      ))}
+    </div>
+  );
+}
+
 export default function ContactLinks() {
   const { data: settings = [], isLoading } = useSiteSettings();
   const update = useUpdateSetting();
@@ -93,6 +180,8 @@ export default function ContactLinks() {
           ফ্রন্টেন্ডের ফ্লোটিং বার ও অ্যাপ লিংকগুলো এখান থেকে নিয়ন্ত্রণ করুন
         </p>
       </div>
+
+      <FooterFacebookGroups />
 
       {FIELDS.map((field) => {
         const Icon = field.icon;

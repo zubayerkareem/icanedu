@@ -1,11 +1,32 @@
 import { Link } from "react-router-dom";
 import { Facebook, Youtube, Instagram, Mail, Phone, MapPin, Navigation } from "lucide-react";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
-import { BRANCHES } from "@/lib/branches";
+import { useSetting } from "@/hooks/useSiteSettings";
+import { useBranches } from "@/hooks/useBranches";
 import { useTranslation, useLanguage } from "@/lib/i18n";
 
+function FacebookGroupCard({ titleKey, urlKey }: { titleKey: string; urlKey: string }) {
+  const title = useSetting(titleKey);
+  const url = useSetting(urlKey);
+  if (!url) return null;
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-[#1877F2] hover:bg-[#1877F2]/5"
+    >
+      <Facebook className="h-6 w-6 shrink-0 text-[#1877F2]" />
+      <div className="leading-tight">
+        <p className="text-[9px] uppercase tracking-wide text-muted-foreground">JOIN OUR</p>
+        <p className="text-sm font-semibold text-foreground">{title || "Facebook Group"}</p>
+      </div>
+    </a>
+  );
+}
+
 export function Footer() {
-  const { data: settings } = useSiteSettings();
+  const logoUrl = useSetting("logo_url");
+  const { data: branches = [] } = useBranches();
   const tr = useTranslation();
   const { lang } = useLanguage();
   const f = tr.home.footer;
@@ -19,7 +40,7 @@ export function Footer() {
           <div>
             <Link to="/" className="inline-block">
               <img
-                src={settings?.logo_url || "/icanbdlogo.webp"}
+                src={logoUrl || "/icanbdlogo.webp"}
                 alt="iCAN Academy"
                 className="h-12 w-auto"
               />
@@ -88,35 +109,9 @@ export function Footer() {
                 </div>
               </a>
 
-              {/* App Store */}
-              <a
-                href="#"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-accent hover:bg-accent/5"
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6 shrink-0 text-foreground" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                </svg>
-                <div className="leading-tight">
-                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">DOWNLOAD ON THE</p>
-                  <p className="text-sm font-semibold text-foreground">App Store</p>
-                </div>
-              </a>
-
-              {/* Facebook Helpline Group */}
-              <a
-                href="#"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 rounded-xl border border-border bg-background px-3 py-2.5 transition-colors hover:border-[#1877F2] hover:bg-[#1877F2]/5"
-              >
-                <Facebook className="h-6 w-6 shrink-0 text-[#1877F2]" />
-                <div className="leading-tight">
-                  <p className="text-[9px] uppercase tracking-wide text-muted-foreground">JOIN OUR</p>
-                  <p className="text-sm font-semibold text-foreground">Helpline Group</p>
-                </div>
-              </a>
+              {/* Facebook Groups (admin-editable, up to 2) */}
+              <FacebookGroupCard titleKey="fb_group_1_title" urlKey="fb_group_1_url" />
+              <FacebookGroupCard titleKey="fb_group_2_title" urlKey="fb_group_2_url" />
             </div>
           </div>
         </div>
@@ -127,28 +122,36 @@ export function Footer() {
             {tr.home.branches.title}
           </h4>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {BRANCHES.map((branch) => (
-              <div key={branch.name.en} className="rounded-lg border border-border bg-background p-4 text-sm">
-                <p className="font-heading font-semibold text-foreground">{branch.name[lang]}</p>
+            {branches.map((branch) => (
+              <div key={branch.id} className="rounded-lg border border-border bg-background p-4 text-sm">
+                <p className="font-heading font-semibold text-foreground">{lang === "en" ? branch.name_en : branch.name_bn}</p>
                 <ul className="mt-3 space-y-2 text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`tel:${branch.phone}`} className="hover:text-accent">{branch.phone}</a>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`mailto:${branch.email}`} className="hover:text-accent">{branch.email}</a>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>{branch.address[lang]}</span>
-                  </li>
+                  {branch.phone && (
+                    <li className="flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      <a href={`tel:${branch.phone}`} className="hover:text-accent">{branch.phone}</a>
+                    </li>
+                  )}
+                  {branch.email && (
+                    <li className="flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <a href={`mailto:${branch.email}`} className="hover:text-accent">{branch.email}</a>
+                    </li>
+                  )}
+                  {(lang === "en" ? branch.address_en : branch.address_bn) && (
+                    <li className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{lang === "en" ? branch.address_en : branch.address_bn}</span>
+                    </li>
+                  )}
                 </ul>
-                <a href={branch.mapUrl} target="_blank" rel="noreferrer"
-                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent">
-                  <Navigation className="h-3 w-3" />
-                  {tr.home.branches.viewOnMap}
-                </a>
+                {branch.map_url && (
+                  <a href={branch.map_url} target="_blank" rel="noreferrer"
+                    className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:bg-accent/10 hover:text-accent">
+                    <Navigation className="h-3 w-3" />
+                    {tr.home.branches.viewOnMap}
+                  </a>
+                )}
               </div>
             ))}
           </div>

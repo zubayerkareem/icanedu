@@ -3,7 +3,7 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, BookOpen, ClipboardList,
   FileText, HelpCircle, Lock, PlayCircle,
-  Brain, CheckCircle2, Menu, X, ListVideo,
+  Brain, CheckCircle2, Menu, X, ListVideo, GraduationCap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/accordion";
 import { RichContent } from "@/components/RichEditor";
 import { PdfViewer } from "@/components/PdfViewer";
+import { CadetCoursePanel } from "@/components/CadetCoursePanel";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyCadetNotifications } from "@/hooks/useCadetNotifications";
 import { getEmbedUrl } from "@/lib/video";
 import { BunnyVideoPlayer } from "@/components/BunnyVideoPlayer";
 import { isLessonFree } from "@/lib/courses/types";
@@ -446,6 +448,39 @@ function CourseLearnSkeleton() {
   );
 }
 
+// ─── Cadet course view (notifications + action buttons, no curriculum) ───────
+
+function CadetCourseLearnView({ course }: { course: Course }) {
+  const { data: notifications = [], isLoading } = useMyCadetNotifications();
+  const courseNotifs = notifications.filter((n) => n.course_id === course.id);
+
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="border-b border-border px-4 py-3 flex items-center gap-3">
+        <Link
+          to="/dashboard/courses"
+          className="flex items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+          aria-label="আমার কোর্সে ফিরুন"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <GraduationCap className="h-4 w-4 text-cyan-600 shrink-0" />
+        <span className="font-heading text-sm font-semibold text-foreground line-clamp-1">{course.title}</span>
+      </div>
+
+      <div className="mx-auto max-w-3xl px-4 py-6 md:px-6">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          </div>
+        ) : (
+          <CadetCoursePanel course={course} notifications={courseNotifs} />
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function CourseLearn() {
@@ -470,6 +505,14 @@ export default function CourseLearn() {
         <Button asChild variant="outline">
           <Link to="/dashboard/courses">← আমার কোর্সে ফিরুন</Link>
         </Button>
+      </div>
+    );
+  }
+
+  if (course.course_type === "cadet") {
+    return (
+      <div className="flex h-screen overflow-hidden">
+        <CadetCourseLearnView course={course} />
       </div>
     );
   }

@@ -1,7 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { sendWelcomeCredentialsEmail, sendCourseAssignedEmail } from "@/lib/email";
+import { addOneMonth } from "@/lib/payments";
 import type { Order } from "./useOrders";
+
+// Cadet monthly-subscription courses: admin-created enrollments should also
+// start with a tracked due date (first cycle counted as covered), same as a
+// self-serve checkout. Standard/ISSB/one-time courses are unaffected.
+async function cadetMonthlyPaymentFields(courseId: string) {
+  const { data } = await supabase
+    .from("courses")
+    .select("course_type, payment_type")
+    .eq("id", courseId)
+    .maybeSingle();
+  if (data?.course_type === "cadet" && data?.payment_type === "monthly") {
+    return { payment_status: "complete" as const, payment_due_date: addOneMonth() };
+  }
+  return {};
+}
 
 export function useStudentCourseOrders(userId: string | null) {
   return useQuery<Order[]>({
@@ -72,6 +88,12 @@ export function useAdminEnrollStudent() {
         throw new Error("এই ইমেইলে কোনো অ্যাকাউন্ট নেই। শিক্ষার্থীকে আগে রেজিস্ট্রেশন করতে বলুন।");
       if (data?.error === "already_enrolled")
         throw new Error("শিক্ষার্থী এই কোর্সে ইতিমধ্যে ভর্তি আছেন।");
+
+      const paymentFields = await cadetMonthlyPaymentFields(params.courseId);
+      if (data?.order_id && Object.keys(paymentFields).length) {
+        await supabase.from("orders").update(paymentFields).eq("id", data.order_id);
+      }
+
       sendCourseAssignedEmail(
         { email: params.email.trim().toLowerCase() },
         { name: params.email, courseName: params.courseName },
@@ -136,6 +158,8 @@ export function useAdminDirectEnroll() {
         .maybeSingle();
       if (already.data) throw new Error("শিক্ষার্থী এই কোর্সে ইতিমধ্যে ভর্তি আছেন।");
 
+      const paymentFields = await cadetMonthlyPaymentFields(params.courseId);
+
       const { error } = await supabase.from("orders").insert({
         user_id: params.userId,
         product_id: params.courseId,
@@ -148,6 +172,7 @@ export function useAdminDirectEnroll() {
         order_type: "course",
         status: "confirmed",
         valid_until: params.validUntil || null,
+        ...paymentFields,
       });
       if (error) throw error;
       sendCourseAssignedEmail(

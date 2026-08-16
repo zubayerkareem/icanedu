@@ -163,6 +163,22 @@ export interface Course {
   cadet_assignment_url?: string;
   cadet_homework_url?: string;
   cadet_attendance_url?: string;
+
+  // Cadet payment plan — main_fee mirrors into `price` on save so every
+  // existing price-reading component (listings, checkout, revenue) keeps
+  // working unchanged; monthly_fee only applies when payment_type = monthly.
+  payment_type?: "one_time" | "monthly";
+  main_fee?: number;
+  monthly_fee?: number;
 }
 
 export type CourseSort = "newest" | "price_asc" | "price_desc" | "manual";
+
+// A cadet enrollment is "due" once its stored status says so, or once its
+// tracked due date has passed — computed, not just stored, so the dashboard
+// card, the course-learn lock screen, and the admin table always agree.
+export function isPaymentDue(order: { payment_status?: string | null; payment_due_date?: string | null }): boolean {
+  if (order.payment_status === "due") return true;
+  if (order.payment_due_date && new Date(order.payment_due_date) <= new Date()) return true;
+  return false;
+}

@@ -25,6 +25,8 @@ export interface Order {
   courier_consignment_id?: string | null;
   courier_tracking_code?:  string | null;
   courier_status?:         string | null;
+  payment_status?:    "due" | "complete" | null;
+  payment_due_date?:  string | null;
 }
 
 export function useOrders() {

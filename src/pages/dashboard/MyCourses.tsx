@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
-import { BookOpen, ChevronRight, Clock } from "lucide-react";
+import { useState } from "react";
+import { BookOpen, ChevronRight, Clock, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useMyOrders, type Order, type OrderStatus } from "@/hooks/useOrders";
 import type { Course } from "@/lib/courses/types";
+import { isPaymentDue } from "@/lib/courses/types";
 import { MOCK_COURSES } from "@/lib/courses/mock";
+import { PaymentDueModal } from "@/components/PaymentDueModal";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -26,7 +29,7 @@ function useEnrolledDbCourses(productIds: string[], productNames: string[]) {
     enabled: productIds.length > 0 || productNames.length > 0,
     staleTime: 60_000,
     queryFn: async () => {
-      const cols = "id, slug, title, thumbnail_url, category, duration, total_lessons, modules";
+      const cols = "id, slug, title, thumbnail_url, category, duration, total_lessons, modules, course_type, payment_type, main_fee, monthly_fee";
 
       // 1. Match by UUID id
       const { data: byId } = productIds.length
@@ -73,6 +76,8 @@ function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Cou
   const courseId = course?.id ?? order.product_id ?? "";
   const thumbnail = course?.thumbnail_url;
   const displayName = course?.title ?? order.product_name;
+  const paymentDue = course?.course_type === "cadet" && isPaymentDue(order);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -99,6 +104,14 @@ function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Cou
           <Badge className={`shrink-0 text-[10px] ${status.color}`}>{status.label}</Badge>
         </div>
       </div>
+
+      <PaymentDueModal
+        open={showPaymentModal}
+        onOpenChange={setShowPaymentModal}
+        courseTitle={displayName}
+        amount={(course?.payment_type === "monthly" ? course.monthly_fee : course?.main_fee) ?? order.total_price}
+        dueDate={order.payment_due_date}
+      />
 
       {/* Body */}
       <div className="p-4 space-y-3">
@@ -131,11 +144,22 @@ function EnrolledCourseCard({ order, dbCourses }: { order: Order; dbCourses: Cou
         })()}
 
         {isActive && courseId && (
-          <Button asChild className="w-full" size="sm">
-            <Link to={`/dashboard/courses/${courseId}`}>
-              কোর্স চালু করুন <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </Button>
+          paymentDue ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400"
+              size="sm"
+              onClick={() => setShowPaymentModal(true)}
+            >
+              <AlertCircle className="h-4 w-4" /> পেমেন্ট বাকি
+            </Button>
+          ) : (
+            <Button asChild className="w-full" size="sm">
+              <Link to={`/dashboard/courses/${courseId}`}>
+                কোর্স চালু করুন <ChevronRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+          )
         )}
       </div>
     </div>

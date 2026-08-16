@@ -43,6 +43,9 @@ type Form = {
   cadet_assignment_url: string;
   cadet_homework_url: string;
   cadet_attendance_url: string;
+  payment_type: "one_time" | "monthly";
+  main_fee: string;
+  monthly_fee: string;
   duration: string;
   total_lessons: string;
   enrollment_count: string;
@@ -67,6 +70,7 @@ type Form = {
 const emptyForm: Form = {
   title: "", slug: "", category: "", course_type: "standard",
   cadet_assignment_url: "", cadet_homework_url: "", cadet_attendance_url: "",
+  payment_type: "one_time", main_fee: "", monthly_fee: "",
   duration: "", total_lessons: "", enrollment_count: "", rating_average: "",
   thumbnail_url: "", short_description: "", long_description: "",
   teachers: [],
@@ -93,6 +97,9 @@ function fromCourse(c: Course): Form {
     cadet_assignment_url: c.cadet_assignment_url ?? "",
     cadet_homework_url: c.cadet_homework_url ?? "",
     cadet_attendance_url: c.cadet_attendance_url ?? "",
+    payment_type: (c.payment_type as "one_time" | "monthly") ?? "one_time",
+    main_fee: c.main_fee != null ? String(c.main_fee) : "",
+    monthly_fee: c.monthly_fee != null ? String(c.monthly_fee) : "",
     duration: c.duration ?? "",
     total_lessons: c.total_lessons != null ? String(c.total_lessons) : "",
     enrollment_count: c.enrollment_count != null ? String(c.enrollment_count) : "",
@@ -223,7 +230,11 @@ export default function CourseEditor() {
         category: form.category.trim() || undefined,
         thumbnail_url: form.thumbnail_url || undefined,
         duration: form.duration.trim() || undefined,
-        price: form.price ? Number(form.price) : undefined,
+        // For cadet courses, main_fee mirrors into price so every existing
+        // price-reading component (listings, checkout, revenue) keeps working.
+        price: form.course_type === "cadet" && form.main_fee
+          ? Number(form.main_fee)
+          : (form.price ? Number(form.price) : undefined),
         discount_price: form.discount_price ? Number(form.discount_price) : undefined,
         discount_ends_at: form.discount_ends_at ? new Date(form.discount_ends_at).toISOString() : undefined,
         short_description: form.short_description.trim() || undefined,
@@ -248,6 +259,9 @@ export default function CourseEditor() {
         cadet_assignment_url: form.cadet_assignment_url.trim() || undefined,
         cadet_homework_url: form.cadet_homework_url.trim() || undefined,
         cadet_attendance_url: form.cadet_attendance_url.trim() || undefined,
+        payment_type: form.payment_type,
+        main_fee: form.main_fee ? Number(form.main_fee) : undefined,
+        monthly_fee: form.payment_type === "monthly" && form.monthly_fee ? Number(form.monthly_fee) : undefined,
       });
       toast.success(isEdit ? "কোর্স আপডেট হয়েছে" : "নতুন কোর্স যোগ হয়েছে");
       navigate("/admin/courses");
@@ -338,6 +352,34 @@ export default function CourseEditor() {
               onChange={(e) => set("youtube_url", e.target.value)}
             />
           </Field>
+
+          {/* Cadet payment plan — only shown for cadet courses */}
+          {form.course_type === "cadet" && (
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-950/30 p-4 space-y-3">
+              <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5">
+                💳 পেমেন্ট প্ল্যান
+              </p>
+              <Field label="পেমেন্ট টাইপ">
+                <Select value={form.payment_type} onValueChange={(v) => set("payment_type", v as "one_time" | "monthly")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="one_time">এককালীন (One-Time Fee)</SelectItem>
+                    <SelectItem value="monthly">মাসিক সাবস্ক্রিপশন (Monthly)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label={form.payment_type === "monthly" ? "ভর্তি ফি (৳)" : "মূল্য (৳)"}>
+                  <Input type="number" value={form.main_fee} onChange={(e) => set("main_fee", e.target.value)} placeholder="2000" />
+                </Field>
+                {form.payment_type === "monthly" && (
+                  <Field label="মাসিক ফি (৳)">
+                    <Input type="number" value={form.monthly_fee} onChange={(e) => set("monthly_fee", e.target.value)} placeholder="500" />
+                  </Field>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Cadet URL config — only shown for cadet courses */}
           {form.course_type === "cadet" && (

@@ -363,6 +363,11 @@ function CourseHero({ course }: { course: Course }) {
                       {t.home.free}
                     </span>
                   )}
+                  {course.course_type === "cadet" && course.payment_type === "monthly" && course.monthly_fee ? (
+                    <p className="mt-1 text-sm font-medium text-muted-foreground">
+                      + ৳{bnNum(course.monthly_fee)}/মাস
+                    </p>
+                  ) : null}
                 </div>
 
                 {enrolled ? (

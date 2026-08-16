@@ -9,8 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { sendOrderReceivedEmail } from "@/lib/email";
 import { trackEvent } from "@/lib/meta";
-
-const BKASH_NUMBER = "01894734002";
+import { BKASH_NUMBER, addOneMonth } from "@/lib/payments";
 
 const SHIPPING = {
   inside:  { label: "ঢাকার ভেতরে",  cost: 100 },
@@ -94,6 +93,22 @@ export default function Checkout() {
 
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
+
+    // Cadet monthly-subscription courses: first payment covers month one —
+    // stamp payment_status/payment_due_date so the next month auto-becomes
+    // due once that date passes. Other courses/products are unaffected.
+    let paymentFields: { payment_status?: string; payment_due_date?: string } = {};
+    if (isCourse && itemId) {
+      const { data: courseRow } = await supabase
+        .from("courses")
+        .select("course_type, payment_type")
+        .eq("id", itemId)
+        .maybeSingle();
+      if (courseRow?.course_type === "cadet" && courseRow?.payment_type === "monthly") {
+        paymentFields = { payment_status: "complete", payment_due_date: addOneMonth() };
+      }
+    }
+
     const order = {
       user_id:       user?.id ?? null,
       order_type:    orderType,
@@ -110,6 +125,7 @@ export default function Checkout() {
       bkash_txn_id:  bkashTxnId.trim(),
       bkash_number:  bkashPhone.trim(),
       status:        "pending",
+      ...paymentFields,
     };
 
     const { error } = await supabase.from("orders").insert([order]);

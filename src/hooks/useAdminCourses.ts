@@ -57,6 +57,9 @@ export function useUpsertCourse() {
         cadet_assignment_url: course.cadet_assignment_url ?? null,
         cadet_homework_url: course.cadet_homework_url ?? null,
         cadet_attendance_url: course.cadet_attendance_url ?? null,
+        payment_type: course.payment_type ?? "one_time",
+        main_fee: course.main_fee ?? null,
+        monthly_fee: course.monthly_fee ?? null,
       };
 
       if (course.id) {

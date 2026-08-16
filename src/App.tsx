@@ -80,6 +80,7 @@ import CourseValidity from "./pages/admin/CourseValidity";
 import ContactLinks from "./pages/admin/ContactLinks";
 import BranchesAdmin from "./pages/admin/BranchesAdmin";
 import CadetAdmin from "./pages/admin/CadetAdmin";
+import CadetPayments from "./pages/admin/CadetPayments";
 import CadetNotifications from "./pages/dashboard/CadetNotifications";
 
 const queryClient = new QueryClient();
@@ -189,6 +190,7 @@ const App = () => (
                 <Route path="/admin/contact-links" element={<ContactLinks />} />
                 <Route path="/admin/branches" element={<BranchesAdmin />} />
                 <Route path="/admin/cadet" element={<CadetAdmin />} />
+                <Route path="/admin/cadet-payments" element={<CadetPayments />} />
                 <Route path="/admin/messages" element={<AdminMessages />} />
                 <Route path="/admin/notices" element={<AdminNotices />} />
                 <Route path="/admin/pages" element={<ComingSoon />} />

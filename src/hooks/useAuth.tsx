@@ -40,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const roleRef           = useRef<AppRole | null>(null);
   const userRef           = useRef<User | null>(null);   // needed for signOut inside kickOut
   const isCadetRef        = useRef(false);
+  // isBypassRef = isCadet OR (ISSB student when admin has turned off ISSB blocking)
+  // Used by the Realtime kick handler to decide whether to exempt this user.
+  const isBypassRef       = useRef(false);
 
   // ── Cadet enrollment helper ────────────────────────────────────────────────
   // Returns true if the user is enrolled in at least one cadet course.
@@ -68,6 +71,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Returns true when the admin has turned ISSB blocking OFF and this user
+  // is enrolled in at least one ISSB course — they should bypass device blocking.
+  const checkIssbBypass = async (uid: string): Promise<boolean> => {
+    try {
+      // 1. Read global toggle — '0' means admin disabled ISSB blocking
+      const { data: setting } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", "issb_device_block_enabled")
+        .maybeSingle();
+
+      // Missing or '1' → blocking is ON → no bypass
+      if (!setting || setting.value !== "0") return false;
+
+      // 2. Toggle is OFF → check if user is enrolled in any ISSB course
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("product_id")
+        .eq("user_id", uid)
+        .eq("order_type", "course")
+        .in("status", ["confirmed", "shipped", "delivered"]);
+
+      const courseIds = (orders ?? []).map((o: { product_id: string }) => o.product_id);
+      if (!courseIds.length) return false;
+
+      const { data: issbCourses } = await supabase
+        .from("courses")
+        .select("id")
+        .in("id", courseIds)
+        .eq("course_type", "issb")
+        .limit(1);
+
+      return (issbCourses?.length ?? 0) > 0;
+    } catch {
+      return false;
+    }
+  };
+
   const loadProfileAndRole = async (uid: string) => {
     const [{ data: p, error: pErr }, { data: r }] = await Promise.all([
       supabase
@@ -90,8 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsCadetStudent(cadet);
     isCadetRef.current = cadet;
 
-    // ── Single-device enforcement (skipped for admins, cadet students, and if column not yet migrated) ──
-    if (!isAdmin && !cadet && !pErr) {
+    // ── ISSB bypass check (bypass when admin has turned off ISSB blocking) ──
+    const isIssbBypass = (!isAdmin && !cadet) ? await checkIssbBypass(uid) : false;
+    isBypassRef.current = cadet || isIssbBypass;
+
+    // ── Single-device enforcement (skipped for admins, bypass students, and if column not yet migrated) ──
+    if (!isAdmin && !isBypassRef.current && !pErr) {
       const localToken = localStorage.getItem(DT_KEY);
       const dbToken    = (p as { device_token?: string | null } | null)?.device_token;
 
@@ -144,7 +189,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Cadet students bypass device blocking entirely
             const { data: isCadet } = isAdmin ? { data: false } : await checkCadetEnrollment(newSession.user.id);
 
-            if (!isAdmin && !isCadet && !pErr) {
+            // ISSB students bypass when admin has turned off ISSB blocking
+            const isIssbBypass = (isAdmin || isCadet) ? false : await checkIssbBypass(newSession.user.id);
+            const bypass = isCadet || isIssbBypass;
+
+            if (!isAdmin && !bypass && !pErr) {
               const existingToken = (p as { device_token?: string | null } | null)?.device_token;
               const myLocalToken  = localStorage.getItem(DT_KEY);
 
@@ -167,8 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
             }
 
-            // If cadet student already owns token → just load profile
-            if (!isAdmin && isCadet) {
+            // If bypass student already owns token → just load profile
+            if (!isAdmin && bypass) {
               await loadProfileAndRole(newSession.user.id);
               return;
             }
@@ -235,7 +284,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: `id=eq.${user.id}`,
         },
         (payload) => {
-          if (roleRef.current === "admin" || isCadetRef.current) return; // admins and cadet students are exempt
+          if (roleRef.current === "admin" || isBypassRef.current) return; // admins and bypass students are exempt
 
           const newDbToken = (payload.new as { device_token?: string | null })?.device_token;
           const localToken = localStorage.getItem(DT_KEY);

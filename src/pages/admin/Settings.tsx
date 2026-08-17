@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { BarChart3, Save, CheckCircle2, Share2, Eye, EyeOff, Truck } from "lucide-react";
+import { BarChart3, Save, CheckCircle2, Share2, Eye, EyeOff, Truck, ShieldCheck, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useSiteSettings, useUpdateSetting } from "@/hooks/useSiteSettings";
 
@@ -28,6 +29,10 @@ export default function AdminSettings() {
   const [sfApiSaved,    setSfApiSaved]    = useState(false);
   const [sfSecretSaved, setSfSecretSaved] = useState(false);
 
+  // ── ISSB device blocking toggle ───────────────────────────────
+  // true = blocking ON (default); false = ISSB students bypass device block
+  const [issbBlockEnabled, setIssbBlockEnabled] = useState(true);
+
   useEffect(() => {
     setGaId(settings.find((s) => s.key === "ga_measurement_id")?.value ?? "");
     setMetaPixelId(settings.find((s) => s.key === "meta_pixel_id")?.value ?? "");
@@ -36,6 +41,9 @@ export default function AdminSettings() {
     setTokenIsSet(hasToken);
     setSfApiKey(settings.find((s) => s.key === "steadfast_api_key")?.value ?? "");
     // secret key is not pre-filled for security; a separate "set" flag could be added later
+
+    const issbRaw = settings.find((s) => s.key === "issb_device_block_enabled")?.value;
+    setIssbBlockEnabled(issbRaw !== "0"); // '1' or missing → blocking ON
   }, [settings]);
 
   async function handleSaveGA() {
@@ -234,6 +242,60 @@ export default function AdminSettings() {
           </div>
         )}
       </div>
+      {/* ISSB Device Blocking Toggle */}
+      <div className="rounded-xl border border-border bg-card p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${issbBlockEnabled ? "bg-green-100 dark:bg-green-900/30" : "bg-amber-100 dark:bg-amber-900/30"}`}>
+            {issbBlockEnabled
+              ? <ShieldCheck className="h-5 w-5 text-green-600" />
+              : <ShieldOff className="h-5 w-5 text-amber-500" />
+            }
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground">ISSB ডিভাইস ব্লকিং</h2>
+            <p className="text-xs text-muted-foreground">ISSB কোর্সের শিক্ষার্থীদের একটি ডিভাইসে সীমাবদ্ধ রাখা</p>
+          </div>
+          <span className={`ml-auto flex items-center gap-1 text-xs font-semibold ${issbBlockEnabled ? "text-green-600" : "text-amber-500"}`}>
+            {issbBlockEnabled ? <><CheckCircle2 className="h-3.5 w-3.5" /> চালু</> : <><ShieldOff className="h-3.5 w-3.5" /> বন্ধ</>}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
+          <div className="space-y-0.5">
+            <p className="text-sm font-medium text-foreground">
+              {issbBlockEnabled ? "ব্লকিং সক্রিয়" : "ব্লকিং নিষ্ক্রিয়"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {issbBlockEnabled
+                ? "ISSB শিক্ষার্থীরা একটি মাত্র ডিভাইস থেকে লগইন করতে পারবে।"
+                : "বন্ধ থাকলে সকল ISSB কোর্সের শিক্ষার্থীরা যেকোনো ডিভাইস থেকে লগইন করতে পারবে।"}
+            </p>
+          </div>
+          <Switch
+            checked={issbBlockEnabled}
+            onCheckedChange={async (val) => {
+              setIssbBlockEnabled(val);
+              try {
+                await update.mutateAsync({
+                  key: "issb_device_block_enabled",
+                  value: val ? "1" : "0",
+                });
+                toast.success(val ? "ISSB ব্লকিং চালু করা হয়েছে" : "ISSB ব্লকিং বন্ধ করা হয়েছে");
+              } catch (e: unknown) {
+                // revert on failure
+                setIssbBlockEnabled(!val);
+                toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");
+              }
+            }}
+            disabled={update.isPending}
+          />
+        </div>
+
+        <p className="text-xs text-muted-foreground opacity-70">
+          শুধুমাত্র ISSB কোর্সের শিক্ষার্থীদের জন্য প্রযোজ্য। অন্যান্য কোর্সের শিক্ষার্থীরা সবসময় ব্লক থাকবে।
+        </p>
+      </div>
+
       {/* Steadfast Courier */}
       <div className="rounded-xl border border-border bg-card p-6 space-y-5">
         <div className="flex items-center gap-3">

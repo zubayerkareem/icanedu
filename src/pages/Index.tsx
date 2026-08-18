@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CourseCard, CourseCardSkeleton } from "@/components/courses/CourseCard";
 import { ProductCard, ProductCardSkeleton } from "@/components/products/ProductCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { useCourses } from "@/hooks/useCourses";
 import type { Product } from "@/lib/products/types";
 import type { Course } from "@/lib/courses/types";
 import { useTranslation } from "@/lib/i18n";
@@ -13,41 +15,25 @@ import { NoticesSection } from "@/components/home/NoticesSection";
 import { FounderSection } from "@/components/home/FounderSection";
 import { HeroSlider } from "@/components/home/HeroSlider";
 
-// ─── DB courses by category ──────────────────────────────────────────────────
+// ─── Category ordering & labels (mirrors Courses.tsx) ────────────────────────
 
-function useHomeCourses(category: string) {
-  return useQuery<Course[]>({
-    queryKey: ["home_courses", category],
-    staleTime: 60 * 1000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("is_published", true)
-        .eq("category", category)
-        .order("display_order", { ascending: true, nullsFirst: false })
-        .order("created_at", { ascending: false })
-        .limit(8);
-      if (error) throw error;
-      return (data ?? []).map((row) => ({
-        ...row,
-        teacher: row.teacher_name
-          ? { name: row.teacher_name, avatar: row.teacher_avatar, short_bio: row.teacher_short_bio }
-          : undefined,
-      })) as Course[];
-    },
-  });
-}
+const CATEGORY_ORDER = ["ISSB", "Cadet", "Skills"];
 
+const CATEGORY_LABELS: Record<string, string> = {
+  ISSB:   "ISSB",
+  Cadet:  "ক্যাডেট কলেজ",
+  Skills: "স্কিলস",
+};
 
 // ─── Course Grid ─────────────────────────────────────────────────────────────
 
-function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlighted = false }: {
+function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlighted = false, badgeLabel }: {
   title: string;
   courses: Course[];
   isLoading: boolean;
   mobileSlider?: boolean;
   highlighted?: boolean;
+  badgeLabel?: string;
 }) {
   const tr = useTranslation();
   return (
@@ -56,12 +42,12 @@ function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlight
       <div className="container">
         <div className="mb-8 flex items-end justify-between gap-4">
           <div className="flex items-center gap-3">
-            {highlighted && (
+            {highlighted && badgeLabel && (
               <span className="hidden sm:inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-accent-foreground uppercase tracking-wide">
-                ISSB
+                {badgeLabel}
               </span>
             )}
-            <h2 className={["font-heading text-2xl font-bold sm:text-3xl", highlighted ? "text-foreground" : "text-foreground"].join(" ")}>{title}</h2>
+            <h2 className="font-heading text-2xl font-bold sm:text-3xl text-foreground">{title}</h2>
           </div>
           <Button variant={highlighted ? "default" : "outline"} size="sm" asChild>
             <Link to="/courses">{tr.home.seeAllCourses}</Link>
@@ -108,6 +94,66 @@ function CoursesGrid({ title, courses, isLoading, mobileSlider = true, highlight
         )}
       </div>
     </section>
+  );
+}
+
+// ─── All Courses Section (dynamic — all categories, no cap) ──────────────────
+
+function AllCoursesSection() {
+  const { data, isLoading } = useCourses({ sort: "manual", pageSize: 500 });
+  const items = data?.items ?? [];
+
+  const groups = useMemo(() => {
+    const map: Record<string, Course[]> = {};
+    items.forEach((c) => {
+      const cat = c.category ?? "অন্যান্য";
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(c);
+    });
+    const allCats = Object.keys(map);
+    const ordered = [
+      ...CATEGORY_ORDER.filter((c) => allCats.includes(c)),
+      ...allCats.filter((c) => !CATEGORY_ORDER.includes(c)),
+    ];
+    return ordered.map((cat) => ({
+      cat,
+      label: CATEGORY_LABELS[cat] ? `${CATEGORY_LABELS[cat]} কোর্সসমূহ` : `${cat} কোর্সসমূহ`,
+      items: map[cat],
+    }));
+  }, [items]);
+
+  if (isLoading) {
+    return (
+      <>
+        <CoursesGrid
+          title="ISSB কোর্সসমূহ"
+          courses={[]}
+          isLoading
+          mobileSlider={false}
+          highlighted
+          badgeLabel="ISSB"
+        />
+        <CoursesGrid title="কোর্সসমূহ" courses={[]} isLoading />
+      </>
+    );
+  }
+
+  if (groups.length === 0) return null;
+
+  return (
+    <>
+      {groups.map((g, i) => (
+        <CoursesGrid
+          key={g.cat}
+          title={g.label}
+          courses={g.items}
+          isLoading={false}
+          highlighted={i === 0}
+          badgeLabel={i === 0 ? (CATEGORY_LABELS[g.cat] ?? g.cat) : undefined}
+          mobileSlider={i !== 0}
+        />
+      ))}
+    </>
   );
 }
 
@@ -165,34 +211,11 @@ function ProductsGrid() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-function IssbGrid() {
-  const { data = [], isLoading } = useHomeCourses("ISSB");
-  const tr = useTranslation();
-  if (!isLoading && data.length === 0) return null;
-  return <CoursesGrid title={tr.home.issbTitle} courses={data} isLoading={isLoading} mobileSlider={false} highlighted />;
-}
-
-function CadetGrid() {
-  const { data = [], isLoading } = useHomeCourses("Cadet");
-  const tr = useTranslation();
-  if (!isLoading && data.length === 0) return null;
-  return <CoursesGrid title={tr.home.cadetTitle} courses={data} isLoading={isLoading} />;
-}
-
-function SkillsGrid() {
-  const { data = [], isLoading } = useHomeCourses("Skills");
-  const tr = useTranslation();
-  if (!isLoading && data.length === 0) return null;
-  return <CoursesGrid title={tr.home.exampleTitle} courses={data} isLoading={isLoading} />;
-}
-
 const Index = () => (
   <>
     <HeroSlider />
     <NoticesSection />
-    <IssbGrid />
-    <CadetGrid />
-    <SkillsGrid />
+    <AllCoursesSection />
     <FounderSection />
     <ProductsGrid />
     <ReviewsSection />

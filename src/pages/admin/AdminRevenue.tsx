@@ -70,7 +70,7 @@ function CourseRevenueTab({ selectedMonth, dateFrom, dateTo, offlineIds }: {
     return onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
   })();
 
-  const courseOrders = monthOrders.filter((o) => o.order_type === "course");
+  const courseOrders = monthOrders.filter((o) => o.order_type === "course" && o.total_price > 0);
   const filtered = selectedCourse
     ? courseOrders.filter((o) => o.product_id === selectedCourse)
     : courseOrders;
@@ -182,7 +182,7 @@ function ProductRevenueTab({ selectedMonth, dateFrom, dateTo, offlineIds }: {
     return onlineOrders.filter((o) => o.created_at.startsWith(selectedMonth));
   })();
 
-  const productOrders = monthOrders.filter((o) => o.order_type === "product");
+  const productOrders = monthOrders.filter((o) => o.order_type === "product" && o.total_price > 0);
   const filtered = selectedProduct
     ? productOrders.filter((o) => o.product_id === selectedProduct)
     : productOrders;
@@ -309,7 +309,7 @@ export default function AdminRevenue() {
   }, [onlineOrders, selectedMonth, dateFrom, dateTo]);
 
   const totalRevenue = filteredOrders
-    .filter((o) => REVENUE_STATUSES.has(o.status))
+    .filter((o) => REVENUE_STATUSES.has(o.status) && o.total_price > 0)
     .reduce((s, o) => s + o.total_price, 0);
 
   return (

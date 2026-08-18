@@ -312,6 +312,14 @@ export default function AdminRevenue() {
     .filter((o) => REVENUE_STATUSES.has(o.status) && o.total_price > 0)
     .reduce((s, o) => s + o.total_price, 0);
 
+  // Today's income — always computed from all online orders regardless of month filter
+  const todayRevenue = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    return onlineOrders
+      .filter((o) => o.created_at.slice(0, 10) === today && REVENUE_STATUSES.has(o.status) && o.total_price > 0)
+      .reduce((s, o) => s + o.total_price, 0);
+  }, [onlineOrders]);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -362,6 +370,15 @@ export default function AdminRevenue() {
                 ✕
               </button>
             )}
+          </div>
+
+          {/* Today's income badge */}
+          <div className="flex items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950/30 px-4 py-2">
+            <TrendingUp className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+            <span className="text-xs text-muted-foreground">আজকের আয়</span>
+            <span className="font-heading text-lg font-bold text-sky-600 dark:text-sky-400">
+              ৳{bnNum(todayRevenue)}
+            </span>
           </div>
 
           {/* Grand total badge */}

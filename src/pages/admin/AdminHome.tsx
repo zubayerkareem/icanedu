@@ -88,12 +88,12 @@ export default function AdminHome() {
   const { data: d, isLoading, refetch, isFetching } = useAdminDashboard();
 
   const statCards = [
-    { key: "totalCourses",   label: "মোট কোর্স",           icon: BookOpen,    href: "/admin/courses",  color: "text-blue-500" },
-    { key: "totalProducts",  label: "মোট পণ্য",             icon: Package,     href: "/admin/products", color: "text-purple-500" },
-    { key: "totalStudents",  label: "নিবন্ধিত শিক্ষার্থী",  icon: Users,       href: "/admin/students", color: "text-green-500" },
-    { key: "activeOrders",   label: "চলমান অর্ডার",         icon: ShoppingBag, href: "/admin/orders",   color: "text-amber-500" },
-    { key: "totalRevenue",   label: "মোট আয়",              icon: TrendingUp,  href: "/admin/orders",   color: "text-emerald-500", prefix: "৳" },
-    { key: "totalNotices",   label: "মোট নোটিশ",            icon: Bell,        href: "/admin/notices",  color: "text-rose-500" },
+    { key: "totalCourses",  label: "মোট কোর্স",           icon: BookOpen,    href: "/admin/courses",  color: "text-blue-500" },
+    { key: "totalStudents", label: "নিবন্ধিত শিক্ষার্থী",  icon: Users,       href: "/admin/students", color: "text-green-500" },
+    { key: "activeOrders",  label: "চলমান অর্ডার",         icon: ShoppingBag, href: "/admin/orders",   color: "text-amber-500" },
+    { key: "totalRevenue",  label: "মোট আয়",              icon: TrendingUp,  href: "/admin/revenue",  color: "text-emerald-500", prefix: "৳" },
+    { key: "todayRevenue",  label: "আজকের আয়",            icon: TrendingUp,  href: "/admin/revenue",  color: "text-sky-500",     prefix: "৳" },
+    { key: "totalNotices",  label: "মোট নোটিশ",            icon: Bell,        href: "/admin/notices",  color: "text-rose-500" },
   ] as const;
 
   const ACTIVITY_COLORS: Record<string, { bg: string; icon: React.ElementType; dot: string }> = {

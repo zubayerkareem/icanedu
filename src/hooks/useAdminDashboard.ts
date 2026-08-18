@@ -20,6 +20,7 @@ export interface AdminDashboardData {
   totalStudents:  number;
   activeOrders:   number;
   totalRevenue:   number;
+  todayRevenue:   number;
   totalNotices:   number;
   dailyOrders:    DailyData[];
   monthlyRevenue: MonthlyData[];
@@ -77,6 +78,16 @@ export function useAdminDashboard() {
       const activeOrders = orders.filter((o) => !["delivered","cancelled"].includes(o.status)).length;
       const totalRevenue  = (revenueRes.data ?? [])
         .reduce((sum, o) => sum + (o.total_price ?? 0), 0);
+
+      // ── Today's revenue (from last-6-months orders, already in memory) ──
+      const todayYmd = ymd(today);
+      const todayRevenue = orders
+        .filter((o) =>
+          ymd(new Date(o.created_at)) === todayYmd &&
+          ["confirmed","shipped","delivered"].includes(o.status) &&
+          (o.total_price ?? 0) > 0
+        )
+        .reduce((s, o) => s + (o.total_price ?? 0), 0);
 
       // ── Daily orders — last 30 days ──────────────────────────────────
       const today = new Date();
@@ -156,6 +167,7 @@ export function useAdminDashboard() {
         totalStudents:  studentsRes.count ?? 0,
         activeOrders,
         totalRevenue,
+        todayRevenue,
         totalNotices:   noticesRes.count  ?? 0,
         dailyOrders,
         monthlyRevenue,

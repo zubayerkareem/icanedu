@@ -32,10 +32,16 @@ const QUICK_FILTERS: { value: QuickFilter; label: string }[] = [
 export default function CourseValidity() {
   const { data: orders = [], isLoading } = useOrders();
   const [search, setSearch] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
   const [quickFilter, setQuickFilter] = useState<QuickFilter>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
+
+  const courseOptions = useMemo(
+    () => Array.from(new Set(courseOrders.map((o) => o.product_name))).sort(),
+    [courseOrders],
+  );
 
   const courseOrders = useMemo(
     () => orders.filter((o) => o.order_type === "course" && ACTIVE_STATUSES.includes(o.status)),
@@ -54,6 +60,10 @@ export default function CourseValidity() {
         o.product_name.toLowerCase().includes(q)
       );
     });
+
+    if (selectedCourse) {
+      result = result.filter((o) => o.product_name === selectedCourse);
+    }
 
     if (quickFilter === "expired") {
       result = result.filter((o) => o.valid_until && new Date(o.valid_until) < now);
@@ -90,7 +100,7 @@ export default function CourseValidity() {
     });
 
     return result;
-  }, [courseOrders, search, quickFilter, dateFrom, dateTo]);
+  }, [courseOrders, search, selectedCourse, quickFilter, dateFrom, dateTo]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -131,6 +141,18 @@ export default function CourseValidity() {
         </div>
 
         <div className="flex flex-wrap gap-3">
+          {/* Course filter dropdown */}
+          <select
+            value={selectedCourse}
+            onChange={(e) => { setSelectedCourse(e.target.value); setPage(1); }}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40 min-w-[180px]"
+          >
+            <option value="">সব কোর্স</option>
+            {courseOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input

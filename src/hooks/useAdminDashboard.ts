@@ -80,7 +80,7 @@ export function useAdminDashboard() {
         .reduce((sum, o) => sum + (o.total_price ?? 0), 0);
 
       // ── Today's revenue (from last-6-months orders, already in memory) ──
-      const todayYmd = ymd(today);
+      const todayYmd = ymd(new Date());
       const todayRevenue = orders
         .filter((o) =>
           ymd(new Date(o.created_at)) === todayYmd &&

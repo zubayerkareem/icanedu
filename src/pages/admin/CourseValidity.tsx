@@ -38,14 +38,14 @@ export default function CourseValidity() {
   const [dateTo, setDateTo] = useState("");
   const [page, setPage] = useState(1);
 
-  const courseOptions = useMemo(
-    () => Array.from(new Set(courseOrders.map((o) => o.product_name))).sort(),
-    [courseOrders],
-  );
-
   const courseOrders = useMemo(
     () => orders.filter((o) => o.order_type === "course" && ACTIVE_STATUSES.includes(o.status)),
     [orders]
+  );
+
+  const courseOptions = useMemo(
+    () => Array.from(new Set(courseOrders.map((o) => o.product_name))).sort(),
+    [courseOrders],
   );
 
   const filtered = useMemo(() => {

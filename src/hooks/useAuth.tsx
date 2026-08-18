@@ -71,41 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Returns true when the admin has turned ISSB blocking OFF and this user
-  // is enrolled in at least one ISSB course — they should bypass device blocking.
-  const checkIssbBypass = async (uid: string): Promise<boolean> => {
+  // Returns true when the admin has turned ISSB blocking OFF.
+  // When the toggle is OFF, all non-cadet, non-admin students bypass device blocking.
+  // Note: we intentionally do NOT check course_type='issb' here because existing ISSB
+  // courses may have course_type='standard' (the column default before the field was added),
+  // which would silently return false and leave students blocked despite the toggle being off.
+  // The admin toggle itself is the gate — admin is trusted to only turn it off in ISSB contexts.
+  const checkIssbBypass = async (): Promise<boolean> => {
     try {
-      // 1. Read global toggle — '0' means admin disabled ISSB blocking
       const { data: setting } = await supabase
         .from("site_settings")
         .select("value")
         .eq("key", "issb_device_block_enabled")
         .maybeSingle();
-
-      // Missing or '1' → blocking is ON → no bypass
-      if (!setting || setting.value !== "0") return false;
-
-      // 2. Toggle is OFF → check if user is enrolled in any ISSB course
-      const { data: orders } = await supabase
-        .from("orders")
-        .select("product_id")
-        .eq("user_id", uid)
-        .eq("order_type", "course")
-        .in("status", ["confirmed", "shipped", "delivered"]);
-
-      const courseIds = (orders ?? []).map((o: { product_id: string }) => o.product_id);
-      if (!courseIds.length) return false;
-
-      const { data: issbCourses } = await supabase
-        .from("courses")
-        .select("id")
-        .in("id", courseIds)
-        .eq("course_type", "issb")
-        .limit(1);
-
-      return (issbCourses?.length ?? 0) > 0;
+      // '0' = admin turned blocking OFF → bypass; anything else → blocking ON
+      return setting?.value === "0";
     } catch {
-      return false;
+      return false; // fail-closed: blocking stays on if the read fails
     }
   };
 
@@ -132,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isCadetRef.current = cadet;
 
     // ── ISSB bypass check (bypass when admin has turned off ISSB blocking) ──
-    const isIssbBypass = (!isAdmin && !cadet) ? await checkIssbBypass(uid) : false;
+    const isIssbBypass = (!isAdmin && !cadet) ? await checkIssbBypass() : false;
     isBypassRef.current = cadet || isIssbBypass;
 
     // ── Single-device enforcement (skipped for admins, bypass students, and if column not yet migrated) ──
@@ -190,7 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const { data: isCadet } = isAdmin ? { data: false } : await checkCadetEnrollment(newSession.user.id);
 
             // ISSB students bypass when admin has turned off ISSB blocking
-            const isIssbBypass = (isAdmin || isCadet) ? false : await checkIssbBypass(newSession.user.id);
+            const isIssbBypass = (isAdmin || isCadet) ? false : await checkIssbBypass();
             const bypass = isCadet || isIssbBypass;
 
             if (!isAdmin && !bypass && !pErr) {

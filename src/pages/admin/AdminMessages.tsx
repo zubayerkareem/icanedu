@@ -15,6 +15,7 @@ import {
   useAdminMessages, useSendAdminMessage, useDeleteAdminMessage,
 } from "@/hooks/useAdminMessages";
 import { useStudents } from "@/hooks/useStudents";
+import { useAllCoursesForSelect, useEnrolledStudentIds } from "@/hooks/useAdminEnrollments";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -44,6 +45,10 @@ export default function AdminMessages() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [filterCourse, setFilterCourse] = useState("");
+
+  const { data: allCourses = [] } = useAllCoursesForSelect();
+  const { data: enrolledIds }     = useEnrolledStudentIds(filterCourse || null);
 
   const studentList = useMemo(
     () => students.filter((s) => s.role !== "admin"),
@@ -51,14 +56,26 @@ export default function AdminMessages() {
   );
 
   const filtered = useMemo(() => {
+    let list = studentList;
+
+    // Course filter — intersect with enrolled IDs
+    if (filterCourse && enrolledIds) {
+      const idSet = new Set(enrolledIds);
+      list = list.filter((s) => idSet.has(s.id));
+    }
+
+    // Text search
     const q = search.trim().toLowerCase();
-    if (!q) return studentList;
-    return studentList.filter(
-      (s) =>
-        s.full_name?.toLowerCase().includes(q) ||
-        s.email?.toLowerCase().includes(q)
-    );
-  }, [studentList, search]);
+    if (q) {
+      list = list.filter(
+        (s) =>
+          s.full_name?.toLowerCase().includes(q) ||
+          s.email?.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [studentList, filterCourse, enrolledIds, search]);
 
   function toggleStudent(id: string) {
     setSelected((prev) => {
@@ -74,7 +91,8 @@ export default function AdminMessages() {
       setSelected(new Set());
       setSelectAll(false);
     } else {
-      setSelected(new Set(studentList.map((s) => s.id)));
+      // Select only what's currently visible (respects course + search filter)
+      setSelected(new Set(filtered.map((s) => s.id)));
       setSelectAll(true);
     }
   }
@@ -84,6 +102,7 @@ export default function AdminMessages() {
     setSearch("");
     setSelected(new Set());
     setSelectAll(false);
+    setFilterCourse("");
   }
 
   async function handleSend() {
@@ -226,6 +245,18 @@ export default function AdminMessages() {
                 </span>
               </div>
 
+              {/* Course filter */}
+              <select
+                value={filterCourse}
+                onChange={(e) => { setFilterCourse(e.target.value); setSelectAll(false); }}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/40"
+              >
+                <option value="">সব শিক্ষার্থী</option>
+                {allCourses.map((c) => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+
               {/* Select all toggle */}
               <button
                 onClick={toggleSelectAll}
@@ -235,7 +266,7 @@ export default function AdminMessages() {
                   ? <CheckSquare className="h-4 w-4 text-accent shrink-0" />
                   : <Square className="h-4 w-4 text-muted-foreground shrink-0" />
                 }
-                সবাইকে নির্বাচন করুন ({studentList.length} জন)
+                সবাইকে নির্বাচন করুন ({filtered.length} জন)
               </button>
 
               {/* Search */}

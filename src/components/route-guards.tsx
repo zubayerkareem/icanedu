@@ -22,6 +22,14 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, role, loading } = useAuth();
   if (loading) return <FullscreenLoader />;
   if (!user) return <Navigate to="/login" replace />;
-  if (role !== "admin") return <Navigate to="/" replace />;
+  if (role !== "admin" && role !== "superadmin") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+export function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, role, loading } = useAuth();
+  if (loading) return <FullscreenLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (role !== "superadmin") return <Navigate to="/admin" replace />;
   return <>{children}</>;
 }

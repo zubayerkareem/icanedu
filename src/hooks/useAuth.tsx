@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
 
     const roles   = (r as { role: AppRole }[] | null) ?? [];
-    const isAdmin = roles.some((x) => x.role === "admin");
+    const isAdmin = roles.some((x) => x.role === "admin" || x.role === "superadmin");
 
     // ── Cadet enrollment check (cadet students bypass device blocking) ──
     let cadet = false;
@@ -141,7 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setProfile((p as Profile) ?? null);
-    const newRole = roles.find((x) => x.role === "admin")?.role ?? roles[0]?.role ?? "student";
+    const newRole =
+      roles.find((x) => x.role === "superadmin")?.role ??
+      roles.find((x) => x.role === "admin")?.role ??
+      roles[0]?.role ?? "student";
     setRole(newRole);
     roleRef.current = newRole;
   };
@@ -166,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               supabase.from("user_roles").select("role").eq("user_id", newSession.user.id),
             ]);
 
-            const isAdmin = (r as { role: string }[] | null)?.some((x) => x.role === "admin") ?? false;
+            const isAdmin = (r as { role: string }[] | null)?.some((x) => x.role === "admin" || x.role === "superadmin") ?? false;
 
             // Cadet students bypass device blocking entirely
             const { data: isCadet } = isAdmin ? { data: false } : await checkCadetEnrollment(newSession.user.id);

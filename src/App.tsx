@@ -8,7 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { FontProvider } from "@/components/FontProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LanguageProvider } from "@/lib/i18n";
-import { ProtectedRoute, AdminRoute } from "@/components/route-guards";
+import { ProtectedRoute, AdminRoute, SuperAdminRoute } from "@/components/route-guards";
 
 import PublicLayout from "@/components/layout/PublicLayout";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -82,6 +82,7 @@ import BranchesAdmin from "./pages/admin/BranchesAdmin";
 import CadetAdmin from "./pages/admin/CadetAdmin";
 import CadetPayments from "./pages/admin/CadetPayments";
 import CadetNotifications from "./pages/dashboard/CadetNotifications";
+import AdminManagement from "./pages/admin/AdminManagement";
 
 const queryClient = new QueryClient();
 
@@ -198,6 +199,10 @@ const App = () => (
                 <Route path="/admin/issb" element={<ISSBAdmin />} />
                 <Route path="/admin/success" element={<SuccessAdmin />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
+                <Route
+                  path="/admin/admins"
+                  element={<SuperAdminRoute><AdminManagement /></SuperAdminRoute>}
+                />
               </Route>
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

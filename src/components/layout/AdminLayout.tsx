@@ -17,6 +17,7 @@ import {
   GraduationCap,
   MapPin,
   CreditCard,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,10 +37,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { t } from "@/lib/strings";
 import { toast } from "sonner";
 
-const items = [
+const BASE_ITEMS = [
   { title: t.admin.dashboard, url: "/admin", icon: LayoutDashboard, end: true },
   { title: "কোর্স ম্যানেজমেন্ট", url: "/admin/courses", icon: BookOpen },
-{ title: "প্রোডাক্ট ম্যানেজমেন্ট", url: "/admin/products", icon: Package },
+  { title: "প্রোডাক্ট ম্যানেজমেন্ট", url: "/admin/products", icon: Package },
   { title: t.admin.orders, url: "/admin/orders", icon: ShoppingBag },
   { title: "রেভেনিউ", url: "/admin/revenue", icon: TrendingUp },
   { title: "ইউজার", url: "/admin/students", icon: Users },
@@ -53,13 +54,20 @@ const items = [
   { title: "সাক্সেস স্টোরি", url: "/admin/success", icon: Trophy },
   { title: "শাখা / লোকেশন", url: "/admin/branches", icon: MapPin },
   { title: t.admin.settings, url: "/admin/settings", icon: Settings },
-];
+] as const;
 
 function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { signOut } = useAuth();
+  const { signOut, role } = useAuth();
   const navigate = useNavigate();
+
+  const items = [
+    ...BASE_ITEMS,
+    ...(role === "superadmin"
+      ? [{ title: "অ্যাডমিন", url: "/admin/admins", icon: ShieldCheck, end: false }]
+      : []),
+  ];
 
   const handleLogout = async () => {
     await signOut();

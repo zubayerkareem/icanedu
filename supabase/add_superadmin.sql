@@ -1,14 +1,17 @@
 -- ──────────────────────────────────────────────────────────────────────────────
--- Superadmin role migration
--- Run this in the Supabase SQL editor once.
+-- Superadmin role migration — TWO STEPS, run them separately in Supabase.
 -- ──────────────────────────────────────────────────────────────────────────────
 
--- 1. Extend the app_role enum with the new value (safe — only additive)
+-- ════════════════════════════════════════════════════════════════════════════
+-- STEP 1: Run this first, then click "Run" — stop here.
+-- ════════════════════════════════════════════════════════════════════════════
 ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'superadmin';
 
--- 2. Update has_role() so that superadmin passes every existing 'admin' RLS policy
---    automatically, without touching any individual policy. Superadmin always
---    satisfies has_role(uid, 'admin') as well as has_role(uid, 'superadmin').
+-- ════════════════════════════════════════════════════════════════════════════
+-- STEP 2: After Step 1 is committed, run THIS in a NEW query (new Run click).
+--         PostgreSQL requires the enum value to be committed before it can
+--         be referenced in a function body.
+-- ════════════════════════════════════════════════════════════════════════════
 CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role public.app_role)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
   SELECT EXISTS (
@@ -16,15 +19,15 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$
     WHERE user_id = _user_id
     AND (
       role = _role
-      OR (_role = 'admin' AND role = 'superadmin')   -- superadmin inherits all admin rights
+      OR (_role = 'admin' AND role = 'superadmin')
     )
   );
 $$;
 
--- ──────────────────────────────────────────────────────────────────────────────
--- After running the above, create your first superadmin with the query below.
--- Replace '<user-uuid>' with the UUID from auth.users for that account.
--- ──────────────────────────────────────────────────────────────────────────────
+-- ════════════════════════════════════════════════════════════════════════════
+-- STEP 3 (optional, same run as Step 2): Create your first superadmin.
+--         Replace '<user-uuid>' with the UUID from auth.users.
+-- ════════════════════════════════════════════════════════════════════════════
 -- INSERT INTO public.user_roles (user_id, role)
 -- VALUES ('<user-uuid>', 'superadmin')
 -- ON CONFLICT (user_id, role) DO NOTHING;

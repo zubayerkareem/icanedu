@@ -3,12 +3,53 @@
 //  - src/pages/dashboard/CadetNotifications.tsx (multi-course tabs view, direct URL)
 //  - src/pages/dashboard/CourseLearn.tsx (single-course view reached via "Start Course"
 //    for course_type === "cadet")
-import { ExternalLink, CheckCircle2, BookOpen } from "lucide-react";
+import { ExternalLink, CheckCircle2, BookOpen, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RichContent } from "@/components/RichEditor";
 import { toast } from "sonner";
 import { useMarkCadetNotificationRead } from "@/hooks/useCadetNotifications";
 import type { CadetNotification } from "@/hooks/useCadetNotifications";
+
+// ─── Unskippable payment-blocked overlay ─────────────────────────────────────
+// Renders as a fixed full-screen layer — no close button, backdrop clicks do
+// nothing. Admin lifting the block (setting access to "হ্যাঁ") removes it.
+const CONTACT_NUMBER = "01642571744";
+
+export function CadetPaymentBlockedOverlay({ courseTitle }: { courseTitle?: string }) {
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      // swallow all pointer events so nothing behind the overlay is clickable
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mx-4 w-full max-w-sm rounded-2xl border border-amber-300 bg-white dark:bg-zinc-900 p-8 text-center shadow-2xl">
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40 mx-auto">
+          <Lock className="h-8 w-8 text-amber-600" />
+        </div>
+        <h2 className="font-heading text-xl font-bold text-foreground mb-1">
+          কোর্স অ্যাক্সেস বন্ধ
+        </h2>
+        {courseTitle && (
+          <p className="text-sm font-medium text-muted-foreground mb-3">{courseTitle}</p>
+        )}
+        <p className="text-sm text-muted-foreground mb-6">
+          ক্যাডেট কোর্সের ফি পরিশোধ করুন।<br />
+          নিচের নম্বরে যোগাযোগ করুন:
+        </p>
+        <a
+          href={`tel:${CONTACT_NUMBER}`}
+          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 font-heading font-bold text-white text-xl tracking-widest hover:bg-amber-600 transition-colors"
+        >
+          📞 {CONTACT_NUMBER}
+        </a>
+        <p className="mt-5 text-xs text-muted-foreground">
+          পেমেন্ট করার পর অ্যাডমিন আপনার অ্যাক্সেস চালু করবেন।
+        </p>
+      </div>
+    </div>
+  );
+}
 
 // Fields needed from either a `Course` or a `CadetCourseRow` — both satisfy this shape.
 export interface CadetActionCourse {

@@ -13,8 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { RichContent } from "@/components/RichEditor";
 import { PdfViewer } from "@/components/PdfViewer";
-import { CadetCoursePanel } from "@/components/CadetCoursePanel";
-import { PaymentDueModal } from "@/components/PaymentDueModal";
+import { CadetCoursePanel, CadetPaymentBlockedOverlay } from "@/components/CadetCoursePanel";
 import { useCourse } from "@/hooks/useCourse";
 import { useIsEnrolled } from "@/hooks/useEnrollment";
 import { useAuth } from "@/hooks/useAuth";
@@ -455,7 +454,6 @@ function CourseLearnSkeleton() {
 function CadetCourseLearnView({ course }: { course: Course }) {
   const { data: notifications = [], isLoading } = useMyCadetNotifications();
   const { data: myOrders = [] } = useMyOrders();
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const courseNotifs = notifications.filter((n) => n.course_id === course.id);
 
   const order = myOrders.find((o) => o.product_id === course.id || o.product_id === course.slug);
@@ -463,6 +461,10 @@ function CadetCourseLearnView({ course }: { course: Course }) {
 
   return (
     <div className="flex-1 overflow-y-auto">
+      {/* Unskippable fullscreen overlay — rendered at fixed z-index so it
+          covers the entire viewport regardless of scroll position */}
+      {paymentDue && <CadetPaymentBlockedOverlay courseTitle={course.title} />}
+
       <div className="border-b border-border px-4 py-3 flex items-center gap-3">
         <Link
           to="/dashboard/courses"
@@ -480,30 +482,6 @@ function CadetCourseLearnView({ course }: { course: Course }) {
           <div className="flex items-center justify-center py-16">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent" />
           </div>
-        ) : paymentDue ? (
-          <>
-            <div className="flex flex-col items-center gap-4 rounded-xl border border-amber-300 bg-amber-50 px-6 py-16 text-center dark:border-amber-700 dark:bg-amber-950/30">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
-                <Lock className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <h2 className="font-heading text-lg font-bold text-foreground">পেমেন্ট বাকি</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  এই কোর্সের কন্টেন্ট দেখতে পেমেন্ট সম্পন্ন করুন।
-                </p>
-              </div>
-              <Button onClick={() => setShowPaymentModal(true)} className="gap-2">
-                <Lock className="h-4 w-4" /> পেমেন্ট বিস্তারিত দেখুন
-              </Button>
-            </div>
-            <PaymentDueModal
-              open={showPaymentModal}
-              onOpenChange={setShowPaymentModal}
-              courseTitle={course.title}
-              amount={(course.payment_type === "monthly" ? course.monthly_fee : course.main_fee) ?? order?.total_price}
-              dueDate={order?.payment_due_date}
-            />
-          </>
         ) : (
           <CadetCoursePanel course={course} notifications={courseNotifs} />
         )}

@@ -6,9 +6,10 @@ import {
   useMyCadetNotifications,
 } from "@/hooks/useCadetNotifications";
 import type { CadetCourseRow, CadetNotification } from "@/hooks/useCadetNotifications";
-import { CadetCoursePanel } from "@/components/CadetCoursePanel";
+import { CadetCoursePanel, CadetPaymentBlockedOverlay } from "@/components/CadetCoursePanel";
+import { useMyCadetPaymentBlocked } from "@/hooks/useCadetPayments";
 
-// ─── Course tab content ───────────────────────────────────────────────────────
+// ─── Course tab content (with payment gate) ───────────────────────────────────
 
 function CoursePanelContent({
   course,
@@ -18,7 +19,13 @@ function CoursePanelContent({
   allNotifications: CadetNotification[];
 }) {
   const notifs = allNotifications.filter((n) => n.course_id === course.id);
-  return <CadetCoursePanel course={course} notifications={notifs} />;
+  const { data: isBlocked } = useMyCadetPaymentBlocked(course.id);
+  return (
+    <>
+      {isBlocked && <CadetPaymentBlockedOverlay courseTitle={course.title} />}
+      <CadetCoursePanel course={course} notifications={notifs} />
+    </>
+  );
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────

@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { CreditCard, X, CheckCircle2, AlertCircle } from "lucide-react";
+import { CreditCard, X, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useAdminCadetCourses } from "@/hooks/useCadetNotifications";
-import { useAdminCadetCourseEnrollments, useBulkConfirmCadetPayment, type CadetEnrollmentRow } from "@/hooks/useCadetPayments";
+import {
+  useAdminCadetCourseEnrollments,
+  useBulkConfirmCadetPayment,
+  useUpdateSingleCadetPaymentStatus,
+  type CadetEnrollmentRow,
+} from "@/hooks/useCadetPayments";
 import { isPaymentDue } from "@/lib/courses/types";
 
 type Filter = "all" | "due" | "complete";
@@ -24,6 +28,7 @@ export default function CadetPayments() {
   const selectedCourse = cadetCourses.find((c) => c.id === selectedCourseId);
   const { data: enrollments = [], isLoading: loadingEnrollments } = useAdminCadetCourseEnrollments(selectedCourseId);
   const bulkConfirm = useBulkConfirmCadetPayment();
+  const updateSingle = useUpdateSingleCadetPaymentStatus();
 
   const rows = enrollments.map((r) => ({ ...r, due: isPaymentDue(r) }));
   const filtered = rows.filter((r) => filter === "all" ? true : filter === "due" ? r.due : !r.due);
@@ -62,6 +67,19 @@ export default function CadetPayments() {
       });
       toast.success(`${selectedIds.size} জনের পেমেন্ট নিশ্চিত করা হয়েছে`);
       setSelectedIds(new Set());
+    } catch (e: unknown) {
+      toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");
+    }
+  }
+
+  async function handleStatusChange(orderId: string, blocked: boolean) {
+    try {
+      await updateSingle.mutateAsync({
+        orderId,
+        blocked,
+        monthly: selectedCourse?.has_monthly_fee === true,
+      });
+      toast.success(blocked ? "অ্যাক্সেস বন্ধ করা হয়েছে" : "অ্যাক্সেস চালু করা হয়েছে");
     } catch (e: unknown) {
       toast.error((e as Error)?.message ?? "সমস্যা হয়েছে");
     }
@@ -165,7 +183,7 @@ export default function CadetPayments() {
                     </th>
                     <th className="px-3 py-2 text-left">নাম</th>
                     <th className="px-3 py-2 text-left">ইমেইল</th>
-                    <th className="px-3 py-2 text-left">স্ট্যাটাস</th>
+                    <th className="px-3 py-2 text-left">এক্সেস</th>
                     <th className="px-3 py-2 text-left">পরবর্তী তারিখ</th>
                     <th className="px-3 py-2 text-left">ভর্তির তারিখ</th>
                   </tr>
@@ -179,15 +197,27 @@ export default function CadetPayments() {
                       <td className="px-3 py-2 font-medium text-foreground">{r.name}</td>
                       <td className="px-3 py-2 text-muted-foreground">{r.email ?? "—"}</td>
                       <td className="px-3 py-2">
-                        {r.due ? (
-                          <Badge className="gap-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                            <AlertCircle className="h-3 w-3" /> বাকি
-                          </Badge>
-                        ) : (
-                          <Badge className="gap-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                            <CheckCircle2 className="h-3 w-3" /> সম্পন্ন
-                          </Badge>
-                        )}
+                        <Select
+                          value={r.due ? "no" : "yes"}
+                          onValueChange={(v) => handleStatusChange(r.id, v === "no")}
+                          disabled={updateSingle.isPending}
+                        >
+                          <SelectTrigger className="h-8 w-32 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">
+                              <span className="flex items-center gap-1.5">
+                                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> হ্যাঁ (এক্সেস আছে)
+                              </span>
+                            </SelectItem>
+                            <SelectItem value="no">
+                              <span className="flex items-center gap-1.5">
+                                🚫 না (এক্সেস বন্ধ)
+                              </span>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-3 py-2 text-muted-foreground">
                         {r.payment_due_date ? formatDate(r.payment_due_date) : "—"}

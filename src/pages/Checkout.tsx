@@ -48,6 +48,7 @@ export default function Checkout() {
   const itemId      = params.get(isCourse ? "courseId"   : "productId") ?? "";
   const itemName    = params.get(isCourse ? "courseName" : "productName") ?? (isCourse ? "কোর্স" : "পণ্য");
   const itemPrice   = Number(params.get("price") ?? 0);
+  const monthlyFee  = Number(params.get("monthlyFee") ?? 0);   // cadet: first month
   const couponCode  = params.get("coupon") ?? null;
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function Checkout() {
   const [errors,     setErrors]     = useState<Record<string, string>>({});
 
   const shippingCost = (isCourse || isEbook) ? 0 : SHIPPING[shipping].cost;
-  const total        = itemPrice + shippingCost;
+  const total        = itemPrice + monthlyFee + shippingCost;
 
   function validate() {
     const e: Record<string, string> = {};
@@ -401,9 +402,17 @@ export default function Checkout() {
               </h2>
               <div className="mt-4 space-y-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-muted-foreground leading-snug">{itemName}</span>
+                  <span className="text-muted-foreground leading-snug">
+                    {monthlyFee > 0 ? "এককালীন ভর্তি ফি" : itemName}
+                  </span>
                   <span className="shrink-0 font-medium text-foreground">৳{itemPrice.toLocaleString("bn-BD")}</span>
                 </div>
+                {monthlyFee > 0 && (
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="text-muted-foreground leading-snug">মাসিক ফি (১ম মাস)</span>
+                    <span className="shrink-0 font-medium text-foreground">৳{monthlyFee.toLocaleString("bn-BD")}</span>
+                  </div>
+                )}
                 {couponCode && (
                   <div className="flex items-center justify-between text-green-600 dark:text-green-400">
                     <span className="flex items-center gap-1">🏷 কুপন: <span className="font-mono font-semibold">{couponCode}</span></span>

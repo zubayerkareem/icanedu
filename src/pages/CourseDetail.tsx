@@ -202,8 +202,14 @@ function CourseHero({ course }: { course: Course }) {
     }
   }
 
+  const cadetMonthlyFee =
+    course.course_type === "cadet" && course.has_monthly_fee && course.monthly_fee
+      ? course.monthly_fee
+      : 0;
+
   const checkoutUrl =
     `/checkout?type=course&courseId=${course.id}&courseName=${encodeURIComponent(course.title)}&price=${finalPrice}` +
+    (cadetMonthlyFee ? `&monthlyFee=${cadetMonthlyFee}` : "") +
     (applied ? `&coupon=${encodeURIComponent(applied.code)}` : "");
   const buyHref = user ? checkoutUrl : `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
 

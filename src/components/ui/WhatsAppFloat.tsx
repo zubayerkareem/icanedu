@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 /** Converts a local BD number like "01XXXXXXXXX" to international wa.me format "880XXXXXXXXX" */
@@ -6,8 +7,15 @@ function toWaNumber(raw: string) {
   return digits.startsWith("880") ? digits : `880${digits.replace(/^0/, "")}`;
 }
 
+interface SupportWaContact {
+  title: string;
+  number: string;
+  icon: string;
+}
+
 export function WhatsAppFloat() {
   const { data: settings = [] } = useSiteSettings();
+  const [open, setOpen] = useState(false);
 
   const find = (key: string) => settings.find((s) => s.key === key)?.value?.trim() ?? "";
 
@@ -16,74 +24,159 @@ export function WhatsAppFloat() {
   const playstore = find("playstore_url");
   const appstore  = find("appstore_url");
 
+  // Parse multi-contact WhatsApp list
+  let supportContacts: SupportWaContact[] = [];
+  try {
+    const raw = find("support_whatsapp_contacts");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        supportContacts = (parsed as SupportWaContact[]).filter(
+          (c) => c.title?.trim() && c.number?.trim()
+        );
+      }
+    }
+  } catch { /* ignore malformed */ }
+
+  const hasMultiContact = supportContacts.length > 0;
+
   // Nothing to show
-  if (!whatsapp && !facebook && !playstore && !appstore) return null;
+  if (!whatsapp && !facebook && !playstore && !appstore && !hasMultiContact) return null;
 
   return (
-    <div className="fixed bottom-6 right-5 z-50 flex flex-col items-center gap-3">
-      {/* App Store */}
-      {appstore && (
-        <a
-          href={appstore}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="App Store"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg transition-transform hover:scale-110"
-          title="App Store"
-        >
-          <AppleIcon className="h-6 w-6" />
-        </a>
+    <>
+      {/* Click-away overlay to close panel */}
+      {open && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
       )}
 
-      {/* Play Store */}
-      {playstore && (
-        <a
-          href={playstore}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Play Store"
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-800 shadow-lg transition-transform hover:scale-110 border border-gray-200"
-          title="Google Play Store"
-        >
-          <PlayStoreIcon className="h-6 w-6" />
-        </a>
-      )}
+      <div className="fixed bottom-6 right-5 z-50 flex flex-col items-end gap-3">
 
-      {/* Facebook */}
-      {facebook && (
-        <a
-          href={facebook}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Facebook Group"
-          className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110"
-          style={{ backgroundColor: "#1877F2" }}
-          title="Facebook গ্রুপ"
-        >
-          <FacebookIcon className="h-6 w-6" />
-        </a>
-      )}
+        {/* ── Multi-contact expandable panel ─────────────────────── */}
+        {hasMultiContact && open && (
+          <div className="mb-1 flex flex-col gap-2 items-end">
+            {/* Panel heading */}
+            <div className="rounded-xl bg-white dark:bg-zinc-900 border border-border shadow-xl px-4 py-2.5">
+              <p className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+                সাপোর্টে যোগাযোগ করুন
+              </p>
+            </div>
+            {/* Contacts list */}
+            {supportContacts.map((c, i) => (
+              <a
+                key={i}
+                href={`https://wa.me/${toWaNumber(c.number)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-2xl bg-white dark:bg-zinc-900 border border-green-200 dark:border-green-800 shadow-lg px-4 py-3 pr-5 min-w-[180px] transition-transform hover:scale-[1.03] hover:border-green-400"
+              >
+                <span className="text-2xl leading-none shrink-0">{c.icon || "💬"}</span>
+                <span className="text-sm font-semibold text-foreground">{c.title}</span>
+                <span className="ml-auto text-green-600">
+                  <WhatsAppIcon className="h-4 w-4" />
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
 
-      {/* WhatsApp */}
-      {whatsapp && (
-        <a
-          href={`https://wa.me/${toWaNumber(whatsapp)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="WhatsApp"
-          className="relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110"
-          style={{ backgroundColor: "#25D366" }}
-          title="WhatsApp"
-        >
-          {/* Pulse rings */}
-          <span className="absolute inset-0 rounded-full opacity-40 animate-ping" style={{ backgroundColor: "#25D366" }} />
-          <span className="absolute inset-0 scale-125 rounded-full opacity-20 animate-ping [animation-delay:0.3s]" style={{ backgroundColor: "#25D366" }} />
-          <span className="relative z-10">
-            <WhatsAppIcon className="h-7 w-7" />
-          </span>
-        </a>
-      )}
-    </div>
+        {/* App Store */}
+        {appstore && (
+          <a
+            href={appstore}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="App Store"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-800 text-white shadow-lg transition-transform hover:scale-110"
+            title="App Store"
+          >
+            <AppleIcon className="h-6 w-6" />
+          </a>
+        )}
+
+        {/* Play Store */}
+        {playstore && (
+          <a
+            href={playstore}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Play Store"
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-800 shadow-lg transition-transform hover:scale-110 border border-gray-200"
+            title="Google Play Store"
+          >
+            <PlayStoreIcon className="h-6 w-6" />
+          </a>
+        )}
+
+        {/* Facebook */}
+        {facebook && (
+          <a
+            href={facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook Group"
+            className="flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110"
+            style={{ backgroundColor: "#1877F2" }}
+            title="Facebook গ্রুপ"
+          >
+            <FacebookIcon className="h-6 w-6" />
+          </a>
+        )}
+
+        {/* ── WhatsApp button ──────────────────────────────────────── */}
+        {hasMultiContact ? (
+          /* Multi-contact mode: pulsing toggle button */
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label="WhatsApp সাপোর্ট"
+            title="সাপোর্টে যোগাযোগ করুন"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110 focus:outline-none"
+            style={{ backgroundColor: "#25D366" }}
+          >
+            {/* Pulse rings — only when panel is closed */}
+            {!open && (
+              <>
+                <span className="absolute inset-0 rounded-full opacity-40 animate-ping" style={{ backgroundColor: "#25D366" }} />
+                <span className="absolute inset-0 scale-125 rounded-full opacity-20 animate-ping [animation-delay:0.3s]" style={{ backgroundColor: "#25D366" }} />
+              </>
+            )}
+            <span className="relative z-10">
+              {open ? (
+                /* X icon when open */
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <WhatsAppIcon className="h-7 w-7" />
+              )}
+            </span>
+          </button>
+        ) : whatsapp ? (
+          /* Single-contact fallback */
+          <a
+            href={`https://wa.me/${toWaNumber(whatsapp)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="WhatsApp"
+            className="relative flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-transform hover:scale-110"
+            style={{ backgroundColor: "#25D366" }}
+            title="WhatsApp"
+          >
+            <span className="absolute inset-0 rounded-full opacity-40 animate-ping" style={{ backgroundColor: "#25D366" }} />
+            <span className="absolute inset-0 scale-125 rounded-full opacity-20 animate-ping [animation-delay:0.3s]" style={{ backgroundColor: "#25D366" }} />
+            <span className="relative z-10">
+              <WhatsAppIcon className="h-7 w-7" />
+            </span>
+          </a>
+        ) : null}
+      </div>
+    </>
   );
 }
 

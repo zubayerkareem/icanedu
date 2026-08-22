@@ -363,11 +363,20 @@ function CourseHero({ course }: { course: Course }) {
                       {t.home.free}
                     </span>
                   )}
-                  {course.course_type === "cadet" && course.payment_type === "monthly" && course.monthly_fee ? (
-                    <p className="mt-1 text-sm font-medium text-muted-foreground">
-                      + ৳{bnNum(course.monthly_fee)}/মাস
-                    </p>
-                  ) : null}
+                  {course.course_type === "cadet" && (
+                    <div className="mt-2 space-y-0.5">
+                      {course.main_fee ? (
+                        <p className="text-xs text-muted-foreground">
+                          ✅ এককালীন ভর্তি ফি: <span className="font-semibold text-foreground">৳{bnNum(course.main_fee)}</span>
+                        </p>
+                      ) : null}
+                      {course.has_monthly_fee && course.monthly_fee ? (
+                        <p className="text-xs text-muted-foreground">
+                          🔄 মাসিক ফি: <span className="font-semibold text-foreground">৳{bnNum(course.monthly_fee)}/মাস</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 {enrolled ? (

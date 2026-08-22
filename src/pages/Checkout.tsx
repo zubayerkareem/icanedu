@@ -101,10 +101,10 @@ export default function Checkout() {
     if (isCourse && itemId) {
       const { data: courseRow } = await supabase
         .from("courses")
-        .select("course_type, payment_type")
+        .select("course_type, has_monthly_fee")
         .eq("id", itemId)
         .maybeSingle();
-      if (courseRow?.course_type === "cadet" && courseRow?.payment_type === "monthly") {
+      if (courseRow?.course_type === "cadet" && courseRow?.has_monthly_fee) {
         paymentFields = { payment_status: "complete", payment_due_date: addOneMonth() };
       }
     }

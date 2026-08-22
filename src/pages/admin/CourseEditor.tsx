@@ -44,6 +44,7 @@ type Form = {
   cadet_homework_url: string;
   cadet_attendance_url: string;
   payment_type: "one_time" | "monthly";
+  has_monthly_fee: boolean;
   main_fee: string;
   monthly_fee: string;
   duration: string;
@@ -70,7 +71,7 @@ type Form = {
 const emptyForm: Form = {
   title: "", slug: "", category: "", course_type: "standard",
   cadet_assignment_url: "", cadet_homework_url: "", cadet_attendance_url: "",
-  payment_type: "one_time", main_fee: "", monthly_fee: "",
+  payment_type: "one_time", has_monthly_fee: false, main_fee: "", monthly_fee: "",
   duration: "", total_lessons: "", enrollment_count: "", rating_average: "",
   thumbnail_url: "", short_description: "", long_description: "",
   teachers: [],
@@ -98,6 +99,7 @@ function fromCourse(c: Course): Form {
     cadet_homework_url: c.cadet_homework_url ?? "",
     cadet_attendance_url: c.cadet_attendance_url ?? "",
     payment_type: (c.payment_type as "one_time" | "monthly") ?? "one_time",
+    has_monthly_fee: c.has_monthly_fee ?? false,
     main_fee: c.main_fee != null ? String(c.main_fee) : "",
     monthly_fee: c.monthly_fee != null ? String(c.monthly_fee) : "",
     duration: c.duration ?? "",
@@ -259,9 +261,12 @@ export default function CourseEditor() {
         cadet_assignment_url: form.cadet_assignment_url.trim() || undefined,
         cadet_homework_url: form.cadet_homework_url.trim() || undefined,
         cadet_attendance_url: form.cadet_attendance_url.trim() || undefined,
-        payment_type: form.payment_type,
+        // has_monthly_fee is the source of truth; payment_type is kept for
+        // backward-compat with older code that may still read it.
+        has_monthly_fee: form.has_monthly_fee,
+        payment_type: form.has_monthly_fee ? "monthly" : "one_time",
         main_fee: form.main_fee ? Number(form.main_fee) : undefined,
-        monthly_fee: form.payment_type === "monthly" && form.monthly_fee ? Number(form.monthly_fee) : undefined,
+        monthly_fee: form.has_monthly_fee && form.monthly_fee ? Number(form.monthly_fee) : undefined,
       });
       toast.success(isEdit ? "কোর্স আপডেট হয়েছে" : "নতুন কোর্স যোগ হয়েছে");
       navigate("/admin/courses");
@@ -355,29 +360,51 @@ export default function CourseEditor() {
 
           {/* Cadet payment plan — only shown for cadet courses */}
           {form.course_type === "cadet" && (
-            <div className="rounded-xl border border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-950/30 p-4 space-y-3">
+            <div className="rounded-xl border border-cyan-200 bg-cyan-50 dark:border-cyan-800 dark:bg-cyan-950/30 p-4 space-y-4">
               <p className="text-sm font-semibold text-cyan-700 dark:text-cyan-300 flex items-center gap-1.5">
                 💳 পেমেন্ট প্ল্যান
               </p>
-              <Field label="পেমেন্ট টাইপ">
-                <Select value={form.payment_type} onValueChange={(v) => set("payment_type", v as "one_time" | "monthly")}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="one_time">এককালীন (One-Time Fee)</SelectItem>
-                    <SelectItem value="monthly">মাসিক সাবস্ক্রিপশন (Monthly)</SelectItem>
-                  </SelectContent>
-                </Select>
+
+              {/* One-time enrollment fee — always required */}
+              <Field label="এককালীন ভর্তি ফি (৳) *">
+                <Input
+                  type="number"
+                  value={form.main_fee}
+                  onChange={(e) => set("main_fee", e.target.value)}
+                  placeholder="2000"
+                  min="0"
+                />
               </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label={form.payment_type === "monthly" ? "ভর্তি ফি (৳)" : "মূল্য (৳)"}>
-                  <Input type="number" value={form.main_fee} onChange={(e) => set("main_fee", e.target.value)} placeholder="2000" />
-                </Field>
-                {form.payment_type === "monthly" && (
-                  <Field label="মাসিক ফি (৳)">
-                    <Input type="number" value={form.monthly_fee} onChange={(e) => set("monthly_fee", e.target.value)} placeholder="500" />
-                  </Field>
-                )}
+              <p className="text-xs text-cyan-600 dark:text-cyan-400 -mt-2">
+                ✅ প্রতিটি ক্যাডেট কোর্সে এককালীন ভর্তি ফি বাধ্যতামূলক।
+              </p>
+
+              {/* Monthly fee — optional toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-cyan-300 dark:border-cyan-700 bg-white/50 dark:bg-cyan-900/20 px-4 py-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">মাসিক ফি আছে?</p>
+                  <p className="text-xs text-muted-foreground">চালু করলে শিক্ষার্থীকে প্রতি মাসে ফি দিতে হবে</p>
+                </div>
+                <Switch
+                  checked={form.has_monthly_fee}
+                  onCheckedChange={(v) => {
+                    set("has_monthly_fee", v);
+                    if (!v) set("monthly_fee", "");
+                  }}
+                />
               </div>
+
+              {form.has_monthly_fee && (
+                <Field label="মাসিক ফি (৳) *">
+                  <Input
+                    type="number"
+                    value={form.monthly_fee}
+                    onChange={(e) => set("monthly_fee", e.target.value)}
+                    placeholder="500"
+                    min="0"
+                  />
+                </Field>
+              )}
             </div>
           )}
 

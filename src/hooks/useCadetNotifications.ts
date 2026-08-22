@@ -22,6 +22,7 @@ export type CadetCourseRow = {
   cadet_homework_url: string | null;
   cadet_attendance_url: string | null;
   payment_type?: "one_time" | "monthly";
+  has_monthly_fee?: boolean;
 };
 
 // ─── Admin: all cadet courses ─────────────────────────────────────────────────
@@ -32,7 +33,7 @@ export function useAdminCadetCourses() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("courses")
-        .select("id, title, cadet_assignment_url, cadet_homework_url, cadet_attendance_url, payment_type")
+        .select("id, title, cadet_assignment_url, cadet_homework_url, cadet_attendance_url, payment_type, has_monthly_fee")
         .eq("course_type", "cadet")
         .order("created_at", { ascending: false });
       if (error) throw error;

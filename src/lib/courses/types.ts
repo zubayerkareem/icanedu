@@ -164,10 +164,13 @@ export interface Course {
   cadet_homework_url?: string;
   cadet_attendance_url?: string;
 
-  // Cadet payment plan — main_fee mirrors into `price` on save so every
-  // existing price-reading component (listings, checkout, revenue) keeps
-  // working unchanged; monthly_fee only applies when payment_type = monthly.
+  // Cadet payment plan — main_fee is always the one-time enrollment fee and
+  // mirrors into `price` so every existing price-reading component keeps
+  // working.  has_monthly_fee is an independent toggle: when true, monthly_fee
+  // is also collected each month by the admin.  payment_type is kept for
+  // backward-compat and derived on save.
   payment_type?: "one_time" | "monthly";
+  has_monthly_fee?: boolean;
   main_fee?: number;
   monthly_fee?: number;
 }

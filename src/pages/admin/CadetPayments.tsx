@@ -58,7 +58,7 @@ export default function CadetPayments() {
     try {
       await bulkConfirm.mutateAsync({
         orderIds: [...selectedIds],
-        monthly: selectedCourse?.payment_type === "monthly",
+        monthly: selectedCourse?.has_monthly_fee === true,
       });
       toast.success(`${selectedIds.size} জনের পেমেন্ট নিশ্চিত করা হয়েছে`);
       setSelectedIds(new Set());

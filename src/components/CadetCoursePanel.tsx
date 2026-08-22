@@ -3,7 +3,8 @@
 //  - src/pages/dashboard/CadetNotifications.tsx (multi-course tabs view, direct URL)
 //  - src/pages/dashboard/CourseLearn.tsx (single-course view reached via "Start Course"
 //    for course_type === "cadet")
-import { ExternalLink, CheckCircle2, BookOpen, Lock } from "lucide-react";
+import { CheckCircle2, BookOpen, Lock, ClipboardList, UserCheck, ArrowUpRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RichContent } from "@/components/RichEditor";
 import { toast } from "sonner";
@@ -60,29 +61,74 @@ export interface CadetActionCourse {
 
 // ─── Action buttons for a cadet course ───────────────────────────────────────
 
+interface ButtonDef {
+  label: string;
+  url: string | null | undefined;
+  Icon: LucideIcon;
+  bg: string;        // solid background
+  shadow: string;    // colored drop-shadow on hover
+}
+
+const BUTTON_DEFS: Omit<ButtonDef, "url">[] = [
+  {
+    label: "এসাইনমেন্ট",
+    Icon: ClipboardList,
+    bg: "bg-violet-500 hover:bg-violet-600 dark:bg-violet-600 dark:hover:bg-violet-700",
+    shadow: "hover:shadow-violet-300 dark:hover:shadow-violet-900",
+  },
+  {
+    label: "হোম ওয়ার্ক",
+    Icon: BookOpen,
+    bg: "bg-amber-500 hover:bg-amber-600 dark:bg-amber-500 dark:hover:bg-amber-600",
+    shadow: "hover:shadow-amber-300 dark:hover:shadow-amber-900",
+  },
+  {
+    label: "এটেন্ডেন্স",
+    Icon: UserCheck,
+    bg: "bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700",
+    shadow: "hover:shadow-emerald-300 dark:hover:shadow-emerald-900",
+  },
+];
+
 export function CourseActionButtons({ course }: { course: CadetActionCourse }) {
-  const buttons = [
-    { label: "এসাইনমেন্ট", url: course.cadet_assignment_url },
-    { label: "হোম ওয়ার্ক",  url: course.cadet_homework_url },
-    { label: "এটেন্ডেন্স",  url: course.cadet_attendance_url },
+  const buttons: ButtonDef[] = [
+    { ...BUTTON_DEFS[0], url: course.cadet_assignment_url },
+    { ...BUTTON_DEFS[1], url: course.cadet_homework_url },
+    { ...BUTTON_DEFS[2], url: course.cadet_attendance_url },
   ].filter((b) => b.url);
 
   if (buttons.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 pb-2">
-      {buttons.map((b) => (
-        <a
-          key={b.label}
-          href={b.url!}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-300 bg-cyan-50 px-4 py-2 text-sm font-semibold text-cyan-700 transition-colors hover:bg-cyan-100 dark:border-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 dark:hover:bg-cyan-900/40"
-        >
-          <ExternalLink className="h-3.5 w-3.5" />
-          {b.label}
-        </a>
-      ))}
+    /* 2 cols on mobile → up to 6 on wide screens */
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pb-2">
+      {buttons.map((b) => {
+        const Icon = b.Icon;
+        return (
+          <a
+            key={b.label}
+            href={b.url!}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={[
+              "group relative flex aspect-square flex-col items-center justify-center gap-2",
+              "rounded-2xl text-white transition-all duration-200",
+              "shadow-md hover:shadow-xl hover:-translate-y-1",
+              b.bg,
+              b.shadow,
+            ].join(" ")}
+          >
+            {/* External link badge */}
+            <ArrowUpRight className="absolute top-2.5 right-2.5 h-3.5 w-3.5 opacity-60 group-hover:opacity-100 transition-opacity" />
+
+            <Icon className="h-9 w-9 drop-shadow-sm" strokeWidth={1.75} />
+
+            <span className="text-center text-xs font-bold leading-tight tracking-wide px-1">
+              {b.label}
+            </span>
+          </a>
+        );
+      })}
     </div>
   );
 }
